@@ -3,9 +3,10 @@
 import { useState, useMemo, useEffect } from 'react'
 import { 
   Search, Filter, ShoppingCart, User, Plus, Minus, Trash2, 
-  ChevronRight, CreditCard, Banknote, QrCode, Clock, CheckCircle
+  ChevronRight, CreditCard, Banknote, QrCode, Clock, CheckCircle, Printer, MessageCircle
 } from 'lucide-react'
 import { formatRupiah } from '@/lib/utils/currency'
+import { formatDateShort } from '@/lib/utils/dates'
 import { cn } from '@/lib/utils/cn'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'react-hot-toast'
@@ -27,21 +28,20 @@ interface CartItem {
 }
 
 export default function POSClient({ products, customers, settings, userRole, userId }: POSClientProps) {
-  // States
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('Semua')
   const [cart, setCart] = useState<CartItem[]>([])
   const [selectedCustomer, setSelectedCustomer] = useState<Partial<Customer> | null>(null)
   
-  // Checkout States
+  // Checkout & Receipt States
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState<'tunai'|'transfer'|'qris'|'tempo'>('tunai')
   const [amountPaid, setAmountPaid] = useState<number | ''>('')
   const [loading, setLoading] = useState(false)
+  const [completedTxn, setCompletedTxn] = useState<any>(null)
 
   const supabase = createClient()
 
-  // Derived data
   const categories = useMemo(() => {
     const cats = new Set(products.map(p => p.category || 'Umum'))
     return ['Semua', ...Array.from(cats)]
@@ -55,7 +55,6 @@ export default function POSClient({ products, customers, settings, userRole, use
     })
   }, [products, search, categoryFilter])
 
-  // Pricing logic based on customer category
   const getProductPrice = (product: Product, customer: Partial<Customer> | null) => {
     if (!customer) return product.price_retail
     if (customer.category === 'grosir' && product.price_grosir) return product.price_grosir
@@ -63,7 +62,6 @@ export default function POSClient({ products, customers, settings, userRole, use
     return product.price_retail
   }
 
-  // Update cart prices when customer changes
   useEffect(() => {
     setCart(prev => prev.map(item => ({
       ...item,
@@ -71,7 +69,6 @@ export default function POSClient({ products, customers, settings, userRole, use
     })))
   }, [selectedCustomer])
 
-  // Cart operations
   const addToCart = (product: Product) => {
     if (product.stock_quantity <= 0) {
       toast.error('Stok produk habis!')
@@ -97,7 +94,7 @@ export default function POSClient({ products, customers, settings, userRole, use
     setCart(prev => prev.map(item => {
       if (item.product.id === productId) {
         const newQty = item.qty + delta
-        if (newQty < 1) return item // handled by remove
+        if (newQty < 1) return item 
         if (newQty > item.product.stock_quantity) {
           toast.error('Melebihi stok yang tersedia!')
           return item
@@ -112,13 +109,11 @@ export default function POSClient({ products, customers, settings, userRole, use
     setCart(prev => prev.filter(item => item.product.id !== productId))
   }
 
-  // Totals
   const subtotal = cart.reduce((sum, item) => sum + (item.unit_price * item.qty), 0)
   const taxRate = settings?.tax_percentage || 0
   const taxAmount = (subtotal * taxRate) / 100
   const total = subtotal + taxAmount
 
-  // Handle Checkout
   const handleCheckout = async () => {
     if (cart.length === 0) return
     if (paymentMethod === 'tempo') {
@@ -141,12 +136,10 @@ export default function POSClient({ products, customers, settings, userRole, use
 
     setLoading(true)
     try {
-      // Generate Invoice Number (e.g. INV-260812-XXXX)
       const dateStr = new Date().toISOString().slice(2,10).replace(/-/g, '')
       const randomCode = Math.floor(1000 + Math.random() * 9000)
       const invoiceNumber = `INV-${dateStr}-${randomCode}`
 
-      // 1. Insert Transaction
       const { data: txn, error: txnError } = await supabase
         .from('transactions')
         .insert([{
@@ -159,14 +152,13 @@ export default function POSClient({ products, customers, settings, userRole, use
           payment_method: paymentMethod,
           payment_status: paymentMethod === 'tempo' ? 'piutang' : 'lunas',
           amount_paid: paymentMethod === 'tempo' ? paid : total,
-          due_date: paymentMethod === 'tempo' ? new Date(Date.now() + 30*24*60*60*1000).toISOString() : null // Default 30 days
+          due_date: paymentMethod === 'tempo' ? new Date(Date.now() + 30*24*60*60*1000).toISOString() : null 
         }])
-        .select('id')
+        .select('id, created_at')
         .single()
 
       if (txnError) throw txnError
 
-      // 2. Insert Transaction Items & Update Stock (Normally done via Edge Function for atomic safety, but doing client-side for v1)
       const txnItems = cart.map(item => ({
         transaction_id: txn.id,
         product_id: item.product.id,
@@ -182,14 +174,12 @@ export default function POSClient({ products, customers, settings, userRole, use
       const { error: itemsError } = await supabase.from('transaction_items').insert(txnItems)
       if (itemsError) throw itemsError
 
-      // Update stocks
       for (const item of cart) {
         await supabase.from('products')
           .update({ stock_quantity: item.product.stock_quantity - item.qty })
           .eq('id', item.product.id)
       }
 
-      // Update customer debt if tempo
       if (paymentMethod === 'tempo' && selectedCustomer) {
         await supabase.from('customers')
           .update({ current_debt: (selectedCustomer.current_debt || 0) + (total - paid) })
@@ -198,15 +188,20 @@ export default function POSClient({ products, customers, settings, userRole, use
 
       toast.success('Transaksi berhasil!')
       
-      // Reset
-      setCart([])
-      setSelectedCustomer(null)
-      setIsCheckoutOpen(false)
-      setAmountPaid('')
-      setPaymentMethod('tunai')
-
-      // Refresh page to get latest stocks (simple way)
-      window.location.reload()
+      // Setup Receipt Data instead of closing
+      setCompletedTxn({
+        invoice_number: invoiceNumber,
+        created_at: txn.created_at,
+        customer: selectedCustomer,
+        items: [...cart],
+        subtotal,
+        taxAmount,
+        total,
+        paymentMethod,
+        amountPaid: paymentMethod === 'tempo' ? paid : paid, 
+        change: paymentMethod === 'tunai' ? paid - total : 0,
+        debt: paymentMethod === 'tempo' ? total - paid : 0
+      })
 
     } catch (error: any) {
       toast.error(error.message || 'Gagal memproses transaksi')
@@ -215,11 +210,49 @@ export default function POSClient({ products, customers, settings, userRole, use
     }
   }
 
+  const startNewTransaction = () => {
+    setCart([])
+    setSelectedCustomer(null)
+    setIsCheckoutOpen(false)
+    setAmountPaid('')
+    setPaymentMethod('tunai')
+    setCompletedTxn(null)
+    // Refresh to get latest stocks (simple solution)
+    window.location.reload()
+  }
+
+  const printReceipt = () => {
+    window.print()
+  }
+
+  const sendWhatsAppReceipt = () => {
+    if (!completedTxn) return
+    const { invoice_number, items, total, customer, paymentMethod } = completedTxn
+    
+    let text = `*${settings?.store_name || 'SBR Frozen'}*\n`
+    text += `Struk Pembelian\n`
+    text += `No: ${invoice_number}\n`
+    text += `--------------------------------\n`
+    
+    items.forEach((item: any) => {
+      text += `${item.product.name}\n`
+      text += `${item.qty} x ${formatRupiah(item.unit_price)} = ${formatRupiah(item.qty * item.unit_price)}\n`
+    })
+    
+    text += `--------------------------------\n`
+    text += `Total: *${formatRupiah(total)}*\n`
+    text += `Metode: ${paymentMethod.toUpperCase()}\n\n`
+    text += `${settings?.receipt_footer_text || 'Terima kasih!'}\n`
+
+    const phone = customer?.phone ? customer.phone.replace(/[^0-9]/g, '') : ''
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`
+    window.open(url, '_blank')
+  }
+
   return (
     <div className="h-screen flex flex-col md:flex-row overflow-hidden bg-slate-50">
       {/* LEFT PANEL: PRODUCT GRID */}
-      <div className="flex-1 flex flex-col min-w-0 border-r border-dark-100">
-        {/* Toolbar */}
+      <div className="flex-1 flex flex-col min-w-0 border-r border-dark-100 no-print">
         <div className="p-4 bg-white border-b border-dark-100 flex-shrink-0 flex flex-col sm:flex-row gap-3 justify-between z-10 shadow-sm">
           <div className="relative w-full max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-400" />
@@ -249,7 +282,6 @@ export default function POSClient({ products, customers, settings, userRole, use
           </div>
         </div>
 
-        {/* Product Grid */}
         <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50/50">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {filteredProducts.map(product => {
@@ -288,9 +320,8 @@ export default function POSClient({ products, customers, settings, userRole, use
       </div>
 
       {/* RIGHT PANEL: CART */}
-      <div className="w-full md:w-[400px] xl:w-[450px] bg-white flex flex-col flex-shrink-0 shadow-[-4px_0_24px_rgba(0,0,0,0.02)] z-20">
+      <div className="w-full md:w-[400px] xl:w-[450px] bg-white flex flex-col flex-shrink-0 shadow-[-4px_0_24px_rgba(0,0,0,0.02)] z-20 no-print">
         
-        {/* Customer Selector */}
         <div className="p-4 border-b border-dark-100 flex-shrink-0">
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
@@ -341,7 +372,6 @@ export default function POSClient({ products, customers, settings, userRole, use
           </DropdownMenu.Root>
         </div>
 
-        {/* Cart Items */}
         <div className="flex-1 overflow-y-auto p-4">
           {cart.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-dark-400">
@@ -387,7 +417,6 @@ export default function POSClient({ products, customers, settings, userRole, use
           )}
         </div>
 
-        {/* Totals & Checkout Button */}
         <div className="border-t border-dark-100 bg-dark-50 p-6 flex-shrink-0">
           <div className="space-y-2 mb-4">
             <div className="flex justify-between text-sm text-dark-500">
@@ -407,7 +436,10 @@ export default function POSClient({ products, customers, settings, userRole, use
           </div>
           
           <button 
-            onClick={() => setIsCheckoutOpen(true)}
+            onClick={() => {
+              setIsCheckoutOpen(true)
+              setCompletedTxn(null)
+            }}
             disabled={cart.length === 0}
             className="w-full btn-lg btn-primary shadow-glow-primary text-lg h-14"
           >
@@ -416,97 +448,196 @@ export default function POSClient({ products, customers, settings, userRole, use
         </div>
       </div>
 
-      {/* CHECKOUT MODAL */}
+      {/* MODALS: CHECKOUT OR RECEIPT */}
       {isCheckoutOpen && (
-        <div className="modal-overlay z-[100]">
+        <div className="modal-overlay z-[100] no-print">
           <div className="modal-content max-w-xl">
-            <div className="flex items-center justify-between p-6 border-b border-dark-100">
-              <div>
-                <h2 className="text-xl font-bold text-dark-900">Selesaikan Pembayaran</h2>
-                <p className="text-sm text-dark-500 mt-0.5">Total Tagihan: <span className="font-bold text-primary-600">{formatRupiah(total)}</span></p>
-              </div>
-              <button onClick={() => setIsCheckoutOpen(false)} className="text-dark-400 hover:text-dark-600">
-                <Trash2 className="w-5 h-5 rotate-45" /> {/* Use as X icon close equivalent for now or import X */}
-              </button>
-            </div>
-
-            <div className="p-6">
-              <h3 className="text-sm font-bold text-dark-900 uppercase tracking-wide mb-3">Pilih Metode Pembayaran</h3>
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                {[
-                  { id: 'tunai', icon: Banknote, label: 'Uang Tunai', color: 'text-emerald-500', bg: 'bg-emerald-50', border: 'border-emerald-200' },
-                  { id: 'transfer', icon: CreditCard, label: 'Transfer Bank', color: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-200' },
-                  { id: 'qris', icon: QrCode, label: 'QRIS', color: 'text-violet-500', bg: 'bg-violet-50', border: 'border-violet-200' },
-                  { id: 'tempo', icon: Clock, label: 'Tempo (Piutang)', color: 'text-amber-500', bg: 'bg-amber-50', border: 'border-amber-200' },
-                ].map((method) => {
-                  const isActive = paymentMethod === method.id
-                  return (
-                    <button
-                      key={method.id}
-                      onClick={() => {
-                        setPaymentMethod(method.id as any)
-                        if (method.id === 'tunai') setAmountPaid(total) // Auto fill for convenience
-                        else setAmountPaid('')
-                      }}
-                      className={cn(
-                        'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all',
-                        isActive ? `${method.border} ${method.bg} shadow-sm scale-[0.98]` : 'border-dark-100 bg-white hover:border-dark-200'
-                      )}
-                    >
-                      <method.icon className={cn('w-6 h-6', isActive ? method.color : 'text-dark-400')} />
-                      <span className={cn('text-sm font-semibold', isActive ? 'text-dark-900' : 'text-dark-600')}>{method.label}</span>
-                    </button>
-                  )
-                })}
-              </div>
-
-              {(paymentMethod === 'tunai' || paymentMethod === 'tempo') && (
-                <div className="mb-6 animate-fade-in">
-                  <label className="label">
-                    {paymentMethod === 'tempo' ? 'DP / Dibayar Dimuka (Bila ada)' : 'Uang Diterima'}
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-dark-400 font-medium text-xl">Rp</span>
-                    <input 
-                      type="number" 
-                      value={amountPaid}
-                      onChange={(e) => setAmountPaid(e.target.value ? Number(e.target.value) : '')}
-                      className="input pl-12 h-14 text-xl font-bold text-dark-900" 
-                      placeholder="0"
-                      autoFocus
-                    />
+            {completedTxn ? (
+              // RECEIPT VIEW
+              <div className="p-0">
+                <div className="bg-success-light/30 p-6 border-b border-success-light text-center flex flex-col items-center">
+                  <div className="w-16 h-16 bg-success rounded-full flex items-center justify-center text-white mb-4">
+                    <CheckCircle className="w-8 h-8" />
                   </div>
-                  {paymentMethod === 'tunai' && amountPaid !== '' && Number(amountPaid) > total && (
-                    <div className="mt-3 p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center justify-between">
-                      <span className="text-emerald-700 text-sm font-medium">Uang Kembalian:</span>
-                      <span className="text-emerald-700 text-lg font-bold text-money">{formatRupiah(Number(amountPaid) - total)}</span>
-                    </div>
-                  )}
-                  {paymentMethod === 'tempo' && (
-                    <div className="mt-3 p-3 bg-amber-50 border border-amber-100 rounded-xl">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-amber-700 text-sm font-medium">Sisa Tagihan (Piutang):</span>
-                        <span className="text-amber-700 text-lg font-bold text-money">{formatRupiah(total - (Number(amountPaid) || 0))}</span>
-                      </div>
-                      <p className="text-xs text-amber-700/70 text-right">Jatuh tempo otomatis diset 30 hari.</p>
-                    </div>
-                  )}
+                  <h2 className="text-2xl font-bold text-success-dark">Transaksi Berhasil!</h2>
+                  <p className="text-sm text-success-dark/80 mt-1">Stok & kas telah diupdate.</p>
                 </div>
-              )}
-              
-              <button 
-                onClick={handleCheckout}
-                disabled={loading}
-                className="w-full btn-lg btn-primary h-14 text-lg"
-              >
-                {loading ? 'Memproses...' : (
-                  <>
-                    <CheckCircle className="w-5 h-5 mr-2" />
-                    Selesaikan Transaksi
-                  </>
-                )}
-              </button>
-            </div>
+
+                <div className="p-6 flex flex-col md:flex-row gap-6">
+                  {/* Digital Receipt Preview */}
+                  <div 
+                    id="printable-receipt" 
+                    className="flex-1 bg-white border border-dark-100 p-6 rounded-xl font-mono text-sm max-w-sm mx-auto shadow-sm"
+                    style={{ color: '#000' }}
+                  >
+                    <div className="text-center mb-4">
+                      <h3 className="text-lg font-bold uppercase">{settings?.store_name || 'SBR Frozen'}</h3>
+                      {settings?.store_address && <p className="text-xs mt-1">{settings.store_address}</p>}
+                      {settings?.store_phone && <p className="text-xs">{settings.store_phone}</p>}
+                    </div>
+                    
+                    <div className="border-t border-b border-dashed border-dark-200 py-2 mb-3 text-xs">
+                      <div className="flex justify-between mb-1">
+                        <span>No:</span>
+                        <span>{completedTxn.invoice_number}</span>
+                      </div>
+                      <div className="flex justify-between mb-1">
+                        <span>Tgl:</span>
+                        <span>{formatDateShort(completedTxn.created_at)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Pelanggan:</span>
+                        <span>{completedTxn.customer ? completedTxn.customer.name : 'Umum'}</span>
+                      </div>
+                    </div>
+
+                    <div className="mb-3 space-y-2">
+                      {completedTxn.items.map((item: any, i: number) => (
+                        <div key={i} className="text-xs">
+                          <div className="font-semibold line-clamp-1">{item.product.name}</div>
+                          <div className="flex justify-between mt-0.5">
+                            <span>{item.qty} x {formatRupiah(item.unit_price)}</span>
+                            <span>{formatRupiah(item.qty * item.unit_price)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="border-t border-dashed border-dark-200 pt-2 mb-4 text-xs">
+                      <div className="flex justify-between font-bold text-sm mb-1">
+                        <span>TOTAL</span>
+                        <span>{formatRupiah(completedTxn.total)}</span>
+                      </div>
+                      <div className="flex justify-between text-dark-500">
+                        <span>BAYAR ({completedTxn.paymentMethod.toUpperCase()})</span>
+                        <span>{formatRupiah(completedTxn.amountPaid)}</span>
+                      </div>
+                      {completedTxn.paymentMethod === 'tunai' && (
+                        <div className="flex justify-between text-dark-500">
+                          <span>KEMBALI</span>
+                          <span>{formatRupiah(completedTxn.change)}</span>
+                        </div>
+                      )}
+                      {completedTxn.paymentMethod === 'tempo' && (
+                        <div className="flex justify-between text-dark-500">
+                          <span>SISA PIUTANG</span>
+                          <span>{formatRupiah(completedTxn.debt)}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="text-center text-xs text-dark-400 mt-6">
+                      <p>{settings?.receipt_footer_text || 'Terima kasih atas kunjungan Anda!'}</p>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex flex-col gap-3 w-full md:w-48 flex-shrink-0 no-print">
+                    <button onClick={printReceipt} className="btn-md btn-outline w-full justify-start text-dark-900 border-dark-200">
+                      <Printer className="w-4 h-4" /> Print Thermal
+                    </button>
+                    <button onClick={sendWhatsAppReceipt} className="btn-md bg-[#25D366] text-white hover:bg-[#1DA851] w-full justify-start border-none">
+                      <MessageCircle className="w-4 h-4" /> Kirim WhatsApp
+                    </button>
+                    <div className="flex-1" />
+                    <button onClick={startNewTransaction} className="btn-lg btn-primary w-full">
+                      Transaksi Baru
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // CHECKOUT VIEW
+              <>
+                <div className="flex items-center justify-between p-6 border-b border-dark-100">
+                  <div>
+                    <h2 className="text-xl font-bold text-dark-900">Selesaikan Pembayaran</h2>
+                    <p className="text-sm text-dark-500 mt-0.5">Total Tagihan: <span className="font-bold text-primary-600">{formatRupiah(total)}</span></p>
+                  </div>
+                  <button onClick={() => setIsCheckoutOpen(false)} className="text-dark-400 hover:text-dark-600">
+                    <Trash2 className="w-5 h-5 rotate-45" /> 
+                  </button>
+                </div>
+
+                <div className="p-6">
+                  <h3 className="text-sm font-bold text-dark-900 uppercase tracking-wide mb-3">Pilih Metode Pembayaran</h3>
+                  <div className="grid grid-cols-2 gap-3 mb-6">
+                    {[
+                      { id: 'tunai', icon: Banknote, label: 'Uang Tunai', color: 'text-emerald-500', bg: 'bg-emerald-50', border: 'border-emerald-200' },
+                      { id: 'transfer', icon: CreditCard, label: 'Transfer Bank', color: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-200' },
+                      { id: 'qris', icon: QrCode, label: 'QRIS', color: 'text-violet-500', bg: 'bg-violet-50', border: 'border-violet-200' },
+                      { id: 'tempo', icon: Clock, label: 'Tempo (Piutang)', color: 'text-amber-500', bg: 'bg-amber-50', border: 'border-amber-200' },
+                    ].map((method) => {
+                      const isActive = paymentMethod === method.id
+                      return (
+                        <button
+                          key={method.id}
+                          onClick={() => {
+                            setPaymentMethod(method.id as any)
+                            if (method.id === 'tunai') setAmountPaid(total) 
+                            else setAmountPaid('')
+                          }}
+                          className={cn(
+                            'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all',
+                            isActive ? `${method.border} ${method.bg} shadow-sm scale-[0.98]` : 'border-dark-100 bg-white hover:border-dark-200'
+                          )}
+                        >
+                          <method.icon className={cn('w-6 h-6', isActive ? method.color : 'text-dark-400')} />
+                          <span className={cn('text-sm font-semibold', isActive ? 'text-dark-900' : 'text-dark-600')}>{method.label}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  {(paymentMethod === 'tunai' || paymentMethod === 'tempo') && (
+                    <div className="mb-6 animate-fade-in">
+                      <label className="label">
+                        {paymentMethod === 'tempo' ? 'DP / Dibayar Dimuka (Bila ada)' : 'Uang Diterima'}
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-dark-400 font-medium text-xl">Rp</span>
+                        <input 
+                          type="number" 
+                          value={amountPaid}
+                          onChange={(e) => setAmountPaid(e.target.value ? Number(e.target.value) : '')}
+                          className="input pl-12 h-14 text-xl font-bold text-dark-900" 
+                          placeholder="0"
+                          autoFocus
+                        />
+                      </div>
+                      {paymentMethod === 'tunai' && amountPaid !== '' && Number(amountPaid) > total && (
+                        <div className="mt-3 p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center justify-between">
+                          <span className="text-emerald-700 text-sm font-medium">Uang Kembalian:</span>
+                          <span className="text-emerald-700 text-lg font-bold text-money">{formatRupiah(Number(amountPaid) - total)}</span>
+                        </div>
+                      )}
+                      {paymentMethod === 'tempo' && (
+                        <div className="mt-3 p-3 bg-amber-50 border border-amber-100 rounded-xl">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-amber-700 text-sm font-medium">Sisa Tagihan (Piutang):</span>
+                            <span className="text-amber-700 text-lg font-bold text-money">{formatRupiah(total - (Number(amountPaid) || 0))}</span>
+                          </div>
+                          <p className="text-xs text-amber-700/70 text-right">Jatuh tempo otomatis diset 30 hari.</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  <button 
+                    onClick={handleCheckout}
+                    disabled={loading}
+                    className="w-full btn-lg btn-primary h-14 text-lg"
+                  >
+                    {loading ? 'Memproses...' : (
+                      <>
+                        <CheckCircle className="w-5 h-5 mr-2" />
+                        Selesaikan Transaksi
+                      </>
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

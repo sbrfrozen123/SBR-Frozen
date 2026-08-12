@@ -349,3 +349,30 @@ body {
     scrollbar-width: none;
   }
 }
+
+/* ============================================================
+   PRINT STYLES FOR RECEIPTS
+   ============================================================ */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  
+  #printable-receipt, #printable-receipt * {
+    visibility: visible;
+  }
+  
+  #printable-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Hide print buttons inside the receipt area if any */
+  .no-print {
+    display: none !important;
+  }
+}
