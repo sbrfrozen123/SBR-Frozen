@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Plus, Search, Filter, MoreVertical, Edit, Trash2, AlertTriangle, Package } from 'lucide-react'
+import { Plus, Search, Filter, MoreVertical, Edit, Trash2, AlertTriangle, Package, ClipboardCheck } from 'lucide-react'
 import { formatRupiah } from '@/lib/utils/currency'
 import { cn } from '@/lib/utils/cn'
 import { ProductForm } from '@/components/inventory/ProductForm'
+import { StockAdjustmentModal } from '@/components/inventory/StockAdjustmentModal'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'react-hot-toast'
 import type { Product, UserRole } from '@/types/database'
@@ -22,6 +23,7 @@ export default function InventoryClient({ initialProducts, userRole }: Inventory
   
   // Modal states
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | undefined>(undefined)
 
   const supabase = createClient()
@@ -78,10 +80,16 @@ export default function InventoryClient({ initialProducts, userRole }: Inventory
           <h1 className="page-title">Database Stok & Inventaris</h1>
           <p className="page-subtitle">Kelola katalog produk, harga, dan pantau ketersediaan stok.</p>
         </div>
-        <button onClick={openAddForm} className="btn-md btn-primary">
-          <Plus className="w-4 h-4" />
-          Tambah Produk
-        </button>
+        <div className="flex items-center gap-3 mt-4 sm:mt-0">
+          <button onClick={() => setIsAdjustmentModalOpen(true)} className="btn-md bg-white border border-dark-200 text-dark-700 hover:bg-dark-50">
+            <ClipboardCheck className="w-4 h-4" />
+            Penyesuaian Stok
+          </button>
+          <button onClick={openAddForm} className="btn-md btn-primary">
+            <Plus className="w-4 h-4" />
+            Tambah Produk
+          </button>
+        </div>
       </div>
 
       <div className="card flex-1 flex flex-col min-h-0 overflow-hidden">
@@ -232,6 +240,20 @@ export default function InventoryClient({ initialProducts, userRole }: Inventory
               refreshData()
             }}
             onCancel={() => setIsFormOpen(false)}
+          />
+        </div>
+      )}
+
+      {/* Adjustment Modal */}
+      {isAdjustmentModalOpen && (
+        <div className="modal-overlay">
+          <StockAdjustmentModal 
+            products={products}
+            onSuccess={() => {
+              setIsAdjustmentModalOpen(false)
+              refreshData()
+            }}
+            onCancel={() => setIsAdjustmentModalOpen(false)}
           />
         </div>
       )}
