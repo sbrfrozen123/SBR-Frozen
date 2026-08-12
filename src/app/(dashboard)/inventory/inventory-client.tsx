@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Plus, Search, Filter, MoreVertical, Edit, Trash2, AlertTriangle } from 'lucide-react'
+import { Plus, Search, Filter, MoreVertical, Edit, Trash2, AlertTriangle, Package } from 'lucide-react'
 import { formatRupiah } from '@/lib/utils/currency'
 import { cn } from '@/lib/utils/cn'
 import { ProductForm } from '@/components/inventory/ProductForm'
@@ -160,7 +160,7 @@ export default function InventoryClient({ initialProducts, userRole }: Inventory
                     <td className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         {product.stock_quantity <= product.min_stock_alert && (
-                          <AlertTriangle className="w-4 h-4 text-warning" title="Stok Menipis!" />
+                          <span title="Stok Menipis!"><AlertTriangle className="w-4 h-4 text-warning" /></span>
                         )}
                         <span className={cn(
                           'font-semibold text-money',
