@@ -3,8 +3,8 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | SBR POS System',
-    default: 'SBR POS System — Kelola Bisnis Lebih Mudah',
+    template: '%s | SBR Frozen',
+    default: 'SBR Frozen — Kelola Bisnis Lebih Mudah',
   },
   description: 'Sistem Point of Sales dan Business Intelligence untuk SBR Frozen. Kelola transaksi, stok, pengeluaran, dan laporan keuangan dalam satu platform.',
   keywords: ['POS', 'Point of Sale', 'Kasir', 'Inventaris', 'Laporan Keuangan', 'SBR Frozen'],

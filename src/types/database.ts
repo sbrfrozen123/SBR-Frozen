@@ -160,6 +160,69 @@ export interface DebtPayment {
   user?: Profile | null
 }
 
+export interface Category {
+  id: string
+  name: string
+  description: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface Supplier {
+  id: string
+  name: string
+  contact_person: string | null
+  phone: string | null
+  address: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface Purchase {
+  id: string
+  invoice_number: string
+  supplier_id: string | null
+  user_id: string
+  total_amount: number
+  payment_status: PaymentStatus
+  purchase_date: string
+  notes: string | null
+  created_at: string
+  updated_at: string
+  // Joined
+  supplier?: Supplier | null
+  user?: Profile | null
+  items?: PurchaseItem[]
+}
+
+export interface PurchaseItem {
+  id: string
+  purchase_id: string
+  product_id: string
+  qty: number
+  unit_price: number
+  subtotal: number
+  // Joined
+  product?: Product | null
+}
+
+export interface CashierShift {
+  id: string
+  user_id: string
+  start_time: string
+  end_time: string | null
+  starting_cash: number
+  ending_cash_system: number | null
+  ending_cash_actual: number | null
+  status: 'open' | 'closed'
+  notes: string | null
+  created_at: string
+  updated_at: string
+  // Joined
+  user?: Profile | null
+}
+
 // ============================================================
 // Cart types (POS)
 // ============================================================
@@ -282,4 +345,32 @@ export interface CheckoutPayload {
   payment_method: PaymentMethod
   due_date?: string
   notes?: string
+}
+
+export interface CategoryForm {
+  name: string
+  description?: string
+}
+
+export interface SupplierForm {
+  name: string
+  contact_person?: string
+  phone?: string
+  address?: string
+  is_active: boolean
+}
+
+export interface PurchaseForm {
+  supplier_id: string
+  invoice_number: string
+  purchase_date: string
+  payment_status: PaymentStatus
+  notes?: string
+  items: Array<{
+    product_id: string
+    qty: number
+    unit_price: number
+    subtotal: number
+  }>
+  total_amount: number
 }

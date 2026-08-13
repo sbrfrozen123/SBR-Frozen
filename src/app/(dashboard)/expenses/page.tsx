@@ -19,8 +19,8 @@ export default async function ExpensesPage() {
     .eq('id', user.id)
     .single()
 
-  // Hanya Super Admin yang boleh akses menu Pengeluaran
-  if (profile?.role !== 'super_admin') {
+  // Super Admin, Kasir, dan Admin Gudang boleh akses menu Pengeluaran
+  if (!['super_admin', 'kasir', 'admin_gudang'].includes(profile?.role || '')) {
     redirect('/')
   }
 

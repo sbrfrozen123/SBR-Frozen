@@ -1,13 +1,15 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
   LayoutDashboard, ShoppingCart, Users, Package,
   Receipt, FileText, BarChart3, Settings, LogOut,
-  ChevronLeft, ChevronRight, AlertCircle, X, Menu,
+  X, Menu, ShoppingBag, Truck, Tags, Clock, AlertCircle, 
+  ChevronRight
 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import type { UserRole } from '@/types/database'
@@ -21,63 +23,87 @@ interface NavItem {
   badge?: number
 }
 
-const navItems: NavItem[] = [
+interface ModuleGroup {
+  id: string
+  label: string
+  icon: React.ElementType
+  color: string
+  roles: UserRole[]
+  href?: string
+  items?: NavItem[]
+}
+
+const modules: ModuleGroup[] = [
   {
-    href: '/',
-    icon: LayoutDashboard,
+    id: 'dashboard',
     label: 'Dashboard',
-    color: 'text-indigo-400',
+    icon: LayoutDashboard,
+    color: 'text-indigo-500',
     roles: ['super_admin'],
+    href: '/'
   },
   {
-    href: '/pos',
+    id: 'penjualan',
+    label: 'Penjualan',
     icon: ShoppingCart,
-    label: 'POS Kasir',
-    color: 'text-pink-400',
+    color: 'text-pink-500',
     roles: ['super_admin', 'kasir'],
+    items: [
+      { href: '/pos', icon: ShoppingCart, label: 'POS Kasir', color: 'text-pink-500', roles: ['super_admin', 'kasir'] },
+      { href: '/transactions', icon: FileText, label: 'Riwayat Transaksi', color: 'text-indigo-500', roles: ['super_admin'] },
+      { href: '/customers', icon: Users, label: 'Pelanggan', color: 'text-blue-500', roles: ['super_admin', 'kasir'] },
+      { href: '/receivables', icon: AlertCircle, label: 'Piutang', color: 'text-red-500', roles: ['super_admin', 'kasir'] },
+      { href: '/shifts', icon: Clock, label: 'Shift Kasir', color: 'text-orange-500', roles: ['super_admin', 'kasir'] },
+    ]
   },
   {
-    href: '/customers',
-    icon: Users,
-    label: 'Database Customer',
-    color: 'text-blue-400',
-    roles: ['super_admin', 'kasir'],
-  },
-  {
-    href: '/inventory',
-    icon: Package,
-    label: 'Database Stok',
-    color: 'text-emerald-400',
+    id: 'pembelian',
+    label: 'Pembelian',
+    icon: ShoppingBag,
+    color: 'text-orange-500',
     roles: ['super_admin', 'admin_gudang'],
+    items: [
+      { href: '/purchases', icon: ShoppingBag, label: 'Pesanan Pembelian', color: 'text-orange-500', roles: ['super_admin', 'admin_gudang'] },
+      { href: '/suppliers', icon: Truck, label: 'Pemasok', color: 'text-cyan-500', roles: ['super_admin', 'admin_gudang'] },
+    ]
   },
   {
-    href: '/expenses',
+    id: 'persediaan',
+    label: 'Persediaan',
+    icon: Package,
+    color: 'text-emerald-500',
+    roles: ['super_admin', 'admin_gudang'],
+    items: [
+      { href: '/inventory', icon: Package, label: 'Barang & Stok', color: 'text-emerald-500', roles: ['super_admin', 'admin_gudang'] },
+      { href: '/categories', icon: Tags, label: 'Kategori Barang', color: 'text-fuchsia-500', roles: ['super_admin', 'admin_gudang'] },
+    ]
+  },
+  {
+    id: 'keuangan',
+    label: 'Kas & Bank',
     icon: Receipt,
-    label: 'Pengeluaran',
-    color: 'text-amber-400',
-    roles: ['super_admin'],
+    color: 'text-amber-500',
+    roles: ['super_admin', 'kasir', 'admin_gudang'],
+    items: [
+      { href: '/expenses', icon: Receipt, label: 'Pengeluaran', color: 'text-amber-500', roles: ['super_admin', 'kasir', 'admin_gudang'] },
+    ]
   },
   {
-    href: '/receivables',
-    icon: AlertCircle,
-    label: 'Piutang',
-    color: 'text-red-400',
-    roles: ['super_admin', 'kasir'],
-  },
-  {
-    href: '/reports',
-    icon: BarChart3,
+    id: 'laporan',
     label: 'Laporan',
-    color: 'text-violet-400',
+    icon: BarChart3,
+    color: 'text-violet-500',
     roles: ['super_admin'],
+    href: '/reports'
   },
   {
-    href: '/settings',
-    icon: Settings,
+    id: 'pengaturan',
     label: 'Pengaturan',
-    color: 'text-slate-400',
+    icon: Settings,
+    color: 'text-slate-500',
     roles: ['super_admin'],
-  },
+    href: '/settings'
+  }
 ]
 
 interface SidebarProps {
@@ -88,11 +114,23 @@ interface SidebarProps {
 export function Sidebar({ userRole, userName }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [activeModule, setActiveModule] = useState<string | null>(null)
   const supabase = createClient()
+  const sidebarRef = useRef<HTMLDivElement>(null)
 
-  const filtered = navItems.filter((item) => item.roles.includes(userRole))
+  const allowedModules = modules.filter(m => m.roles.includes(userRole))
+
+  // Close flyout when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
+        setActiveModule(null)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -100,109 +138,28 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
     router.refresh()
   }
 
-  const isActive = (href: string) => {
-    if (href === '/') return pathname === '/'
-    return pathname.startsWith(href)
+  const isModuleActive = (module: ModuleGroup) => {
+    if (module.href === '/') return pathname === '/'
+    if (module.href) return pathname.startsWith(module.href)
+    return module.items?.some(item => pathname.startsWith(item.href))
   }
 
-  const SidebarContent = () => (
-    <div className="flex flex-col h-full">
-      {/* Logo area */}
-      <div className={cn(
-        'flex items-center h-16 px-4 border-b border-dark-800 flex-shrink-0',
-        collapsed ? 'justify-center' : 'justify-between'
-      )}>
-        {!collapsed && (
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center flex-shrink-0">
-              <ShoppingCart className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <div className="text-white font-bold text-sm">SBR POS</div>
-              <div className="text-dark-500 text-xs">v1.0</div>
-            </div>
-          </div>
-        )}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="w-7 h-7 rounded-lg bg-dark-800 hover:bg-dark-700 flex items-center justify-center text-dark-400 hover:text-white transition-all hidden lg:flex"
-        >
-          {collapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
-        </button>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 py-4 overflow-y-auto no-scrollbar">
-        <div className="space-y-0.5">
-          {filtered.map((item) => {
-            const Icon = item.icon
-            const active = isActive(item.href)
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setMobileOpen(false)}
-                className={cn(
-                  'sidebar-nav-item',
-                  active && 'active',
-                  collapsed && 'justify-center px-0 mx-3'
-                )}
-                title={collapsed ? item.label : undefined}
-              >
-                <Icon className={cn('w-5 h-5 nav-icon flex-shrink-0', active ? 'text-primary-400' : item.color)} />
-                {!collapsed && (
-                  <span className="text-sm font-medium truncate">{item.label}</span>
-                )}
-                {!collapsed && item.badge && item.badge > 0 && (
-                  <span className="ml-auto bg-danger text-white text-xs rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0">
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
-            )
-          })}
-        </div>
-      </nav>
-
-      {/* User section */}
-      <div className="border-t border-dark-800 p-3 flex-shrink-0">
-        {!collapsed ? (
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center flex-shrink-0">
-              <span className="text-white text-sm font-bold">{userName.charAt(0).toUpperCase()}</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-white text-sm font-medium truncate">{userName}</div>
-              <div className="text-dark-500 text-xs capitalize">{userRole.replace('_', ' ')}</div>
-            </div>
-          </div>
-        ) : (
-          <div className="flex justify-center mb-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center">
-              <span className="text-white text-sm font-bold">{userName.charAt(0).toUpperCase()}</span>
-            </div>
-          </div>
-        )}
-        <button
-          onClick={handleLogout}
-          className={cn(
-            'w-full flex items-center gap-2 px-3 py-2 rounded-xl text-dark-400 hover:text-danger hover:bg-danger-light/10 transition-all text-sm',
-            collapsed && 'justify-center'
-          )}
-        >
-          <LogOut className="w-4 h-4 flex-shrink-0" />
-          {!collapsed && <span>Keluar</span>}
-        </button>
-      </div>
-    </div>
-  )
+  const handleModuleClick = (mod: ModuleGroup) => {
+    if (mod.href) {
+      router.push(mod.href)
+      setActiveModule(null)
+      setMobileOpen(false)
+    } else {
+      setActiveModule(activeModule === mod.id ? null : mod.id)
+    }
+  }
 
   return (
-    <>
+    <div ref={sidebarRef}>
       {/* Mobile toggle button */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-50 w-10 h-10 rounded-xl bg-dark-900 text-white flex items-center justify-center shadow-lg"
+        className="lg:hidden fixed top-4 left-4 z-[60] w-10 h-10 rounded-xl bg-dark-900 text-white flex items-center justify-center shadow-lg"
       >
         <Menu className="w-5 h-5" />
       </button>
@@ -210,37 +167,117 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/60 z-40"
-          onClick={() => setMobileOpen(false)}
+          className="lg:hidden fixed inset-0 bg-black/60 z-[40]"
+          onClick={() => {
+            setMobileOpen(false)
+            setActiveModule(null)
+          }}
         />
       )}
 
-      {/* Mobile sidebar */}
+      {/* MAIN SLIM SIDEBAR (Accurate Style) */}
       <aside
         className={cn(
-          'lg:hidden fixed left-0 top-0 h-screen bg-dark-900 border-r border-dark-800 z-50 transition-transform duration-300',
-          mobileOpen ? 'translate-x-0' : '-translate-x-full',
-          'w-64'
+          'fixed left-0 top-0 h-screen bg-dark-900 border-r border-dark-800 z-[50] flex flex-col items-center py-4 transition-transform duration-300 w-[72px]',
+          !mobileOpen && 'max-lg:-translate-x-full'
         )}
       >
-        <button
-          onClick={() => setMobileOpen(false)}
-          className="absolute top-4 right-4 w-7 h-7 rounded-lg bg-dark-800 flex items-center justify-center text-dark-400 hover:text-white"
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
-        <SidebarContent />
+        {/* Logo */}
+        <Link href="/" className="w-10 h-10 rounded-xl overflow-hidden relative mb-6 shadow-sm group">
+          <Image src="/logo.jpeg" alt="Logo" fill className="object-cover group-hover:scale-110 transition-transform" />
+        </Link>
+
+        {/* Icons */}
+        <nav className="flex-1 w-full flex flex-col gap-2 px-2 items-center overflow-y-auto no-scrollbar">
+          {allowedModules.map((mod) => {
+            const Icon = mod.icon
+            const active = isModuleActive(mod) || activeModule === mod.id
+            return (
+              <button
+                key={mod.id}
+                onClick={() => handleModuleClick(mod)}
+                className={cn(
+                  'w-12 h-12 rounded-xl flex items-center justify-center relative group transition-all',
+                  active ? 'bg-primary-500/10 text-primary-500' : 'text-dark-400 hover:bg-dark-800 hover:text-white'
+                )}
+                title={mod.label}
+              >
+                <Icon className={cn('w-6 h-6', active ? 'text-primary-500' : '')} />
+                
+                {/* Tooltip on hover (desktop only) */}
+                <div className="absolute left-14 bg-dark-800 text-white text-xs px-2 py-1 rounded opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] hidden lg:block">
+                  {mod.label}
+                </div>
+                
+                {/* Indicator dot */}
+                {active && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-primary-500 rounded-r-full" />
+                )}
+              </button>
+            )
+          })}
+        </nav>
+
+        {/* User / Logout */}
+        <div className="mt-auto flex flex-col gap-3 px-2 w-full pt-4 border-t border-dark-800">
+          <div className="w-12 h-12 rounded-xl bg-gradient-primary flex items-center justify-center text-white font-bold text-lg cursor-help" title={userName}>
+            {userName.charAt(0).toUpperCase()}
+          </div>
+          <button
+            onClick={handleLogout}
+            className="w-12 h-12 rounded-xl flex items-center justify-center text-dark-400 hover:bg-danger/10 hover:text-danger transition-colors"
+            title="Keluar"
+          >
+            <LogOut className="w-5 h-5" />
+          </button>
+        </div>
       </aside>
 
-      {/* Desktop sidebar */}
-      <aside
-        className={cn(
-          'hidden lg:flex flex-col fixed left-0 top-0 h-screen bg-dark-900 border-r border-dark-800 z-40 transition-all duration-300',
-          collapsed ? 'w-[72px]' : 'w-64'
-        )}
-      >
-        <SidebarContent />
-      </aside>
-    </>
+      {/* FLYOUT MENU (The Popover Submenu) */}
+      {activeModule && (
+        <div 
+          className="fixed top-0 bottom-0 left-[72px] w-[320px] bg-slate-50 border-r border-dark-100 shadow-2xl z-[45] animate-slide-right flex flex-col"
+        >
+          {(() => {
+            const mod = modules.find(m => m.id === activeModule)
+            if (!mod) return null
+            const items = mod.items?.filter(item => item.roles.includes(userRole)) || []
+
+            return (
+              <>
+                <div className="h-16 flex items-center px-6 border-b border-dark-100 bg-white">
+                  <h2 className="font-bold text-lg text-dark-900 flex items-center gap-2">
+                    <mod.icon className={cn("w-5 h-5", mod.color)} />
+                    {mod.label}
+                  </h2>
+                </div>
+                <div className="p-6 overflow-y-auto">
+                  <div className="grid grid-cols-2 gap-3">
+                    {items.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => {
+                          setActiveModule(null)
+                          setMobileOpen(false)
+                        }}
+                        className="group flex flex-col items-center text-center gap-2 p-4 bg-white rounded-xl border border-dark-100 shadow-sm hover:shadow-md hover:border-primary-200 transition-all"
+                      >
+                        <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", item.color.replace('text-', 'bg-').replace('500', '50'))}>
+                          <item.icon className={cn("w-6 h-6", item.color)} />
+                        </div>
+                        <span className="text-xs font-medium text-dark-600 group-hover:text-primary-600 transition-colors">
+                          {item.label}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )
+          })()}
+        </div>
+      )}
+    </div>
   )
 }

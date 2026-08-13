@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { Eye, EyeOff, Loader2, BarChart3, ShoppingCart, Package, TrendingUp } from 'lucide-react'
 
@@ -64,11 +65,11 @@ export default function LoginPage() {
         <div className="relative z-10">
           {/* Logo */}
           <div className="flex items-center gap-3 mb-16">
-            <div className="w-10 h-10 rounded-xl bg-gradient-primary flex items-center justify-center">
-              <ShoppingCart className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl overflow-hidden relative">
+              <Image src="/logo.jpeg" alt="SBR Frozen Logo" fill className="object-cover" />
             </div>
             <div>
-              <div className="text-white font-bold text-xl">SBR POS</div>
+              <div className="text-white font-bold text-xl">SBR Frozen</div>
               <div className="text-dark-400 text-xs">Business Management System</div>
             </div>
           </div>
@@ -115,11 +116,11 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="flex items-center gap-3 mb-10 lg:hidden">
-            <div className="w-10 h-10 rounded-xl bg-gradient-primary flex items-center justify-center">
-              <ShoppingCart className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl overflow-hidden relative">
+              <Image src="/logo.jpeg" alt="SBR Frozen Logo" fill className="object-cover" />
             </div>
             <div>
-              <div className="text-dark-900 font-bold text-xl">SBR POS</div>
+              <div className="text-dark-900 font-bold text-xl">SBR Frozen</div>
               <div className="text-dark-400 text-xs">Business Management System</div>
             </div>
           </div>
@@ -198,9 +199,11 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="text-center text-xs text-dark-400 mt-8">
-            © 2026 SBR POS System. Semua hak dilindungi.
-          </p>
+          <div className="text-center mt-auto pt-8">
+            <p className="text-dark-400 text-xs">
+              © 2026 SBR Frozen. Semua hak dilindungi.
+            </p>
+          </div>
         </div>
       </div>
     </div>

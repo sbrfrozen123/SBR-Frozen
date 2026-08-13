@@ -10,7 +10,8 @@ import { formatDateShort } from '@/lib/utils/dates'
 import { cn } from '@/lib/utils/cn'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'react-hot-toast'
-import type { Product, Customer, UserRole } from '@/types/database'
+import type { Product, Customer, UserRole, CashierShift } from '@/types/database'
+import { ShiftManagement } from '@/components/pos/ShiftManagement'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 
 interface POSClientProps {
@@ -32,6 +33,10 @@ export default function POSClient({ products, customers, settings, userRole, use
   const [categoryFilter, setCategoryFilter] = useState('Semua')
   const [cart, setCart] = useState<CartItem[]>([])
   const [selectedCustomer, setSelectedCustomer] = useState<Partial<Customer> | null>(null)
+  
+  // Shift State
+  const [activeShift, setActiveShift] = useState<CashierShift | null>(null)
+  const [isShiftLoaded, setIsShiftLoaded] = useState(false)
   
   // Checkout & Receipt States
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
@@ -68,6 +73,21 @@ export default function POSClient({ products, customers, settings, userRole, use
       unit_price: getProductPrice(item.product, selectedCustomer)
     })))
   }, [selectedCustomer])
+
+  useEffect(() => {
+    async function fetchShift() {
+      const { data } = await supabase
+        .from('cashier_shifts')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'open')
+        .single()
+      
+      setActiveShift(data || null)
+      setIsShiftLoaded(true)
+    }
+    fetchShift()
+  }, [userId, supabase])
 
   const addToCart = (product: Product) => {
     if (product.stock_quantity <= 0) {
@@ -322,6 +342,17 @@ export default function POSClient({ products, customers, settings, userRole, use
       {/* RIGHT PANEL: CART */}
       <div className="w-full md:w-[400px] xl:w-[450px] bg-white flex flex-col flex-shrink-0 shadow-[-4px_0_24px_rgba(0,0,0,0.02)] z-20 no-print">
         
+        {/* SHIFT MANAGEMENT BAR */}
+        {isShiftLoaded && (
+          <div className="px-4 py-3 bg-dark-50 border-b border-dark-100 flex items-center justify-between">
+            <ShiftManagement 
+              userId={userId} 
+              activeShift={activeShift} 
+              onShiftChange={setActiveShift} 
+            />
+          </div>
+        )}
+
         <div className="p-4 border-b border-dark-100 flex-shrink-0">
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>

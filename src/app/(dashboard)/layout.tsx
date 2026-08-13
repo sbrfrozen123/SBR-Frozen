@@ -6,8 +6,8 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | SBR POS',
-    default: 'Dashboard | SBR POS',
+    template: '%s | SBR Frozen',
+    default: 'Dashboard | SBR Frozen',
   },
 }
 
@@ -41,7 +41,7 @@ export default async function DashboardLayout({
       <Sidebar userRole={profile.role} userName={profile.full_name} />
 
       {/* Main content area */}
-      <main className="lg:pl-64 transition-all duration-300">
+      <main className="lg:pl-[72px] transition-all duration-300">
         <div className="min-h-screen">
           {children}
         </div>
