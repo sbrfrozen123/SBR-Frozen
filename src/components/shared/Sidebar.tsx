@@ -121,15 +121,13 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
 
   const allowedModules = modules.filter(m => m.roles.includes(userRole))
 
-  // Close flyout when clicking outside
+  // Close flyout when pressing Escape
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
-        setActiveModule(null)
-      }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') setActiveModule(null)
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
   }, [])
 
   const handleLogout = async () => {
@@ -235,9 +233,16 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
 
       {/* FLYOUT MENU (The Popover Submenu) */}
       {activeModule && (
-        <div 
-          className="fixed top-0 bottom-0 left-[72px] w-[320px] bg-slate-50 border-r border-dark-100 shadow-2xl z-[45] animate-slide-right flex flex-col"
-        >
+        <>
+          {/* Backdrop (Click to close) */}
+          <div 
+            className="fixed inset-0 z-[40] bg-black/5 lg:bg-black/10 transition-opacity"
+            onClick={() => setActiveModule(null)}
+          />
+          
+          <div 
+            className="fixed top-1/2 -translate-y-1/2 left-[84px] w-[340px] max-h-[85vh] bg-white border border-dark-100 rounded-[24px] shadow-[0_0_40px_rgba(0,0,0,0.15)] z-[45] animate-slide-right flex flex-col overflow-hidden"
+          >
           {(() => {
             const mod = modules.find(m => m.id === activeModule)
             if (!mod) return null
@@ -245,13 +250,13 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
 
             return (
               <>
-                <div className="h-16 flex items-center px-6 border-b border-dark-100 bg-white">
+                <div className="h-16 flex flex-shrink-0 items-center px-6 border-b border-dark-100 bg-[#FEF6F7]">
                   <h2 className="font-bold text-lg text-dark-900 flex items-center gap-2">
                     <mod.icon className={cn("w-5 h-5", mod.color)} />
                     {mod.label}
                   </h2>
                 </div>
-                <div className="p-6 overflow-y-auto">
+                <div className="p-5 overflow-y-auto no-scrollbar">
                   <div className="grid grid-cols-2 gap-3">
                     {items.map((item) => (
                       <Link
@@ -263,10 +268,10 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
                         }}
                         className="group flex flex-col items-center text-center gap-2 p-4 bg-white rounded-xl border border-dark-100 shadow-sm hover:shadow-md hover:border-primary-200 transition-all"
                       >
-                        <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", item.color.replace('text-', 'bg-').replace('500', '50'))}>
+                        <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm", item.color.replace('text-', 'bg-').replace('500', '50'))}>
                           <item.icon className={cn("w-6 h-6", item.color)} />
                         </div>
-                        <span className="text-xs font-medium text-dark-600 group-hover:text-primary-600 transition-colors">
+                        <span className="text-[13px] font-medium text-dark-700 group-hover:text-primary-600 transition-colors">
                           {item.label}
                         </span>
                       </Link>
@@ -276,7 +281,8 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
               </>
             )
           })()}
-        </div>
+          </div>
+        </>
       )}
     </div>
   )
