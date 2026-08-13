@@ -8,9 +8,13 @@ export const metadata: Metadata = {
   },
   description: 'Sistem Point of Sales dan Business Intelligence untuk SBR Frozen. Kelola transaksi, stok, pengeluaran, dan laporan keuangan dalam satu platform.',
   keywords: ['POS', 'Point of Sale', 'Kasir', 'Inventaris', 'Laporan Keuangan', 'SBR Frozen'],
-  viewport: 'width=device-width, initial-scale=1',
-  themeColor: '#E91E8C',
   manifest: '/manifest.json',
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#E83446',
 }
 
 export default function RootLayout({
