@@ -153,7 +153,7 @@ export default function GrafikClient({
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="salesman" tickLine={false} axisLine={{ stroke: '#cbd5e1' }} />
                   <YAxis 
-                    tickFormatter={(value) => \`\${(value / 1000000).toFixed(0)}M\`}
+                    tickFormatter={(value) => `${(value / 1000000).toFixed(0)}M`}
                     axisLine={{ stroke: '#cbd5e1' }}
                     tickLine={false}
                   />
