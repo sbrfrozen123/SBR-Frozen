@@ -31,6 +31,12 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
           href: '/reports/profit-loss',
         },
         {
+          title: 'Ringkasan Keuangan',
+          description: 'Rincian penerimaan uang berdasarkan metode pembayaran (Cash/Transfer/QRIS).',
+          icon: BarChart3,
+          href: '/reports/financial-summary',
+        },
+        {
           title: 'Laporan Pengeluaran',
           description: 'Rekapitulasi biaya operasional, logistik, dan SDM.',
           icon: Receipt,
