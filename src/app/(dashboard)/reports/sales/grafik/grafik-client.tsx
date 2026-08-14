@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
-import { ArrowLeft, Printer, Download, RefreshCw, Settings2, X, Calendar, MapPin, User, ChevronLeft } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Printer, Download, RefreshCw, Settings2, X, Calendar, MapPin, User, ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { formatRupiah } from '@/lib/utils/currency'
 import { cn } from '@/lib/utils/cn'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
-interface RincianClientProps {
+interface GrafikClientProps {
   salesData: any[]
   branches: any[]
   profiles: any[]
@@ -17,7 +18,7 @@ interface RincianClientProps {
   initialSalesman: string
 }
 
-export default function RincianClient({
+export default function GrafikClient({
   salesData,
   branches,
   profiles,
@@ -25,10 +26,9 @@ export default function RincianClient({
   initialTo,
   initialBranch,
   initialSalesman
-}: RincianClientProps) {
+}: GrafikClientProps) {
   const router = useRouter()
   
-  // Parameter State
   const [showModal, setShowModal] = useState(!initialFrom || !initialTo)
   const [fromDate, setFromDate] = useState(initialFrom)
   const [toDate, setToDate] = useState(initialTo)
@@ -37,18 +37,16 @@ export default function RincianClient({
   
   const [isRefreshing, setIsRefreshing] = useState(false)
 
-  // Format Dates for display in the report header
   const formattedFrom = initialFrom ? new Date(initialFrom).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : ''
   const formattedTo = initialTo ? new Date(initialTo).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : ''
 
-  // Format Branch Name for display
   const displayBranch = initialBranch === 'all' || !initialBranch 
     ? '[Semua Cabang]' 
     : branches.find(b => b.id === initialBranch)?.name || '[Semua Cabang]'
 
   const applyFilter = () => {
     setShowModal(false)
-    let url = `/reports/sales/rincian?from=${fromDate}&to=${toDate}`
+    let url = `/reports/sales/grafik?from=${fromDate}&to=${toDate}`
     if (branch) url += `&branch=${branch}`
     if (salesman) url += `&salesman=${salesman}`
     router.push(url)
@@ -60,55 +58,30 @@ export default function RincianClient({
     setTimeout(() => setIsRefreshing(false), 500)
   }
 
-  const exportToCSV = () => {
-    const headers = ['Nomor SO', 'Pelanggan', 'Nama Barang', 'Kuantitas', 'UoM', 'Salesman', 'Warehouse', 'Harga Jual', 'Penjualan', 'Payment Amount']
-    const csvData = detailedItems.map(item => [
-      item.invoice_number,
-      item.customer_name,
-      item.product_name,
-      item.qty,
-      item.unit,
-      item.salesman,
-      item.branch,
-      item.unit_price,
-      item.subtotal,
-      item.payment_amount
-    ])
-    
-    const csvContent = [
-      headers.join(','),
-      ...csvData.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n')
+  // Calculate chart data by salesman
+  const chartData = useMemo(() => {
+    const dataBySalesman: Record<string, { salesman: string; penjualan: number; kuantitas: number; total: number }> = {}
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
-    link.setAttribute('download', `Rincian_Faktur_Penjualan_${initialFrom}_${initialTo}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
-
-  const detailedItems = useMemo(() => {
-    const items: any[] = []
     salesData.forEach(sale => {
-      sale.transaction_items?.forEach((item: any) => {
-        items.push({
-          id: item.id,
-          invoice_number: sale.invoice_number,
-          customer_name: sale.customers?.name || '-',
-          product_name: item.product_name || item.products?.name || 'Produk Dihapus',
-          qty: item.qty,
-          unit: item.unit || '-',
-          salesman: sale.profiles?.full_name || '-',
-          branch: sale.branches?.name || '-',
-          unit_price: item.unit_price,
-          subtotal: item.subtotal,
-          payment_amount: sale.amount_paid,
-        })
-      })
+      const salesmanName = sale.profiles?.full_name || 'Tidak Diketahui'
+      
+      if (!dataBySalesman[salesmanName]) {
+        dataBySalesman[salesmanName] = {
+          salesman: salesmanName,
+          penjualan: 0,
+          kuantitas: 0,
+          total: 0
+        }
+      }
+
+      dataBySalesman[salesmanName].penjualan += (sale.total_amount || 0)
+      dataBySalesman[salesmanName].total += (sale.amount_paid || sale.total_amount || 0)
+      
+      const saleQty = sale.transaction_items?.reduce((sum: number, item: any) => sum + (item.qty || 0), 0) || 0
+      dataBySalesman[salesmanName].kuantitas += saleQty
     })
-    return items
+
+    return Object.values(dataBySalesman)
   }, [salesData])
 
   return (
@@ -136,10 +109,6 @@ export default function RincianClient({
             <RefreshCw className={cn("w-5 h-5 group-hover:scale-110 transition-transform", isRefreshing && "animate-spin")} />
             <span className="text-[10px] font-bold mt-1">Refresh</span>
           </button>
-          <button onClick={exportToCSV} className="flex flex-col items-center text-dark-500 hover:text-primary-600 transition-colors group">
-            <Download className="w-5 h-5 group-hover:scale-110 transition-transform" />
-            <span className="text-[10px] font-bold mt-1">Export</span>
-          </button>
           <button onClick={() => window.print()} className="flex flex-col items-center text-dark-500 hover:text-primary-600 transition-colors group">
             <Printer className="w-5 h-5 group-hover:scale-110 transition-transform" />
             <span className="text-[10px] font-bold mt-1">Print</span>
@@ -151,9 +120,9 @@ export default function RincianClient({
       <div className="bg-white shadow-xl max-w-[1400px] w-full mx-4 min-h-[800px] p-12 print:shadow-none print:m-0 print:max-w-none print:p-0">
         
         {/* Header Document */}
-        <div className="text-center mb-10">
+        <div className="text-center mb-10 relative">
           <h2 className="text-sm font-bold text-dark-900 uppercase tracking-widest">SBR FROZEN</h2>
-          <h1 className="text-2xl font-bold text-[#800000] mt-1">Rincian Faktur Penjualan</h1>
+          <h1 className="text-2xl font-bold text-[#800000] mt-1">Grafik Penjualan</h1>
           <p className="text-sm text-dark-700 mt-1">
             Dari {formattedFrom || '-'} s/d {formattedTo || '-'}
           </p>
@@ -164,56 +133,47 @@ export default function RincianClient({
           <p className="text-xs italic text-dark-600">Cabang : {displayBranch}</p>
         </div>
 
-        {/* Data Table */}
+        {/* Data Chart */}
         <div className="w-full">
           {(!initialFrom || !initialTo) ? (
             <div className="text-center py-20 text-dark-400 border-t border-b border-dark-200">
               Silakan atur Parameter Laporan terlebih dahulu untuk menampilkan data.
             </div>
-          ) : detailedItems.length === 0 ? (
+          ) : chartData.length === 0 ? (
             <div className="text-center py-20 text-dark-400 border-t border-b border-dark-200">
               Tidak ada data penjualan pada rentang tanggal dan parameter ini.
             </div>
           ) : (
-            <table className="w-full text-xs text-left">
-              <thead>
-                <tr className="border-t-2 border-b-2 border-dark-900 text-dark-900">
-                  <th className="py-3 px-2 font-bold whitespace-nowrap">Nomor SO</th>
-                  <th className="py-3 px-2 font-bold">Pelanggan</th>
-                  <th className="py-3 px-2 font-bold">Nama Barang</th>
-                  <th className="py-3 px-2 font-bold text-right whitespace-nowrap">Kuantitas</th>
-                  <th className="py-3 px-2 font-bold whitespace-nowrap">UoM</th>
-                  <th className="py-3 px-2 font-bold">Salesman</th>
-                  <th className="py-3 px-2 font-bold">Warehouse</th>
-                  <th className="py-3 px-2 font-bold text-right whitespace-nowrap">Harga Jual</th>
-                  <th className="py-3 px-2 font-bold text-right whitespace-nowrap">Penjualan</th>
-                  <th className="py-3 px-2 font-bold text-right whitespace-nowrap">Payment<br/>Amount</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-dark-200 text-dark-700">
-                {detailedItems.map((item, idx) => (
-                  <tr key={`${item.id}-${idx}`} className="hover:bg-slate-50 print:hover:bg-transparent transition-colors">
-                    <td className="py-3 px-2 align-top">{item.invoice_number}</td>
-                    <td className="py-3 px-2 align-top">{item.customer_name}</td>
-                    <td className="py-3 px-2 align-top">{item.product_name}</td>
-                    <td className="py-3 px-2 align-top text-right">{item.qty}</td>
-                    <td className="py-3 px-2 align-top">{item.unit}</td>
-                    <td className="py-3 px-2 align-top">{item.salesman}</td>
-                    <td className="py-3 px-2 align-top">{item.branch}</td>
-                    <td className="py-3 px-2 align-top text-right">{formatRupiah(item.unit_price).replace('Rp', '')}</td>
-                    <td className="py-3 px-2 align-top text-right font-semibold">{formatRupiah(item.subtotal).replace('Rp', '')}</td>
-                    <td className="py-3 px-2 align-top text-right">{formatRupiah(item.payment_amount).replace('Rp', '')}</td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="border-t-2 border-b-2 border-dark-900 font-bold text-dark-900">
-                  <td colSpan={8} className="py-3 px-2 text-right">TOTAL</td>
-                  <td className="py-3 px-2 text-right">{formatRupiah(detailedItems.reduce((sum, item) => sum + item.subtotal, 0)).replace('Rp', '')}</td>
-                  <td className="py-3 px-2 text-right">{formatRupiah(detailedItems.reduce((sum, item) => sum + item.payment_amount, 0)).replace('Rp', '')}</td>
-                </tr>
-              </tfoot>
-            </table>
+            <div className="w-full h-[500px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={chartData}
+                  margin={{ top: 20, right: 30, left: 60, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="salesman" tickLine={false} axisLine={{ stroke: '#cbd5e1' }} />
+                  <YAxis 
+                    tickFormatter={(value) => \`\${(value / 1000000).toFixed(0)}M\`}
+                    axisLine={{ stroke: '#cbd5e1' }}
+                    tickLine={false}
+                  />
+                  <Tooltip 
+                    formatter={(value: number, name: string) => {
+                      if (name === 'Kuantitas') return [value, name]
+                      return [formatRupiah(value), name]
+                    }}
+                    cursor={{fill: 'transparent'}}
+                  />
+                  <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                  <Bar dataKey="penjualan" name="Penjualan" fill="#2563EB" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="kuantitas" name="Kuantitas" fill="#10B981" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="total" name="Total" fill="#F59E0B" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="text-center text-xs text-dark-400 mt-8 border-t border-dark-200 pt-4">
+                SBR Frozen System Report
+              </div>
+            </div>
           )}
         </div>
       </div>
@@ -222,7 +182,6 @@ export default function RincianClient({
       {showModal && (
         <div className="fixed inset-0 bg-dark-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 print-hidden animate-fade-in">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-slide-up">
-            {/* Modal Header */}
             <div className="bg-[#1a365d] text-white px-6 py-4 flex items-center justify-between">
               <h3 className="font-bold">Parameter Laporan</h3>
               <button onClick={() => initialFrom ? setShowModal(false) : null} className="text-white/70 hover:text-white transition-colors">
@@ -230,16 +189,12 @@ export default function RincianClient({
               </button>
             </div>
             
-            {/* Modal Tabs */}
             <div className="flex border-b border-dark-200 px-6 pt-2">
-              <div className="px-4 py-2 text-primary-600 font-semibold border-b-2 border-danger-500">Umum</div>
+              <div className="px-4 py-2 text-primary-600 font-semibold border-b-2 border-primary-600">Umum</div>
               <div className="px-4 py-2 text-dark-500 font-medium">Kolom</div>
             </div>
 
-            {/* Modal Body */}
             <div className="p-6 space-y-6">
-              
-              {/* Tanggal Section */}
               <div>
                 <h4 className="text-lg text-dark-700 mb-4 border-b border-dark-200 pb-2">Tanggal</h4>
                 <div className="space-y-4">
@@ -250,7 +205,7 @@ export default function RincianClient({
                         type="date" 
                         value={fromDate}
                         onChange={(e) => setFromDate(e.target.value)}
-                        className="w-full border-dark-200 rounded-lg text-sm pl-3 pr-10 py-2 focus:ring-primary-500 focus:border-primary-500 bg-blue-50 text-blue-700 selection:bg-blue-200 font-medium"
+                        className="w-full border-dark-200 rounded-lg text-sm pl-3 pr-10 py-2 focus:ring-primary-500 focus:border-primary-500 bg-blue-50 text-blue-700 font-medium"
                       />
                       <Calendar className="w-4 h-4 text-dark-400 absolute right-3 top-2.5 pointer-events-none" />
                     </div>
@@ -270,7 +225,6 @@ export default function RincianClient({
                 </div>
               </div>
 
-              {/* Parameter Tambahan Section */}
               <div>
                 <h4 className="text-lg text-dark-700 mb-4 border-b border-dark-200 pb-2">Parameter Tambahan</h4>
                 <div className="space-y-4">
@@ -309,10 +263,8 @@ export default function RincianClient({
                   </div>
                 </div>
               </div>
-
             </div>
 
-            {/* Modal Footer */}
             <div className="px-6 py-4 border-t border-dark-200 flex justify-end">
               <button 
                 onClick={applyFilter}

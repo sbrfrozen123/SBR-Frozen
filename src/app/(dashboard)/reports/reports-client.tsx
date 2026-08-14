@@ -45,7 +45,7 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
           title: 'Grafik Penjualan',
           description: 'Laporan grafik penjualan berdasarkan kasir.',
           icon: BarChart3,
-          href: '/reports/sales?tab=ringkasan',
+          href: '/reports/sales/grafik',
         },
         {
           title: 'Rincian Faktur Penjualan',
