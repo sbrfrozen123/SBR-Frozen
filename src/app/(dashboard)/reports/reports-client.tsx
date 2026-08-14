@@ -57,7 +57,7 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
           title: 'Barang Paling Laku',
           description: 'Menampilkan laporan barang paling laku diurutkan berdasar kuantitas.',
           icon: Package,
-          href: '/reports/sales?tab=terlaris',
+          href: '/reports/sales/terlaris',
         }
       ]
     },
