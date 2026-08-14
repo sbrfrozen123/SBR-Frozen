@@ -222,6 +222,7 @@ export default function DashboardClient({
               <Wallet className="w-6 h-6 text-warning-600" />
             </div>
           </div>
+        </div>
         {/* Aset Barang */}
         <div className="p-5 rounded-2xl relative overflow-hidden bg-white border border-indigo-100 shadow-sm group hover:shadow-md transition-all">
           <div className="flex justify-between items-start">
