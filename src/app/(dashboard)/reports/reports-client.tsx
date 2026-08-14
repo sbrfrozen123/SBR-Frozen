@@ -62,6 +62,23 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
       ]
     },
     {
+      title: 'Pembelian',
+      reports: [
+        {
+          title: 'Rincian Pembelian Barang',
+          description: 'Laporan yang berisi rincian faktur pembelian ke pemasok.',
+          icon: Receipt,
+          href: '/reports/purchases/rincian',
+        },
+        {
+          title: 'Rincian Penerimaan Barang',
+          description: 'Laporan penerimaan barang secara fisik ke gudang.',
+          icon: Package,
+          href: '/reports/purchases/penerimaan',
+        }
+      ]
+    },
+    {
       title: 'Persediaan',
       reports: [
         {
