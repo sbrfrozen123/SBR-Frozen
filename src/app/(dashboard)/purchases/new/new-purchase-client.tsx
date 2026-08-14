@@ -126,6 +126,7 @@ export default function NewPurchaseClient({ products, suppliers, userId, branchI
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split('T')[0])
   const [supplierId, setSupplierId] = useState('')
   const [paymentStatus, setPaymentStatus] = useState<'lunas' | 'tempo'>('lunas')
+  const [paymentMethod, setPaymentMethod] = useState<'tunai' | 'transfer' | 'qris' | 'tempo'>('tunai')
   const [notes, setNotes] = useState('')
   
   // Items State
@@ -219,6 +220,7 @@ export default function NewPurchaseClient({ products, suppliers, userId, branchI
           branch_id: branchId,
           total_amount: totalAmount,
           payment_status: paymentStatus,
+          payment_method: paymentMethod,
           purchase_date: purchaseDate,
           notes: notes,
         }])
@@ -390,13 +392,32 @@ export default function NewPurchaseClient({ products, suppliers, userId, branchI
               <label className="label">Status Pembayaran</label>
               <select 
                 value={paymentStatus}
-                onChange={(e) => setPaymentStatus(e.target.value as any)}
+                onChange={(e) => {
+                  setPaymentStatus(e.target.value as any)
+                  if (e.target.value === 'tempo') setPaymentMethod('tempo')
+                  else setPaymentMethod('tunai')
+                }}
                 className="input bg-white"
               >
-                <option value="lunas">Lunas (Tunai/Transfer)</option>
+                <option value="lunas">Lunas (Langsung Dibayar)</option>
                 <option value="tempo">Belum Lunas (Tempo/Kredit)</option>
               </select>
             </div>
+            
+            {paymentStatus === 'lunas' && (
+              <div className="form-group">
+                <label className="label">Metode Pembayaran</label>
+                <select 
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value as any)}
+                  className="input bg-white"
+                >
+                  <option value="tunai">Tunai (Laci Kasir)</option>
+                  <option value="transfer">Transfer (Bank)</option>
+                  <option value="qris">QRIS (Bank)</option>
+                </select>
+              </div>
+            )}
           </div>
         </div>
 

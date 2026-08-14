@@ -13,6 +13,7 @@ import type { Expense } from '@/types/database'
 const expenseSchema = z.object({
   category: z.enum(['operasional', 'logistik', 'sdm', 'lain-lain']),
   amount: z.coerce.number().min(1, 'Nominal pengeluaran wajib diisi dan > 0'),
+  payment_method: z.enum(['tunai', 'transfer', 'qris']),
   description: z.string().min(1, 'Keterangan pengeluaran wajib diisi'),
   expense_date: z.string(),
 })
@@ -36,11 +37,13 @@ export function ExpenseForm({ initialData, userId, branchId, onSuccess, onCancel
     defaultValues: initialData ? {
       category: initialData.category,
       amount: initialData.amount,
+      payment_method: initialData.payment_method || 'tunai',
       description: initialData.description || '',
       expense_date: initialData.expense_date,
     } : {
       category: 'operasional',
       amount: 0,
+      payment_method: 'tunai',
       expense_date: new Date().toISOString().split('T')[0],
     }
   })
@@ -139,6 +142,15 @@ export function ExpenseForm({ initialData, userId, branchId, onSuccess, onCancel
               <input type="number" {...register('amount')} className={`input pl-10 ${errors.amount ? 'input-error' : ''}`} />
             </div>
             {errors.amount && <span className="text-xs text-danger mt-1">{errors.amount.message}</span>}
+          </div>
+
+          <div className="form-group">
+            <label className="label">Sumber Dana (Metode Pembayaran) *</label>
+            <select {...register('payment_method')} className="input bg-white">
+              <option value="tunai">Tunai (Laci Kasir)</option>
+              <option value="transfer">Transfer (Rekening Bank)</option>
+              <option value="qris">QRIS (Rekening Bank)</option>
+            </select>
           </div>
 
           <div className="form-group">

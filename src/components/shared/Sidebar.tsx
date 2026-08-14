@@ -9,7 +9,7 @@ import {
   LayoutDashboard, ShoppingCart, Users, Package,
   Receipt, FileText, BarChart3, Settings, LogOut,
   X, Menu, ShoppingBag, Truck, Tags, Clock, AlertCircle, 
-  ChevronRight, Scale
+  ChevronRight, Scale, Landmark
 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import type { UserRole } from '@/types/database'
@@ -86,6 +86,7 @@ export const modules: ModuleGroup[] = [
     color: 'text-amber-500',
     roles: ['super_admin', 'kasir', 'admin_gudang'],
     items: [
+      { href: '/cashflow', icon: Landmark, label: 'Arus Kas (Cashflow)', color: 'text-emerald-500', roles: ['super_admin'] },
       { href: '/expenses', icon: Receipt, label: 'Pengeluaran', color: 'text-amber-500', roles: ['super_admin', 'kasir', 'admin_gudang'] },
     ]
   },

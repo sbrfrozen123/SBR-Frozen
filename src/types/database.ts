@@ -12,6 +12,7 @@ export type PaymentStatus = 'lunas' | 'piutang'
 export type TransactionType = 'sale' | 'retur'
 export type ExpenseCategory = 'operasional' | 'logistik' | 'sdm' | 'lain-lain'
 export type StockAdjustmentType = 'tambah' | 'kurang' | 'opname' | 'retur_masuk'
+export type CashTransactionType = 'setor_kas' | 'tarik_kas' | 'mutasi_ke_bank' | 'mutasi_ke_kas'
 
 // ============================================================
 // Table row types
@@ -154,6 +155,7 @@ export interface Expense {
   user_id: string
   category: ExpenseCategory
   amount: number
+  payment_method: PaymentMethod
   description: string | null
   receipt_url: string | null
   expense_date: string
@@ -226,6 +228,7 @@ export interface Purchase {
   user_id: string
   total_amount: number
   payment_status: PaymentStatus
+  payment_method: PaymentMethod
   purchase_date: string
   notes: string | null
   branch_id: string
@@ -259,6 +262,20 @@ export interface CashierShift {
   ending_cash_actual: number | null
   status: 'open' | 'closed'
   notes: string | null
+  created_at: string
+  updated_at: string
+  // Joined
+  user?: Profile | null
+}
+
+export interface CashTransaction {
+  id: string
+  user_id: string
+  type: CashTransactionType
+  amount: number
+  payment_method: PaymentMethod
+  description: string | null
+  transaction_date: string
   created_at: string
   updated_at: string
   // Joined

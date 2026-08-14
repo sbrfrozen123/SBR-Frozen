@@ -22,6 +22,7 @@ interface DashboardClientProps {
     netProfit: number
     expenses: number
     piutang: number
+    assetValue: number
   }
   chartData: any[]
   topProducts: any[]
@@ -148,7 +149,7 @@ export default function DashboardClient({
       )}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Omset */}
         <div className="p-5 rounded-2xl relative overflow-hidden bg-white border border-primary-100 shadow-sm group hover:shadow-md transition-all">
           <div className="flex justify-between items-start relative z-10">
@@ -219,6 +220,21 @@ export default function DashboardClient({
             </div>
             <div className="w-12 h-12 rounded-xl bg-warning-50 flex items-center justify-center group-hover:scale-110 group-hover:bg-warning-100 transition-all duration-300">
               <Wallet className="w-6 h-6 text-warning-600" />
+            </div>
+          </div>
+        {/* Aset Barang */}
+        <div className="p-5 rounded-2xl relative overflow-hidden bg-white border border-indigo-100 shadow-sm group hover:shadow-md transition-all">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-indigo-500"></div> Total Aset Barang
+              </p>
+              <p className="text-3xl font-black text-dark-900 mb-1 tracking-tight">
+                {formatRupiah(stats.assetValue)}
+              </p>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center group-hover:scale-110 group-hover:bg-indigo-100 transition-all duration-300">
+              <Package className="w-6 h-6 text-indigo-600" />
             </div>
           </div>
         </div>

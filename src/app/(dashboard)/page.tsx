@@ -109,6 +109,24 @@ export default async function DashboardPage({
     .filter(ps => ps.is_active && ps.stock_quantity <= ps.min_stock_alert)
     .sort((a, b) => a.stock_quantity - b.stock_quantity)
 
+  // 5. Fetch Total Inventory Value (Asset)
+  let inventoryQuery = supabase
+    .from('product_stocks')
+    .select('stock_quantity, branch_id, products(id, hpp, is_active)')
+  if (branchId) inventoryQuery = inventoryQuery.eq('branch_id', branchId)
+  const { data: inventoryData } = await inventoryQuery
+  
+  const totalAssetValue = (inventoryData || [])
+    .filter(ps => {
+      const prod: any = Array.isArray(ps.products) ? ps.products[0] : ps.products
+      return prod?.is_active !== false
+    })
+    .reduce((sum, ps) => {
+      const prod: any = Array.isArray(ps.products) ? ps.products[0] : ps.products
+      const hpp = prod?.hpp || 0
+      return sum + (ps.stock_quantity * hpp)
+    }, 0)
+
   // --- AGGREGATIONS ---
   
   // Total Revenue (Omset)
@@ -285,7 +303,8 @@ export default async function DashboardPage({
         grossProfit: grossProfit,
         netProfit: netProfit,
         expenses: totalPengeluaran,
-        piutang: piutangBerjalan
+        piutang: piutangBerjalan,
+        assetValue: totalAssetValue
       }}
       chartData={chartData}
       monthlyChartData={monthlyChartData}
