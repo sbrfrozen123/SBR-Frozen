@@ -6,7 +6,10 @@ import {
   TrendingUp, 
   Package, 
   Receipt,
-  FileText
+  FileText,
+  Users,
+  Clock,
+  Briefcase
 } from 'lucide-react'
 import { formatRupiah } from '@/lib/utils/currency'
 
@@ -41,6 +44,12 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
           description: 'Rekapitulasi biaya operasional, logistik, dan SDM.',
           icon: Receipt,
           href: '/reports/expenses-report',
+        },
+        {
+          title: 'Laporan Piutang',
+          description: 'Rincian piutang pelanggan dan batas piutang.',
+          icon: Receipt,
+          href: '/reports/receivables-report',
         }
       ]
     },
@@ -98,6 +107,29 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
           description: 'Laporan log mutasi dan penyesuaian stok (Adjustment).',
           icon: FileText,
           href: '/reports/inventory/adjustments',
+        }
+      ]
+    },
+    {
+      title: 'Media Perusahaan',
+      reports: [
+        {
+          title: 'Daftar Customer',
+          description: 'Menampilkan data pelanggan lengkap dengan alamat dan kontak.',
+          icon: Users,
+          href: '/reports/media/customers',
+        },
+        {
+          title: 'Rincian Shift Kerja',
+          description: 'Menampilkan histori jam kerja dan laporan saldo tiap kasir.',
+          icon: Clock,
+          href: '/reports/media/shifts',
+        },
+        {
+          title: 'Daftar Karyawan/Team',
+          description: 'Menampilkan data seluruh pengguna sistem dan status mereka.',
+          icon: Briefcase,
+          href: '/reports/media/employees',
         }
       ]
     }
