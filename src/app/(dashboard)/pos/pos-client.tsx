@@ -753,6 +753,13 @@ export default function POSClient({ products, customers, settings, userRole, use
 
                 <div className="p-6 flex flex-col md:flex-row gap-6">
                   {/* Digital Receipt Preview */}
+                  <style dangerouslySetInnerHTML={{__html: `
+                    @media print {
+                      body * { visibility: hidden; }
+                      #printable-receipt, #printable-receipt * { visibility: visible; }
+                      #printable-receipt { position: absolute; left: 0; top: 0; margin: 0; padding: 0; width: 100%; }
+                    }
+                  `}} />
                   <div 
                     id="printable-receipt" 
                     className="flex-1 bg-white border border-dark-100 p-6 rounded-xl font-mono text-sm max-w-sm mx-auto shadow-sm"
