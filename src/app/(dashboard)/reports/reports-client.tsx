@@ -82,10 +82,16 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
       title: 'Persediaan',
       reports: [
         {
-          title: 'Laporan Inventaris',
-          description: 'Nilai aset stok berjalan dan riwayat penyesuaian stok (Adjustment).',
+          title: 'Nilai Persediaan Barang',
+          description: 'Laporan nilai aset stok berjalan per cabang.',
           icon: Package,
-          href: '/reports/inventory',
+          href: '/reports/inventory/value',
+        },
+        {
+          title: 'Riwayat Penyesuaian Stok',
+          description: 'Laporan log mutasi dan penyesuaian stok (Adjustment).',
+          icon: FileText,
+          href: '/reports/inventory/adjustments',
         }
       ]
     }
