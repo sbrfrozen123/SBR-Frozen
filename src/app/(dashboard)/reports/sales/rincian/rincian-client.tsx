@@ -225,7 +225,7 @@ export default function RincianClient({
             {/* Modal Header */}
             <div className="bg-[#1a365d] text-white px-6 py-4 flex items-center justify-between">
               <h3 className="font-bold">Parameter Laporan</h3>
-              <button onClick={() => initialFrom ? setShowModal(false) : null} className="text-white/70 hover:text-white transition-colors">
+              <button onClick={() => setShowModal(false)} className="text-white/70 hover:text-white transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>

@@ -50,13 +50,13 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 print:bg-white">
+    <div className="min-h-screen bg-slate-50 print:bg-white print:min-h-0 print:block">
       <div className="print:hidden">
         <Sidebar userRole={profile.role} userName={profile.full_name} />
       </div>
 
       {/* Main content area */}
-      <main className="lg:pl-[72px] transition-all duration-300 min-h-screen flex flex-col print:pl-0">
+      <main className="lg:pl-[72px] transition-all duration-300 min-h-screen flex flex-col print:pl-0 print:min-h-0 print:block">
         {/* Global Header */}
         <div className="print:hidden">
           <GlobalHeader 
@@ -72,7 +72,7 @@ export default async function DashboardLayout({
           <TopTabBar />
         </div>
 
-        <div className="flex-1 lg:pt-0 print:pt-0">
+        <div className="flex-1 lg:pt-0 print:pt-0 print:block">
           {children}
         </div>
       </main>
