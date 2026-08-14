@@ -42,10 +42,22 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
       title: 'Penjualan',
       reports: [
         {
-          title: 'Laporan Penjualan',
-          description: 'Analisis pendapatan, jumlah transaksi, dan produk terlaris.',
-          icon: TrendingUp,
-          href: '/reports/sales',
+          title: 'Grafik Penjualan',
+          description: 'Laporan grafik penjualan berdasarkan kasir.',
+          icon: BarChart3,
+          href: '/reports/sales?tab=ringkasan',
+        },
+        {
+          title: 'Rincian Faktur Penjualan',
+          description: 'Laporan yang berisi rincian barang pada faktur penjualan.',
+          icon: FileText,
+          href: '/reports/sales?tab=rincian',
+        },
+        {
+          title: 'Barang Paling Laku',
+          description: 'Menampilkan laporan barang paling laku diurutkan berdasar kuantitas.',
+          icon: Package,
+          href: '/reports/sales?tab=terlaris',
         }
       ]
     },

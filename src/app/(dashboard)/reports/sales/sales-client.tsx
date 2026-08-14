@@ -21,16 +21,17 @@ interface SalesClientProps {
   salesData: any[] // From transactions table
   initialFrom: string
   initialTo: string
+  initialTab: string
 }
 
-export default function SalesClient({ salesData, initialFrom, initialTo }: SalesClientProps) {
+export default function SalesClient({ salesData, initialFrom, initialTo, initialTab }: SalesClientProps) {
   const router = useRouter()
   const [fromDate, setFromDate] = useState(initialFrom)
   const [toDate, setToDate] = useState(initialTo)
-  const [activeTab, setActiveTab] = useState<'ringkasan' | 'rincian' | 'terlaris'>('ringkasan')
+  const [activeTab, setActiveTab] = useState<'ringkasan' | 'rincian' | 'terlaris'>(initialTab as any || 'ringkasan')
 
   const applyFilter = () => {
-    router.push(`/reports/sales?from=${fromDate}&to=${toDate}`)
+    router.push(`/reports/sales?from=${fromDate}&to=${toDate}&tab=${activeTab}`)
   }
 
   // Summaries
@@ -153,7 +154,10 @@ export default function SalesClient({ salesData, initialFrom, initialTo }: Sales
       {/* Tabs */}
       <div className="flex bg-white rounded-xl border border-dark-100 p-1 shadow-sm self-start">
         <button
-          onClick={() => setActiveTab('ringkasan')}
+          onClick={() => {
+            setActiveTab('ringkasan')
+            router.push(`/reports/sales?from=${fromDate}&to=${toDate}&tab=ringkasan`)
+          }}
           className={cn(
             'px-5 py-2.5 text-sm font-medium rounded-lg transition-all flex items-center gap-2',
             activeTab === 'ringkasan' ? 'bg-primary-50 text-primary-700 shadow-sm' : 'text-dark-500 hover:text-dark-900'
@@ -162,7 +166,10 @@ export default function SalesClient({ salesData, initialFrom, initialTo }: Sales
           <BarChart3 className="w-4 h-4" /> Grafik & Ringkasan
         </button>
         <button
-          onClick={() => setActiveTab('rincian')}
+          onClick={() => {
+            setActiveTab('rincian')
+            router.push(`/reports/sales?from=${fromDate}&to=${toDate}&tab=rincian`)
+          }}
           className={cn(
             'px-5 py-2.5 text-sm font-medium rounded-lg transition-all flex items-center gap-2',
             activeTab === 'rincian' ? 'bg-primary-50 text-primary-700 shadow-sm' : 'text-dark-500 hover:text-dark-900'
@@ -171,7 +178,10 @@ export default function SalesClient({ salesData, initialFrom, initialTo }: Sales
           <FileText className="w-4 h-4" /> Rincian Faktur
         </button>
         <button
-          onClick={() => setActiveTab('terlaris')}
+          onClick={() => {
+            setActiveTab('terlaris')
+            router.push(`/reports/sales?from=${fromDate}&to=${toDate}&tab=terlaris`)
+          }}
           className={cn(
             'px-5 py-2.5 text-sm font-medium rounded-lg transition-all flex items-center gap-2',
             activeTab === 'terlaris' ? 'bg-primary-50 text-primary-700 shadow-sm' : 'text-dark-500 hover:text-dark-900'

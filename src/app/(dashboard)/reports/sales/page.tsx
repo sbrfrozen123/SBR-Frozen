@@ -35,6 +35,7 @@ export default async function SalesReportPage({
 
   const from = (searchParams?.from as string) || firstDayOfMonth
   const to = (searchParams?.to as string) || lastDayOfMonthStr
+  const tab = (searchParams?.tab as string) || 'ringkasan'
 
   // Fetch detailed sales
   let salesQuery = supabase
@@ -69,6 +70,7 @@ export default async function SalesReportPage({
       salesData={salesData || []} 
       initialFrom={from}
       initialTo={to}
+      initialTab={tab}
     />
   )
 }
