@@ -41,7 +41,7 @@ export default async function ProfitLossPage({
 
   if (from && to) {
     let txnsQuery = supabase.from('transactions').select('id, total_amount, created_at, branch_id')
-    let itemsQuery = supabase.from('transaction_items').select('id, qty, created_at, products(hpp), transactions!inner(branch_id)')
+    let itemsQuery = supabase.from('transaction_items').select('id, qty, hpp_snapshot, transactions!inner(created_at, branch_id)')
     let expensesQuery = supabase.from('expenses').select('id, amount, expense_date, category, branch_id')
 
     if (branch_id && branch_id !== 'all') {
@@ -55,7 +55,7 @@ export default async function ProfitLossPage({
     }
 
     txnsQuery = txnsQuery.gte('created_at', `${from}T00:00:00Z`).lte('created_at', `${to}T23:59:59Z`)
-    itemsQuery = itemsQuery.gte('created_at', `${from}T00:00:00Z`).lte('created_at', `${to}T23:59:59Z`)
+    itemsQuery = itemsQuery.gte('transactions.created_at', `${from}T00:00:00Z`).lte('transactions.created_at', `${to}T23:59:59Z`)
     expensesQuery = expensesQuery.gte('expense_date', from).lte('expense_date', to)
 
     const [

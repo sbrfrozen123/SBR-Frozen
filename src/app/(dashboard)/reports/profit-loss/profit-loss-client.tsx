@@ -57,7 +57,7 @@ export default function ProfitLossClient({
 
   const { totalRevenue, totalCogs, totalExpenses, expenseByCategory } = useMemo(() => {
     const totalRevenue = transactions.reduce((sum, t) => sum + Number(t.total_amount), 0)
-    const totalCogs = transactionItems.reduce((sum, i) => sum + (Number(i.qty) * Number(i.products?.hpp || 0)), 0)
+    const totalCogs = transactionItems.reduce((sum, i) => sum + (Number(i.qty) * Number(i.hpp_snapshot || 0)), 0)
     const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.amount), 0)
 
     const expenseByCategory: Record<string, number> = {}
