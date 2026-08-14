@@ -51,7 +51,7 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
           title: 'Rincian Faktur Penjualan',
           description: 'Laporan yang berisi rincian barang pada faktur penjualan.',
           icon: FileText,
-          href: '/reports/sales?tab=rincian',
+          href: '/reports/sales/rincian',
         },
         {
           title: 'Barang Paling Laku',

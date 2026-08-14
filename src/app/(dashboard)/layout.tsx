@@ -50,23 +50,29 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <Sidebar userRole={profile.role} userName={profile.full_name} />
+    <div className="min-h-screen bg-slate-50 print:bg-white">
+      <div className="print:hidden">
+        <Sidebar userRole={profile.role} userName={profile.full_name} />
+      </div>
 
       {/* Main content area */}
-      <main className="lg:pl-[72px] transition-all duration-300 min-h-screen flex flex-col">
+      <main className="lg:pl-[72px] transition-all duration-300 min-h-screen flex flex-col print:pl-0">
         {/* Global Header */}
-        <GlobalHeader 
-          userName={profile.full_name} 
-          userRole={profile.role} 
-          branches={branches} 
-          activeBranchId={activeBranchId || undefined} 
-        />
+        <div className="print:hidden">
+          <GlobalHeader 
+            userName={profile.full_name} 
+            userRole={profile.role} 
+            branches={branches} 
+            activeBranchId={activeBranchId || undefined} 
+          />
+        </div>
 
         {/* Top Tab Bar (Multi-Jendela) */}
-        <TopTabBar />
+        <div className="print:hidden">
+          <TopTabBar />
+        </div>
 
-        <div className="flex-1 lg:pt-0">
+        <div className="flex-1 lg:pt-0 print:pt-0">
           {children}
         </div>
       </main>
