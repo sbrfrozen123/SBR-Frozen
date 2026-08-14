@@ -6,7 +6,8 @@ export async function createTeamUser(data: {
   email: string
   password: string
   fullName: string
-  role: 'super_admin' | 'admin_gudang' | 'kasir'
+  role: 'super_admin' | 'admin_gudang' | 'kasir' | 'sales'
+  branch_id?: string
 }) {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -42,16 +43,21 @@ export async function createTeamUser(data: {
       return { success: false, error: authError.message }
     }
 
-    // Trigger `handle_new_user` otomatis berjalan dari database (migrasi 001).
-    // Tapi kita perlu memastikan Role nya sesuai (karena defaultnya 'kasir').
-    if (authData.user && data.role !== 'kasir') {
-      const { error: profileError } = await adminAuthClient
-        .from('profiles')
-        .update({ role: data.role })
-        .eq('id', authData.user.id)
+    // Update role dan branch_id
+    if (authData.user) {
+      const updates: any = {}
+      if (data.role !== 'kasir') updates.role = data.role
+      if (data.role !== 'super_admin' && data.branch_id) updates.branch_id = data.branch_id
 
-      if (profileError) {
-        return { success: false, error: 'User dibuat tapi gagal set role. Silakan edit manual di tabel.' }
+      if (Object.keys(updates).length > 0) {
+        const { error: profileError } = await adminAuthClient
+          .from('profiles')
+          .update(updates)
+          .eq('id', authData.user.id)
+
+        if (profileError) {
+          return { success: false, error: 'User dibuat tapi gagal set role/cabang. Silakan edit manual di tabel.' }
+        }
       }
     }
 

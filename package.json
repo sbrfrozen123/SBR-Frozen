@@ -29,6 +29,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
+    "dotenv": "^17.4.2",
     "framer-motion": "^11.9.0",
     "idb": "^8.0.0",
     "lucide-react": "^0.446.0",
@@ -41,7 +42,8 @@
     "tailwind-merge": "^2.5.2",
     "uuid": "^14.0.1",
     "xlsx": "^0.18.5",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@types/node": "^20",

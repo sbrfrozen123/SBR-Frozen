@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Clock, Search } from 'lucide-react'
+import { Clock, Search, Printer } from 'lucide-react'
 import { formatRupiah } from '@/lib/utils/currency'
 import { cn } from '@/lib/utils/cn'
 import type { UserRole } from '@/types/database'
@@ -67,12 +67,13 @@ export default function ShiftsClient({ initialShifts, userRole }: ShiftsClientPr
                 <th className="text-right">Kas Akhir (Fisik)</th>
                 <th className="text-center">Selisih</th>
                 <th className="text-center">Status</th>
+                <th className="w-16 text-center">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {filteredShifts.length === 0 ? (
                 <tr>
-                  <td colSpan={userRole === 'super_admin' ? 8 : 7} className="text-center py-12 text-dark-400">
+                  <td colSpan={userRole === 'super_admin' ? 9 : 8} className="text-center py-12 text-dark-400">
                     <Clock className="w-12 h-12 mx-auto text-dark-200 mb-3" />
                     <p className="text-base font-medium text-dark-600">Tidak ada riwayat shift</p>
                   </td>
@@ -114,9 +115,26 @@ export default function ShiftsClient({ initialShifts, userRole }: ShiftsClientPr
                         ) : '-'}
                       </td>
                       <td className="text-center">
-                        <span className={cn('badge', shift.status === 'open' ? 'badge-success animate-pulse' : 'badge-outline')}>
+                        <span className={cn(
+                          'px-3 py-1 rounded-full text-xs font-bold tracking-wider',
+                          shift.status === 'open' 
+                            ? 'bg-primary-500 text-white shadow-glow-primary animate-pulse' 
+                            : 'bg-dark-100 text-dark-500'
+                        )}>
                           {shift.status.toUpperCase()}
                         </span>
+                      </td>
+                      <td className="text-center">
+                        {shift.status === 'closed' ? (
+                          <a 
+                            href={`/print/shift/${shift.id}`} 
+                            target="_blank"
+                            className="inline-flex w-8 h-8 rounded-lg items-center justify-center text-dark-400 hover:text-primary-600 hover:bg-primary-50 transition-colors mx-auto"
+                            title="Cetak Rekap Shift"
+                          >
+                            <Printer className="w-4 h-4" />
+                          </a>
+                        ) : '-'}
                       </td>
                     </tr>
                   )

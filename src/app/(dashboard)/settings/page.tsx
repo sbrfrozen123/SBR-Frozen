@@ -35,13 +35,20 @@ export default async function SettingsPage() {
   // Fetch all users for user management
   const { data: users } = await supabase
     .from('profiles')
-    .select('id, full_name, role, status')
+    .select('id, full_name, role, status, branch_id, branch:branches(name)')
     .order('created_at', { ascending: true })
+
+  // Fetch branches
+  const { data: branches } = await supabase
+    .from('branches')
+    .select('*')
+    .order('name', { ascending: true })
 
   return (
     <SettingsClient 
       initialStoreSettings={storeSettings} 
       initialUsers={users || []} 
+      initialBranches={branches || []}
     />
   )
 }

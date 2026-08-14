@@ -41,6 +41,20 @@ export function CategoryForm({ initialData, onSuccess, onCancel }: CategoryFormP
           .update(data)
           .eq('id', initialData.id)
         if (error) throw error
+
+        // Cascade update products if category name changed
+        if (data.name !== initialData.name) {
+          const { error: prodError } = await supabase
+            .from('products')
+            .update({ category: data.name })
+            .eq('category', initialData.name)
+          
+          if (prodError) {
+            console.error('Error updating products category:', prodError)
+            // We don't throw here to not fail the whole operation, but maybe we should?
+          }
+        }
+        
         toast.success('Data kategori berhasil diperbarui')
       } else {
         const { error } = await supabase

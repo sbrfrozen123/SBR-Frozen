@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import ProfitLossClient from './profit-loss-client'
+import { getBranchContext } from '@/app/actions/branch'
 
 export const metadata: Metadata = {
   title: 'Laba Rugi | SBR Frozen',
@@ -26,14 +27,26 @@ export default async function ProfitLossPage() {
   // or rely on client filtering for simplicity in this demo.
   
   // We'll fetch all data since it's an MVP, but ideally this should be paginated or date-bound.
+  const branchId = await getBranchContext(supabase, user.id)
+
+  let txnsQuery = supabase.from('transactions').select('id, total_amount, created_at')
+  let itemsQuery = supabase.from('transaction_items').select('id, qty, created_at, products(hpp), transactions!inner(branch_id)')
+  let expensesQuery = supabase.from('expenses').select('id, amount, expense_date')
+
+  if (branchId) {
+    txnsQuery = txnsQuery.eq('branch_id', branchId)
+    itemsQuery = itemsQuery.eq('transactions.branch_id', branchId)
+    expensesQuery = expensesQuery.eq('branch_id', branchId)
+  }
+
   const [
     { data: transactions },
     { data: transactionItems },
     { data: expenses }
   ] = await Promise.all([
-    supabase.from('transactions').select('id, total_amount, created_at'),
-    supabase.from('transaction_items').select('id, qty, created_at, products(hpp)'),
-    supabase.from('expenses').select('id, amount, expense_date')
+    txnsQuery,
+    itemsQuery,
+    expensesQuery
   ])
 
   return (

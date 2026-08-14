@@ -4,16 +4,18 @@ import { useState } from 'react'
 import { Store, Users, Info } from 'lucide-react'
 import { StoreSettingsForm } from '@/components/settings/StoreSettingsForm'
 import { UserManagementTable } from '@/components/settings/UserManagementTable'
+import { BranchManagementTable } from '@/components/settings/BranchManagementTable'
 import { cn } from '@/lib/utils/cn'
 
 interface SettingsClientProps {
   initialStoreSettings: any
   initialUsers: any[]
+  initialBranches: any[]
 }
 
-type Tab = 'store' | 'users'
+type Tab = 'store' | 'users' | 'branches'
 
-export default function SettingsClient({ initialStoreSettings, initialUsers }: SettingsClientProps) {
+export default function SettingsClient({ initialStoreSettings, initialUsers, initialBranches }: SettingsClientProps) {
   const [activeTab, setActiveTab] = useState<Tab>('store')
 
   return (
@@ -55,8 +57,21 @@ export default function SettingsClient({ initialStoreSettings, initialUsers }: S
                     : 'text-dark-600 hover:bg-dark-50 hover:text-dark-900'
                 )}
               >
-                <Users className={cn('w-5 h-5', activeTab === 'users' ? 'text-blue-400' : 'text-dark-400')} />
+                <Users className={cn('w-5 h-5', activeTab === 'users' ? 'text-primary-400' : 'text-dark-400')} />
                 Manajemen Akses
+              </button>
+
+              <button
+                onClick={() => setActiveTab('branches')}
+                className={cn(
+                  'w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-left',
+                  activeTab === 'branches' 
+                    ? 'bg-dark-900 text-white shadow-md' 
+                    : 'text-dark-600 hover:bg-dark-50 hover:text-dark-900'
+                )}
+              >
+                <Store className={cn('w-5 h-5', activeTab === 'branches' ? 'text-primary-400' : 'text-dark-400')} />
+                Cabang Toko
               </button>
             </nav>
             
@@ -77,7 +92,10 @@ export default function SettingsClient({ initialStoreSettings, initialUsers }: S
             <StoreSettingsForm initialData={initialStoreSettings} />
           )}
           {activeTab === 'users' && (
-            <UserManagementTable initialUsers={initialUsers} />
+            <UserManagementTable initialUsers={initialUsers} initialBranches={initialBranches} />
+          )}
+          {activeTab === 'branches' && (
+            <BranchManagementTable initialBranches={initialBranches} />
           )}
         </div>
       </div>

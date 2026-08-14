@@ -15,7 +15,7 @@ export default async function ExpensesPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, branch_id')
     .eq('id', user.id)
     .single()
 
@@ -34,5 +34,5 @@ export default async function ExpensesPage() {
     .gte('expense_date', firstDay)
     .order('expense_date', { ascending: false })
 
-  return <ExpensesClient initialExpenses={expenses || []} userId={user.id} />
+  return <ExpensesClient initialExpenses={expenses || []} userId={user.id} branchId={profile?.branch_id} />
 }

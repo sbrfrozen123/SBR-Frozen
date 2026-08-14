@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { Plus, Search, MoreVertical, Edit, Trash2, Tags } from 'lucide-react'
+import { useState, useMemo, useEffect } from 'react'
+import { Plus, Search, MoreVertical, Edit, Trash2, Tags, Package } from 'lucide-react'
 import { CategoryForm } from '@/components/categories/CategoryForm'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'react-hot-toast'
@@ -20,8 +20,13 @@ export default function CategoriesClient({ initialCategories, userRole }: Catego
   // Modal states
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | undefined>(undefined)
+  const [productCounts, setProductCounts] = useState<Record<string, number>>({})
 
   const supabase = createClient()
+
+  useEffect(() => {
+    refreshData()
+  }, [])
 
   // Filter categories
   const filteredCategories = useMemo(() => {
@@ -33,21 +38,32 @@ export default function CategoriesClient({ initialCategories, userRole }: Catego
   }, [categories, search])
 
   const refreshData = async () => {
-    const { data } = await supabase.from('categories').select('*').order('name', { ascending: true })
-    if (data) setCategories(data)
+    const { data: cats } = await supabase.from('categories').select('*').order('name', { ascending: true })
+    if (cats) setCategories(cats)
+
+    const { data: prods } = await supabase.from('products').select('category')
+    if (prods) {
+      const counts: Record<string, number> = {}
+      prods.forEach(p => {
+        const cat = p.category || 'Umum'
+        counts[cat] = (counts[cat] || 0) + 1
+      })
+      setProductCounts(counts)
+    }
   }
 
   const handleDelete = async (id: string, name: string) => {
+    const count = productCounts[name] || 0
+    if (count > 0) {
+      toast.error(`Kategori "${name}" tidak dapat dihapus karena sedang digunakan oleh ${count} produk.`)
+      return
+    }
+
     if (!window.confirm(`Apakah Anda yakin ingin menghapus kategori "${name}"? Data ini tidak dapat dikembalikan.`)) return
     
     try {
       const { error } = await supabase.from('categories').delete().eq('id', id)
-      if (error) {
-        if (error.code === '23503') { // Foreign key violation
-          throw new Error('Kategori tidak dapat dihapus karena masih digunakan oleh produk.')
-        }
-        throw error
-      }
+      if (error) throw error
       toast.success('Kategori berhasil dihapus')
       refreshData()
     } catch (error: any) {
@@ -103,6 +119,7 @@ export default function CategoriesClient({ initialCategories, userRole }: Catego
               <tr>
                 <th className="w-12 text-center">No</th>
                 <th>Nama Kategori</th>
+                <th className="text-center">Jml Produk</th>
                 <th>Deskripsi</th>
                 {['super_admin', 'admin_gudang'].includes(userRole) && (
                   <th className="w-12"></th>
@@ -112,7 +129,7 @@ export default function CategoriesClient({ initialCategories, userRole }: Catego
             <tbody>
               {filteredCategories.length === 0 ? (
                 <tr>
-                  <td colSpan={['super_admin', 'admin_gudang'].includes(userRole) ? 4 : 3} className="text-center py-12 text-dark-400">
+                  <td colSpan={['super_admin', 'admin_gudang'].includes(userRole) ? 5 : 4} className="text-center py-12 text-dark-400">
                     <Tags className="w-12 h-12 mx-auto text-dark-200 mb-3" />
                     <p className="text-base font-medium text-dark-600">Tidak ada kategori ditemukan</p>
                     <p className="text-sm">Silakan tambahkan kategori baru atau ubah kata kunci pencarian.</p>
@@ -124,6 +141,12 @@ export default function CategoriesClient({ initialCategories, userRole }: Catego
                     <td className="text-center text-dark-400 text-sm">{index + 1}</td>
                     <td>
                       <div className="font-semibold text-dark-900">{category.name}</div>
+                    </td>
+                    <td className="text-center">
+                      <div className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-full bg-primary-50 text-primary-700 text-xs font-semibold">
+                        <Package className="w-3 h-3" />
+                        {productCounts[category.name] || 0}
+                      </div>
                     </td>
                     <td className="text-dark-600">
                       {category.description || '-'}

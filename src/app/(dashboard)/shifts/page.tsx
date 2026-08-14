@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import ShiftsClient from './shifts-client'
+import { getBranchContext } from '@/app/actions/branch'
 
 export const metadata: Metadata = {
   title: 'Riwayat Shift Kasir',
@@ -31,6 +32,12 @@ export default async function ShiftsPage() {
       user:user_id(full_name)
     `)
     .order('start_time', { ascending: false })
+
+  const branchId = await getBranchContext(supabase, user.id)
+  
+  if (branchId) {
+    query = query.eq('branch_id', branchId)
+  }
 
   if (profile.role === 'kasir') {
     query = query.eq('user_id', user.id)

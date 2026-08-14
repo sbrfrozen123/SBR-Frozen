@@ -2,9 +2,11 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Plus, Search, ShoppingBag, Eye } from 'lucide-react'
+import { Plus, Search, ShoppingBag, CheckCircle, Loader2 } from 'lucide-react'
 import { formatRupiah } from '@/lib/utils/currency'
 import { cn } from '@/lib/utils/cn'
+import { createClient } from '@/lib/supabase/client'
+import { toast } from 'react-hot-toast'
 import type { UserRole } from '@/types/database'
 
 interface PurchaseData {
@@ -24,8 +26,35 @@ interface PurchasesClientProps {
 
 export default function PurchasesClient({ initialPurchases, userRole }: PurchasesClientProps) {
   const [search, setSearch] = useState('')
+  const [purchases, setPurchases] = useState(initialPurchases)
+  const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const supabase = createClient()
 
-  const filteredPurchases = initialPurchases.filter(p => {
+  const handleMarkAsPaid = async (id: string, invoice: string) => {
+    if (!window.confirm(`Apakah Anda yakin ingin mengubah status invoice ${invoice} menjadi LUNAS?`)) return
+    
+    setUpdatingId(id)
+    try {
+      const { error } = await supabase
+        .from('purchases')
+        .update({ payment_status: 'lunas' })
+        .eq('id', id)
+        
+      if (error) throw error
+      
+      setPurchases(prev => prev.map(p => 
+        p.id === id ? { ...p, payment_status: 'lunas' } : p
+      ))
+      toast.success('Status pembayaran berhasil diperbarui!')
+    } catch (error: any) {
+      console.error(error)
+      toast.error('Gagal memperbarui status pembayaran')
+    } finally {
+      setUpdatingId(null)
+    }
+  }
+
+  const filteredPurchases = purchases.filter(p => {
     const searchLower = search.toLowerCase()
     return p.invoice_number.toLowerCase().includes(searchLower) ||
            (p.supplier?.name && p.supplier.name.toLowerCase().includes(searchLower))
@@ -74,12 +103,13 @@ export default function PurchasesClient({ initialPurchases, userRole }: Purchase
                 <th>Dibuat Oleh</th>
                 <th className="text-right">Total Transaksi</th>
                 <th className="text-center">Status</th>
+                <th className="text-center w-24">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {filteredPurchases.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-dark-400">
+                  <td colSpan={8} className="text-center py-12 text-dark-400">
                     <ShoppingBag className="w-12 h-12 mx-auto text-dark-200 mb-3" />
                     <p className="text-base font-medium text-dark-600">Tidak ada riwayat pembelian</p>
                   </td>
@@ -104,9 +134,35 @@ export default function PurchasesClient({ initialPurchases, userRole }: Purchase
                       {formatRupiah(purchase.total_amount)}
                     </td>
                     <td className="text-center">
-                      <span className={cn('badge', purchase.payment_status === 'lunas' ? 'badge-success' : 'badge-warning')}>
+                      <span className={cn(
+                        'px-3 py-1 rounded-full text-[11px] font-bold tracking-wider inline-flex items-center gap-1.5 border',
+                        purchase.payment_status === 'lunas' 
+                          ? 'bg-success/10 text-success border-success/20' 
+                          : 'bg-warning/10 text-warning-700 border-warning/20'
+                      )}>
+                        {purchase.payment_status === 'lunas' ? (
+                          <div className="w-1.5 h-1.5 rounded-full bg-success"></div>
+                        ) : (
+                          <div className="w-1.5 h-1.5 rounded-full bg-warning"></div>
+                        )}
                         {purchase.payment_status.toUpperCase()}
                       </span>
+                    </td>
+                    <td className="text-center">
+                      {purchase.payment_status === 'tempo' && ['super_admin', 'admin_gudang'].includes(userRole) && (
+                        <button 
+                          onClick={() => handleMarkAsPaid(purchase.id, purchase.invoice_number)}
+                          disabled={updatingId === purchase.id}
+                          className="btn-sm btn-outline text-success hover:bg-success hover:text-white border-success/30 hover:border-success py-1 px-2.5 mx-auto"
+                          title="Tandai Lunas"
+                        >
+                          {updatingId === purchase.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <CheckCircle className="w-4 h-4" />
+                          )}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))

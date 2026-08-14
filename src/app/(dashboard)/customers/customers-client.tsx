@@ -104,8 +104,8 @@ export default function CustomersClient({ initialCustomers, userRole }: Customer
                 className={cn(
                   'px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors capitalize',
                   categoryFilter === cat 
-                    ? 'bg-dark-900 text-white' 
-                    : 'bg-dark-50 text-dark-600 hover:bg-dark-100'
+                    ? 'bg-primary-500 text-white shadow-sm shadow-primary-500/20' 
+                    : 'bg-dark-50 text-dark-600 hover:bg-dark-100 hover:text-dark-900'
                 )}
               >
                 {cat}
@@ -164,9 +164,12 @@ export default function CustomersClient({ initialCustomers, userRole }: Customer
                     </td>
                     <td className="text-right text-dark-600">
                       {customer.credit_limit > 0 ? (
-                        <span className="text-money">{formatRupiah(customer.credit_limit)}</span>
+                        <>
+                          <div className="text-money font-semibold">{formatRupiah(customer.credit_limit)}</div>
+                          <div className="text-xs text-dark-400 mt-0.5">{customer.payment_terms}</div>
+                        </>
                       ) : (
-                        <span className="text-xs text-dark-400">Tidak diizinkan</span>
+                        <div className="text-xs text-dark-400">Tidak diizinkan</div>
                       )}
                     </td>
                     <td className="text-right">

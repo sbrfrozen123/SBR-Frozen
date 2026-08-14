@@ -149,7 +149,7 @@ export function StockAdjustmentModal({ products, onSuccess, onCancel }: StockAdj
               </div>
             )}
             
-            <div className="bg-blue-50 text-blue-800 p-4 rounded-xl flex items-start gap-3 mt-4">
+            <div className="bg-primary-50 text-primary-800 p-4 rounded-xl flex items-start gap-3 mt-4">
               <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
               <p className="text-sm">
                 Cari dan pilih produk yang stok fisiknya berbeda dengan stok di sistem untuk melakukan penyesuaian.

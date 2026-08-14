@@ -73,13 +73,14 @@ export default function SalesClient({ salesData, topProducts }: SalesClientProps
         {/* Left Column: Summaries & Chart Area */}
         <div className="lg:col-span-2 flex flex-col gap-6">
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white rounded-2xl border border-dark-100 p-6 shadow-sm">
-              <p className="text-sm font-semibold text-dark-500 uppercase tracking-wide mb-2">Total Pendapatan</p>
-              <p className="text-3xl font-bold text-dark-900 text-money">{formatRupiah(totalRevenue)}</p>
+            <div className="card p-6 relative overflow-hidden bg-gradient-primary text-white group border-none shadow-glow-primary">
+              <p className="text-sm font-semibold text-white/80 uppercase tracking-wide mb-2 relative z-10">Total Pendapatan</p>
+              <p className="text-3xl font-bold text-white tracking-tight font-mono relative z-10">{formatRupiah(totalRevenue)}</p>
+              <div className="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-colors duration-500"></div>
             </div>
-            <div className="bg-white rounded-2xl border border-dark-100 p-6 shadow-sm">
+            <div className="card p-6 bg-white">
               <p className="text-sm font-semibold text-dark-500 uppercase tracking-wide mb-2">Total Transaksi</p>
-              <p className="text-3xl font-bold text-primary-600">{totalTransactions} <span className="text-base font-medium text-dark-400 normal-case tracking-normal">struk</span></p>
+              <p className="text-3xl font-bold text-primary-600 font-mono">{totalTransactions} <span className="text-base font-medium text-dark-400 normal-case tracking-normal font-sans">struk</span></p>
             </div>
           </div>
 

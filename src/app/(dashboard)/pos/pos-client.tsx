@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { 
   Search, Filter, ShoppingCart, User, Plus, Minus, Trash2, 
-  ChevronRight, CreditCard, Banknote, QrCode, Clock, CheckCircle, Printer, MessageCircle
+  ChevronRight, CreditCard, Banknote, QrCode, Clock, CheckCircle, Printer, MessageCircle, FileText
 } from 'lucide-react'
 import { formatRupiah } from '@/lib/utils/currency'
 import { formatDateShort } from '@/lib/utils/dates'
@@ -20,6 +20,8 @@ interface POSClientProps {
   settings: any
   userRole: UserRole
   userId: string
+  branchId: string | null
+  editTxId?: string
 }
 
 interface CartItem {
@@ -28,8 +30,10 @@ interface CartItem {
   unit_price: number
 }
 
-export default function POSClient({ products, customers, settings, userRole, userId }: POSClientProps) {
+export default function POSClient({ products, customers, settings, userRole, userId, branchId, editTxId }: POSClientProps) {
   const [search, setSearch] = useState('')
+  const [customerSearch, setCustomerSearch] = useState('')
+  const [categorySearch, setCategorySearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('Semua')
   const [cart, setCart] = useState<CartItem[]>([])
   const [selectedCustomer, setSelectedCustomer] = useState<Partial<Customer> | null>(null)
@@ -44,8 +48,56 @@ export default function POSClient({ products, customers, settings, userRole, use
   const [amountPaid, setAmountPaid] = useState<number | ''>('')
   const [loading, setLoading] = useState(false)
   const [completedTxn, setCompletedTxn] = useState<any>(null)
+  const [editInvoiceNumber, setEditInvoiceNumber] = useState<string | null>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   const supabase = createClient()
+
+  useEffect(() => {
+    async function loadEditTx() {
+      if (!editTxId) return
+      const { data: tx, error } = await supabase
+        .from('transactions')
+        .select('*, transaction_items(*)')
+        .eq('id', editTxId)
+        .single()
+      
+      if (tx && !error) {
+        setEditInvoiceNumber(tx.invoice_number)
+        if (tx.customer_id) {
+          const cust = customers.find(c => c.id === tx.customer_id)
+          if (cust) setSelectedCustomer(cust)
+        }
+        setPaymentMethod(tx.payment_method)
+        setAmountPaid(tx.amount_paid)
+        
+        const loadedCart: CartItem[] = (tx.transaction_items || []).map((ti: any) => {
+          const product = products.find(p => p.id === ti.product_id)
+          if (!product) return null
+          return {
+            product,
+            qty: ti.qty,
+            unit_price: ti.unit_price
+          }
+        }).filter(Boolean) as CartItem[]
+        
+        setCart(loadedCart)
+        toast.success(`Mode Edit: ${tx.invoice_number}`)
+      }
+    }
+    loadEditTx()
+  }, [editTxId, supabase, customers, products])
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F2') {
+        e.preventDefault()
+        searchInputRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   const categories = useMemo(() => {
     const cats = new Set(products.map(p => p.category || 'Umum'))
@@ -54,7 +106,13 @@ export default function POSClient({ products, customers, settings, userRole, use
 
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
-      const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.sku.toLowerCase().includes(search.toLowerCase())
+      const searchTerms = search.toLowerCase().split(' ').filter(term => term.trim() !== '')
+      
+      // Match all terms (AND logic) for multi-word search
+      const matchesSearch = searchTerms.length === 0 || searchTerms.every(term => 
+        p.name.toLowerCase().includes(term) || p.sku.toLowerCase().includes(term)
+      )
+      
       const matchesCategory = categoryFilter === 'Semua' || (p.category || 'Umum') === categoryFilter
       return matchesSearch && matchesCategory
     })
@@ -113,13 +171,61 @@ export default function POSClient({ products, customers, settings, userRole, use
   const updateQty = (productId: string, delta: number) => {
     setCart(prev => prev.map(item => {
       if (item.product.id === productId) {
-        const newQty = item.qty + delta
+        const currentQty = typeof item.qty === 'number' ? item.qty : 1
+        const newQty = currentQty + delta
         if (newQty < 1) return item 
         if (newQty > item.product.stock_quantity) {
           toast.error('Melebihi stok yang tersedia!')
           return item
         }
         return { ...item, qty: newQty }
+      }
+      return item
+    }))
+  }
+
+  const handleQtyChange = (productId: string, val: string) => {
+    if (val === '') {
+      setCart(prev => prev.map(item => item.product.id === productId ? { ...item, qty: '' as any } : item))
+      return
+    }
+    const qty = parseInt(val)
+    if (isNaN(qty)) return
+    setCart(prev => prev.map(item => {
+      if (item.product.id === productId) {
+        if (qty > item.product.stock_quantity) {
+          toast.error('Melebihi stok yang tersedia!')
+          return { ...item, qty: item.product.stock_quantity }
+        }
+        return { ...item, qty }
+      }
+      return item
+    }))
+  }
+
+  const handleQtyBlur = (productId: string) => {
+    setCart(prev => prev.map(item => {
+      if (item.product.id === productId) {
+        if (!item.qty || (item.qty as any) < 1) return { ...item, qty: 1 }
+      }
+      return item
+    }))
+  }
+
+  const handlePriceChange = (productId: string, val: string) => {
+    if (val === '') {
+      setCart(prev => prev.map(item => item.product.id === productId ? { ...item, unit_price: '' as any } : item))
+      return
+    }
+    const price = parseInt(val.replace(/\D/g, ''))
+    if (isNaN(price)) return
+    setCart(prev => prev.map(item => item.product.id === productId ? { ...item, unit_price: price } : item))
+  }
+
+  const handlePriceBlur = (productId: string) => {
+    setCart(prev => prev.map(item => {
+      if (item.product.id === productId) {
+        if (!item.unit_price || (item.unit_price as any) < 0) return { ...item, unit_price: 0 }
       }
       return item
     }))
@@ -134,11 +240,19 @@ export default function POSClient({ products, customers, settings, userRole, use
   const taxAmount = (subtotal * taxRate) / 100
   const total = subtotal + taxAmount
 
-  const handleCheckout = async () => {
+  const handleCheckout = async (isSaveAsOrder = false) => {
     if (cart.length === 0) return
-    if (paymentMethod === 'tempo') {
+    if (!branchId) {
+      toast.error('Gagal: Cabang belum dipilih atau Anda tidak memiliki akses ke cabang ini.')
+      return
+    }
+    if (paymentMethod === 'tempo' && !isSaveAsOrder) {
       if (!selectedCustomer) {
         toast.error('Pembayaran tempo wajib memilih pelanggan!')
+        return
+      }
+      if (selectedCustomer.payment_terms === 'COD' || !selectedCustomer.payment_terms) {
+        toast.error('Pelanggan ini tidak diizinkan menggunakan pembayaran tempo (Kategori COD).')
         return
       }
       const newDebt = (selectedCustomer.current_debt || 0) + total
@@ -149,7 +263,7 @@ export default function POSClient({ products, customers, settings, userRole, use
     }
 
     const paid = amountPaid === '' ? 0 : Number(amountPaid)
-    if (paymentMethod !== 'tempo' && paid < total) {
+    if (paymentMethod !== 'tempo' && paid < total && !isSaveAsOrder) {
       toast.error('Nominal pembayaran kurang dari total tagihan!')
       return
     }
@@ -159,28 +273,74 @@ export default function POSClient({ products, customers, settings, userRole, use
       const dateStr = new Date().toISOString().slice(2,10).replace(/-/g, '')
       const randomCode = Math.floor(1000 + Math.random() * 9000)
       const invoiceNumber = `INV-${dateStr}-${randomCode}`
+      const orderStatus = (userRole === 'sales' || isSaveAsOrder) ? 'pending' : 'completed'
 
-      const { data: txn, error: txnError } = await supabase
-        .from('transactions')
-        .insert([{
-          invoice_number: invoiceNumber,
-          customer_id: selectedCustomer?.id || null,
-          user_id: userId,
-          subtotal,
-          tax_amount: taxAmount,
-          total_amount: total,
-          payment_method: paymentMethod,
-          payment_status: paymentMethod === 'tempo' ? 'piutang' : 'lunas',
-          amount_paid: paymentMethod === 'tempo' ? paid : total,
-          due_date: paymentMethod === 'tempo' ? new Date(Date.now() + 30*24*60*60*1000).toISOString() : null 
-        }])
-        .select('id, created_at')
-        .single()
+      const getDueDays = (terms: string) => {
+        if (!terms) return 0
+        if (terms === 'NET 7') return 7
+        if (terms === 'NET 14') return 14
+        if (terms === 'NET 30') return 30
+        if (terms === 'NET 60') return 60
+        return 0
+      }
+      
+      const dueDays = selectedCustomer?.payment_terms ? getDueDays(selectedCustomer.payment_terms) : 0
+      
+      let finalInvoiceNumber = invoiceNumber;
+      let txnId = "";
+      let txnCreatedAt = new Date().toISOString();
 
-      if (txnError) throw txnError
+      if (editTxId) {
+        finalInvoiceNumber = editInvoiceNumber || invoiceNumber;
+        
+        const { error: txnError } = await supabase
+          .from('transactions')
+          .update({
+            customer_id: selectedCustomer?.id || null,
+            subtotal,
+            tax_amount: taxAmount,
+            total_amount: total,
+            payment_method: isSaveAsOrder ? 'tempo' : paymentMethod,
+            payment_status: isSaveAsOrder ? 'piutang' : (paymentMethod === 'tempo' ? 'piutang' : 'lunas'),
+            amount_paid: isSaveAsOrder ? 0 : (paymentMethod === 'tempo' ? paid : total),
+            due_date: isSaveAsOrder ? null : (paymentMethod === 'tempo' ? new Date(Date.now() + dueDays*24*60*60*1000).toISOString() : null),
+            order_status: orderStatus,
+          })
+          .eq('id', editTxId)
+
+        if (txnError) throw txnError
+        txnId = editTxId;
+        
+        const { error: delError } = await supabase.from('transaction_items').delete().eq('transaction_id', editTxId)
+        if (delError) throw delError
+
+      } else {
+        const { data: txn, error: txnError } = await supabase
+          .from('transactions')
+          .insert([{
+            invoice_number: invoiceNumber,
+            customer_id: selectedCustomer?.id || null,
+            user_id: userId,
+            subtotal,
+            tax_amount: taxAmount,
+            total_amount: total,
+            payment_method: isSaveAsOrder ? 'tempo' : paymentMethod,
+            payment_status: isSaveAsOrder ? 'piutang' : (paymentMethod === 'tempo' ? 'piutang' : 'lunas'),
+            amount_paid: isSaveAsOrder ? 0 : (paymentMethod === 'tempo' ? paid : total),
+            due_date: isSaveAsOrder ? null : (paymentMethod === 'tempo' ? new Date(Date.now() + dueDays*24*60*60*1000).toISOString() : null),
+            branch_id: branchId,
+            order_status: orderStatus
+          }])
+          .select('id, created_at')
+          .single()
+
+        if (txnError) throw txnError
+        txnId = txn.id
+        txnCreatedAt = txn.created_at
+      }
 
       const txnItems = cart.map(item => ({
-        transaction_id: txn.id,
+        transaction_id: txnId,
         product_id: item.product.id,
         product_name: item.product.name,
         product_sku: item.product.sku,
@@ -194,24 +354,32 @@ export default function POSClient({ products, customers, settings, userRole, use
       const { error: itemsError } = await supabase.from('transaction_items').insert(txnItems)
       if (itemsError) throw itemsError
 
-      for (const item of cart) {
-        await supabase.from('products')
-          .update({ stock_quantity: item.product.stock_quantity - item.qty })
-          .eq('id', item.product.id)
+      if (orderStatus === 'completed') {
+        for (const item of cart) {
+          await supabase.from('product_stocks')
+            .update({ stock_quantity: item.product.stock_quantity - item.qty })
+            .eq('product_id', item.product.id)
+            .eq('branch_id', branchId)
+        }
       }
 
-      if (paymentMethod === 'tempo' && selectedCustomer) {
+      if (orderStatus === 'completed' && paymentMethod === 'tempo' && selectedCustomer) {
         await supabase.from('customers')
           .update({ current_debt: (selectedCustomer.current_debt || 0) + (total - paid) })
           .eq('id', selectedCustomer.id)
       }
 
-      toast.success('Transaksi berhasil!')
+      if (orderStatus === 'pending') {
+        toast.success('Pesanan berhasil dibuat! Menunggu persetujuan kasir.')
+      } else {
+        toast.success('Transaksi berhasil diproses!')
+      }
       
       // Setup Receipt Data instead of closing
       setCompletedTxn({
-        invoice_number: invoiceNumber,
-        created_at: txn.created_at,
+        id: txnId,
+        invoice_number: finalInvoiceNumber,
+        created_at: txnCreatedAt,
         customer: selectedCustomer,
         items: [...cart],
         subtotal,
@@ -250,7 +418,7 @@ export default function POSClient({ products, customers, settings, userRole, use
     const { invoice_number, items, total, customer, paymentMethod } = completedTxn
     
     let text = `*${settings?.store_name || 'SBR Frozen'}*\n`
-    text += `Struk Pembelian\n`
+    text += `Faktur Penjualan\n`
     text += `No: ${invoice_number}\n`
     text += `--------------------------------\n`
     
@@ -273,32 +441,73 @@ export default function POSClient({ products, customers, settings, userRole, use
     <div className="h-screen flex flex-col md:flex-row overflow-hidden bg-slate-50">
       {/* LEFT PANEL: PRODUCT GRID */}
       <div className="flex-1 flex flex-col min-w-0 border-r border-dark-100 no-print">
-        <div className="p-4 bg-white border-b border-dark-100 flex-shrink-0 flex flex-col sm:flex-row gap-3 justify-between z-10 shadow-sm">
-          <div className="relative w-full max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-400" />
+        {/* Header & Filter Area */}
+        <div className="p-4 bg-white border-b border-dark-100 flex-shrink-0 flex flex-col gap-3 z-10 shadow-sm relative">
+          
+          {/* Search Bar - Larger and more prominent */}
+          <div className="relative w-full">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-400" />
             <input 
+              ref={searchInputRef}
               type="text" 
-              placeholder="Cari produk (F2)..." 
+              placeholder="Cari produk (Tekan F2)..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="input pl-9"
+              className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-dark-200 text-lg rounded-2xl focus:bg-white focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all font-medium text-dark-900 placeholder:text-dark-400 shadow-inner"
             />
           </div>
           
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-            <Filter className="w-4 h-4 text-dark-400 mr-1 flex-shrink-0" />
-            {categories.map(cat => (
-              <button
-                key={cat}
-                onClick={() => setCategoryFilter(cat)}
-                className={cn(
-                  'px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors',
-                  categoryFilter === cat ? 'bg-primary-500 text-white shadow-md' : 'bg-dark-50 text-dark-600 hover:bg-dark-100'
-                )}
-              >
-                {cat}
-              </button>
-            ))}
+          {/* Category Dropdown */}
+          <div className="flex items-center gap-2 pb-1 sm:pb-0 w-full relative z-20">
+            <Filter className="w-5 h-5 text-dark-400 flex-shrink-0 hidden sm:block" />
+            <DropdownMenu.Root onOpenChange={(open) => { if (!open) setCategorySearch('') }}>
+              <DropdownMenu.Trigger asChild>
+                <button className="flex items-center justify-between input py-2.5 text-sm font-medium w-full sm:max-w-[250px] bg-white border-dark-200 focus:border-primary focus:ring-primary shadow-sm rounded-xl cursor-pointer">
+                  <span className="truncate">{categoryFilter === 'Semua' ? 'Semua Kategori' : categoryFilter}</span>
+                  <ChevronRight className="w-4 h-4 text-dark-400 rotate-90 flex-shrink-0" />
+                </button>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content className="w-[250px] max-h-[350px] flex flex-col bg-white rounded-xl shadow-2xl border border-dark-100 p-2 z-50 animate-fade-in" align="start">
+                  <div className="px-2 py-2 border-b border-dark-50 mb-2">
+                    <p className="text-xs font-bold text-dark-400 uppercase tracking-wide mb-2">Pilih Kategori</p>
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-400" />
+                      <input 
+                        type="text" 
+                        placeholder="Cari kategori..." 
+                        value={categorySearch}
+                        onChange={(e) => setCategorySearch(e.target.value)}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        className="input pl-9 h-9 text-sm w-full"
+                      />
+                    </div>
+                  </div>
+                  <div className="overflow-y-auto flex-1 p-1 hide-scrollbar">
+                    {categories.filter(cat => cat.toLowerCase().includes(categorySearch.toLowerCase())).map(cat => (
+                      <DropdownMenu.Item 
+                        key={cat}
+                        onClick={() => {
+                          setCategoryFilter(cat)
+                          searchInputRef.current?.focus()
+                        }}
+                        className={cn(
+                          "px-3 py-2 text-sm rounded-lg cursor-pointer outline-none transition-colors",
+                          categoryFilter === cat ? "bg-primary-50 text-primary-700 font-semibold" : "text-dark-700 hover:bg-dark-50"
+                        )}
+                      >
+                        {cat === 'Semua' ? 'Semua Kategori' : cat}
+                      </DropdownMenu.Item>
+                    ))}
+                    {categories.filter(cat => cat.toLowerCase().includes(categorySearch.toLowerCase())).length === 0 && (
+                      <div className="px-3 py-4 text-center text-sm text-dark-400">
+                        Kategori tidak ditemukan
+                      </div>
+                    )}
+                  </div>
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
           </div>
         </div>
 
@@ -344,9 +553,10 @@ export default function POSClient({ products, customers, settings, userRole, use
         
         {/* SHIFT MANAGEMENT BAR */}
         {isShiftLoaded && (
-          <div className="px-4 py-3 bg-dark-50 border-b border-dark-100 flex items-center justify-between">
+          <div className="p-3 border-b border-dark-100">
             <ShiftManagement 
               userId={userId} 
+              branchId={branchId}
               activeShift={activeShift} 
               onShiftChange={setActiveShift} 
             />
@@ -366,10 +576,10 @@ export default function POSClient({ products, customers, settings, userRole, use
                   </div>
                   <div className="text-left">
                     <p className="text-sm font-semibold text-dark-900">
-                      {selectedCustomer ? selectedCustomer.name : 'Pelanggan Umum (Retail)'}
+                      {selectedCustomer ? selectedCustomer.name : 'Pelanggan Umum'}
                     </p>
                     <p className="text-xs text-dark-400 capitalize">
-                      {selectedCustomer ? `${selectedCustomer.category} — Limit: ${formatRupiah(selectedCustomer.credit_limit || 0)}` : 'Walk-in Customer'}
+                      {selectedCustomer ? `${selectedCustomer.category} — ${selectedCustomer.payment_terms || 'COD'} (Limit: ${formatRupiah(selectedCustomer.credit_limit || 0)})` : 'Walk-in Customer'}
                     </p>
                   </div>
                 </div>
@@ -377,27 +587,47 @@ export default function POSClient({ products, customers, settings, userRole, use
               </button>
             </DropdownMenu.Trigger>
             <DropdownMenu.Portal>
-              <DropdownMenu.Content className="w-[360px] max-h-[400px] overflow-y-auto bg-white rounded-xl shadow-2xl border border-dark-100 p-2 z-50 animate-fade-in" align="end">
+              <DropdownMenu.Content className="w-[360px] max-h-[400px] overflow-hidden flex flex-col bg-white rounded-xl shadow-2xl border border-dark-100 p-2 z-50 animate-fade-in" align="end">
                 <div className="px-2 py-2 border-b border-dark-50 mb-2">
-                  <p className="text-xs font-bold text-dark-400 uppercase tracking-wide">Pilih Pelanggan</p>
+                  <p className="text-xs font-bold text-dark-400 uppercase tracking-wide mb-2">Pilih Pelanggan</p>
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-400" />
+                    <input 
+                      type="text" 
+                      placeholder="Cari nama pelanggan..." 
+                      value={customerSearch}
+                      onChange={(e) => setCustomerSearch(e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      className="input pl-9 h-9 text-sm w-full"
+                      autoFocus
+                    />
+                  </div>
                 </div>
-                <DropdownMenu.Item 
-                  onClick={() => setSelectedCustomer(null)}
-                  className="flex flex-col px-3 py-2 rounded-lg cursor-pointer outline-none hover:bg-dark-50 mb-1"
-                >
-                  <span className="text-sm font-semibold text-dark-900">Pelanggan Umum (Retail)</span>
-                  <span className="text-xs text-dark-400">Harga Retail Default</span>
-                </DropdownMenu.Item>
-                {customers.map(c => (
+                <div className="overflow-y-auto flex-1 p-1">
                   <DropdownMenu.Item 
-                    key={c.id}
-                    onClick={() => setSelectedCustomer(c)}
+                    onClick={() => {
+                      setSelectedCustomer(null)
+                      setCustomerSearch('')
+                    }}
                     className="flex flex-col px-3 py-2 rounded-lg cursor-pointer outline-none hover:bg-dark-50 mb-1"
                   >
-                    <span className="text-sm font-semibold text-dark-900">{c.name}</span>
-                    <span className="text-xs text-dark-400 capitalize">{c.category} • Piutang: {formatRupiah(c.current_debt || 0)}</span>
+                    <span className="text-sm font-semibold text-dark-900">Pelanggan Umum</span>
+                    <span className="text-xs text-dark-400">Harga Jual Default</span>
                   </DropdownMenu.Item>
-                ))}
+                  {customers.filter(c => c.name?.toLowerCase().includes(customerSearch.toLowerCase())).map(c => (
+                    <DropdownMenu.Item 
+                      key={c.id}
+                      onClick={() => {
+                        setSelectedCustomer(c)
+                        setCustomerSearch('')
+                      }}
+                      className="flex flex-col px-3 py-2 rounded-lg cursor-pointer outline-none hover:bg-dark-50 mb-1"
+                    >
+                      <span className="text-sm font-semibold text-dark-900">{c.name}</span>
+                      <span className="text-xs text-dark-400 capitalize">{c.category} — {c.payment_terms || 'COD'} (Piutang: {formatRupiah(c.current_debt || 0)})</span>
+                    </DropdownMenu.Item>
+                  ))}
+                </div>
               </DropdownMenu.Content>
             </DropdownMenu.Portal>
           </DropdownMenu.Root>
@@ -416,7 +646,20 @@ export default function POSClient({ products, customers, settings, userRole, use
                 <div key={item.product.id} className="flex gap-3 p-3 rounded-xl border border-dark-100 bg-white hover:border-primary-200 transition-colors group">
                   <div className="flex-1 min-w-0">
                     <h4 className="text-sm font-semibold text-dark-900 line-clamp-1">{item.product.name}</h4>
-                    <p className="text-primary-600 font-bold text-money text-sm mt-0.5">{formatRupiah(item.unit_price)}</p>
+                    {userRole === 'super_admin' || userRole === 'kasir' ? (
+                      <div className="flex items-center gap-1 mt-1">
+                        <span className="text-xs text-dark-400 font-medium">Rp</span>
+                        <input 
+                          type="text"
+                          value={item.unit_price as any === '' ? '' : item.unit_price.toLocaleString('id-ID')}
+                          onChange={(e) => handlePriceChange(item.product.id, e.target.value)}
+                          onBlur={() => handlePriceBlur(item.product.id)}
+                          className="w-24 text-primary-600 font-bold text-money text-sm bg-white border border-dark-200 rounded px-1.5 py-0.5 focus:border-primary-400 focus:outline-none transition-colors"
+                        />
+                      </div>
+                    ) : (
+                      <p className="text-primary-600 font-bold text-money text-sm mt-0.5">{formatRupiah(item.unit_price)}</p>
+                    )}
                   </div>
                   
                   <div className="flex flex-col items-end gap-2">
@@ -427,7 +670,17 @@ export default function POSClient({ products, customers, settings, userRole, use
                       >
                         <Minus className="w-3.5 h-3.5" />
                       </button>
-                      <span className="w-8 text-center text-sm font-semibold">{item.qty}</span>
+                      {userRole === 'super_admin' || userRole === 'kasir' ? (
+                        <input 
+                          type="number"
+                          value={item.qty}
+                          onChange={(e) => handleQtyChange(item.product.id, e.target.value)}
+                          onBlur={() => handleQtyBlur(item.product.id)}
+                          className="w-12 text-center text-sm font-semibold bg-white border border-dark-200 focus:outline-none focus:border-primary-400 rounded-md h-7 hide-arrow px-1"
+                        />
+                      ) : (
+                        <span className="w-8 text-center text-sm font-semibold">{item.qty}</span>
+                      )}
                       <button 
                         onClick={() => updateQty(item.product.id, 1)}
                         className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-white hover:shadow-sm text-dark-600 transition-all"
@@ -474,7 +727,7 @@ export default function POSClient({ products, customers, settings, userRole, use
             disabled={cart.length === 0}
             className="w-full btn-lg btn-primary shadow-glow-primary text-lg h-14"
           >
-            Bayar Sekarang
+            {userRole === 'sales' ? 'Buat Pesanan (SO)' : 'Proses Pesanan'}
           </button>
         </div>
       </div>
@@ -490,8 +743,12 @@ export default function POSClient({ products, customers, settings, userRole, use
                   <div className="w-16 h-16 bg-success rounded-full flex items-center justify-center text-white mb-4">
                     <CheckCircle className="w-8 h-8" />
                   </div>
-                  <h2 className="text-2xl font-bold text-success-dark">Transaksi Berhasil!</h2>
-                  <p className="text-sm text-success-dark/80 mt-1">Stok & kas telah diupdate.</p>
+                  <h2 className="text-2xl font-bold text-success-dark">
+                    {userRole === 'sales' ? 'Pesanan Diajukan!' : 'Transaksi Berhasil!'}
+                  </h2>
+                  <p className="text-sm text-success-dark/80 mt-1">
+                    {userRole === 'sales' ? 'Pesanan dalam status PENDING menunggu kasir.' : 'Stok & kas telah diupdate.'}
+                  </p>
                 </div>
 
                 <div className="p-6 flex flex-col md:flex-row gap-6">
@@ -564,11 +821,22 @@ export default function POSClient({ products, customers, settings, userRole, use
 
                   {/* Actions */}
                   <div className="flex flex-col gap-3 w-full md:w-48 flex-shrink-0 no-print">
-                    <button onClick={printReceipt} className="btn-md btn-outline w-full justify-start text-dark-900 border-dark-200">
+                    <a 
+                      href={`/print/invoice/${completedTxn.id}?format=thermal`}
+                      target="_blank"
+                      className="btn-md bg-dark-900 text-white hover:bg-dark-800 w-full justify-start border-none"
+                    >
                       <Printer className="w-4 h-4" /> Print Thermal
-                    </button>
+                    </a>
+                    <a 
+                      href={`/print/invoice/${completedTxn.id}?format=a4`}
+                      target="_blank"
+                      className="btn-md bg-white border border-dark-200 text-dark-700 hover:bg-dark-50 w-full justify-start"
+                    >
+                      <FileText className="w-4 h-4" /> Print A4
+                    </a>
                     <button onClick={sendWhatsAppReceipt} className="btn-md bg-[#25D366] text-white hover:bg-[#1DA851] w-full justify-start border-none">
-                      <MessageCircle className="w-4 h-4" /> Kirim WhatsApp
+                      <MessageCircle className="w-4 h-4" /> WA
                     </button>
                     <div className="flex-1" />
                     <button onClick={startNewTransaction} className="btn-lg btn-primary w-full">
@@ -595,7 +863,7 @@ export default function POSClient({ products, customers, settings, userRole, use
                   <div className="grid grid-cols-2 gap-3 mb-6">
                     {[
                       { id: 'tunai', icon: Banknote, label: 'Uang Tunai', color: 'text-emerald-500', bg: 'bg-emerald-50', border: 'border-emerald-200' },
-                      { id: 'transfer', icon: CreditCard, label: 'Transfer Bank', color: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-200' },
+                      { id: 'transfer', icon: CreditCard, label: 'Transfer Bank', color: 'text-primary-500', bg: 'bg-primary-50', border: 'border-primary-200' },
                       { id: 'qris', icon: QrCode, label: 'QRIS', color: 'text-violet-500', bg: 'bg-violet-50', border: 'border-violet-200' },
                       { id: 'tempo', icon: Clock, label: 'Tempo (Piutang)', color: 'text-amber-500', bg: 'bg-amber-50', border: 'border-amber-200' },
                     ].map((method) => {
@@ -654,18 +922,37 @@ export default function POSClient({ products, customers, settings, userRole, use
                     </div>
                   )}
                   
-                  <button 
-                    onClick={handleCheckout}
-                    disabled={loading}
-                    className="w-full btn-lg btn-primary h-14 text-lg"
-                  >
-                    {loading ? 'Memproses...' : (
-                      <>
-                        <CheckCircle className="w-5 h-5 mr-2" />
-                        Selesaikan Transaksi
-                      </>
-                    )}
-                  </button>
+                  {userRole === 'sales' ? (
+                    <button 
+                      onClick={() => handleCheckout(true)}
+                      disabled={loading}
+                      className="w-full btn-lg btn-primary h-14 text-lg"
+                    >
+                      {loading ? 'Memproses...' : (
+                        <>
+                          <CheckCircle className="w-5 h-5 mr-2" />
+                          Selesaikan & Ajukan Pesanan
+                        </>
+                      )}
+                    </button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => handleCheckout(true)}
+                        disabled={loading}
+                        className="w-1/2 btn-lg bg-white border border-primary text-primary hover:bg-primary-50 h-14 text-base font-bold rounded-xl"
+                      >
+                        {loading ? 'Memproses...' : 'Simpan Sbg Pesanan'}
+                      </button>
+                      <button 
+                        onClick={() => handleCheckout(false)}
+                        disabled={loading}
+                        className="w-1/2 btn-lg btn-primary h-14 text-base font-bold rounded-xl px-2"
+                      >
+                        {loading ? 'Memproses...' : 'Bayar Lunas (Faktur)'}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </>
             )}

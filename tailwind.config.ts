@@ -15,17 +15,17 @@ const config: Config = {
       colors: {
         // Brand Colors (Accurate-inspired, upgraded)
         primary: {
-          DEFAULT: '#E83446',
-          50:  '#FDF2F3',
-          100: '#FCE4E6',
-          200: '#F9C9CE',
-          300: '#F49EA6',
-          400: '#EE6976',
-          500: '#E83446',
-          600: '#D52033',
-          700: '#B31627',
-          800: '#941624',
-          900: '#7B1822',
+          DEFAULT: '#EC4899', // Pink 500
+          50:  '#FDF2F8',
+          100: '#FCE7F3',
+          200: '#FBCFE8',
+          300: '#F9A8D4',
+          400: '#F472B6',
+          500: '#EC4899',
+          600: '#DB2777',
+          700: '#BE185D',
+          800: '#9D174D',
+          900: '#831843',
         },
         accent: {
           DEFAULT: '#6366F1',
@@ -80,7 +80,7 @@ const config: Config = {
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-        'gradient-primary': 'linear-gradient(135deg, #E83446 0%, #6366F1 100%)',
+        'gradient-primary': 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)',
         'gradient-dark': 'linear-gradient(180deg, #1E293B 0%, #0F172A 100%)',
       },
       animation: {

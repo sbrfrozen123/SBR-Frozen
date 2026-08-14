@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Eye, EyeOff, Loader2, BarChart3, ShoppingCart, Package, TrendingUp } from 'lucide-react'
 
 const features = [
-  { icon: ShoppingCart, label: 'POS Kasir Real-time', color: 'text-pink-400' },
+  { icon: ShoppingCart, label: 'Pesanan Penjualan Real-time', color: 'text-pink-400' },
   { icon: Package, label: 'Manajemen Stok Otomatis', color: 'text-indigo-400' },
   { icon: TrendingUp, label: 'Laporan Laba Rugi Instan', color: 'text-emerald-400' },
   { icon: BarChart3, label: 'Dashboard Eksekutif Live', color: 'text-amber-400' },

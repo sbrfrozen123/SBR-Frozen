@@ -20,11 +20,12 @@ const expenseSchema = z.object({
 interface ExpenseFormProps {
   initialData?: Expense
   userId: string
+  branchId: string
   onSuccess: () => void
   onCancel: () => void
 }
 
-export function ExpenseForm({ initialData, userId, onSuccess, onCancel }: ExpenseFormProps) {
+export function ExpenseForm({ initialData, userId, branchId, onSuccess, onCancel }: ExpenseFormProps) {
   const [loading, setLoading] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [uploadProgress, setUploadProgress] = useState(0)
@@ -74,6 +75,7 @@ export function ExpenseForm({ initialData, userId, onSuccess, onCancel }: Expens
       const payload = {
         ...data,
         user_id: userId,
+        branch_id: branchId,
         receipt_url
       }
 

@@ -111,7 +111,7 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
                       href={report.href}
                       className="flex items-start gap-4 p-4 rounded-xl hover:bg-slate-50 border border-transparent hover:border-dark-100 transition-all group"
                     >
-                      <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-100 transition-colors">
+                      <div className="w-10 h-10 rounded-lg bg-primary-50 text-primary-600 flex items-center justify-center flex-shrink-0 group-hover:bg-primary-100 transition-colors">
                         <Icon className="w-5 h-5" />
                       </div>
                       <div>

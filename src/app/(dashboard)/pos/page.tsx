@@ -2,12 +2,17 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import POSClient from './pos-client'
+import { getBranchContext } from '@/app/actions/branch'
 
 export const metadata: Metadata = {
-  title: 'POS Kasir',
+  title: 'Pesanan Penjualan',
 }
 
-export default async function POSPage() {
+export default async function POSPage({
+  searchParams,
+}: {
+  searchParams?: { edit?: string }
+}) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   
@@ -19,22 +24,39 @@ export default async function POSPage() {
     .eq('id', user.id)
     .single()
 
-  // Super Admin dan Kasir boleh akses
-  if (profile?.role !== 'super_admin' && profile?.role !== 'kasir') {
+  // Super Admin, Kasir, dan Sales boleh akses
+  if (profile?.role !== 'super_admin' && profile?.role !== 'kasir' && profile?.role !== 'sales') {
     redirect('/')
   }
 
-  // Fetch products (only active)
-  const { data: products } = await supabase
+  const branchId = await getBranchContext(supabase, user.id)
+
+  // Fetch products (only active) and branch stocks
+  let query = supabase
     .from('products')
-    .select('*')
+    .select(`
+      *,
+      product_stocks (stock_quantity, min_stock_alert, branch_id)
+    `)
     .eq('is_active', true)
     .order('name', { ascending: true })
+
+  if (branchId) {
+    query = query.eq('product_stocks.branch_id', branchId)
+  }
+
+  const { data: rawProducts } = await query
+
+  const products = (rawProducts || []).map(p => {
+    const stocks = p.product_stocks || []
+    const totalQty = stocks.reduce((acc: number, s: any) => acc + (Number(s.stock_quantity) || 0), 0)
+    return { ...p, stock_quantity: totalQty }
+  })
 
   // Fetch customers (only active)
   const { data: customers } = await supabase
     .from('customers')
-    .select('id, name, category, phone, credit_limit, current_debt')
+    .select('id, name, category, phone, credit_limit, payment_terms, current_debt')
     .eq('is_active', true)
     .order('name', { ascending: true })
 
@@ -47,11 +69,13 @@ export default async function POSPage() {
 
   return (
     <POSClient 
-      products={products || []} 
+      products={products} 
       customers={customers || []} 
       settings={settings}
       userRole={profile.role}
       userId={user.id}
+      branchId={branchId}
+      editTxId={searchParams?.edit}
     />
   )
 }

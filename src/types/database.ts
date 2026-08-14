@@ -3,7 +3,7 @@
 // Matches exactly the Supabase schema from migration 001
 // ============================================================
 
-export type UserRole = 'super_admin' | 'kasir' | 'admin_gudang'
+export type UserRole = 'super_admin' | 'kasir' | 'admin_gudang' | 'sales'
 export type UserStatus = 'active' | 'inactive'
 export type CustomerCategory = 'retail' | 'grosir' | 'horeca'
 export type PaymentMethod = 'tunai' | 'transfer' | 'qris' | 'tempo'
@@ -24,6 +24,19 @@ export interface Profile {
   status: UserStatus
   created_at: string
   updated_at: string
+  branch_id: string | null
+  // Joined
+  branch?: Branch | null
+}
+
+export interface Branch {
+  id: string
+  name: string
+  address: string | null
+  phone: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
 }
 
 export interface StoreSettings {
@@ -33,6 +46,8 @@ export interface StoreSettings {
   store_phone: string | null
   receipt_footer_text: string | null
   tax_percentage: number
+  social_instagram: string | null
+  store_website: string | null
   payment_cash: boolean
   payment_transfer: boolean
   payment_qris: boolean
@@ -61,6 +76,19 @@ export interface Product {
   is_active: boolean
   created_at: string
   updated_at: string
+  // Joined
+  product_stocks?: ProductStock[]
+}
+
+export interface ProductStock {
+  id: string
+  product_id: string
+  branch_id: string
+  stock_quantity: number
+  min_stock_alert: number
+  updated_at: string
+  // Joined
+  branch?: Branch | null
 }
 
 export interface Customer {
@@ -70,6 +98,7 @@ export interface Customer {
   address: string | null
   category: CustomerCategory
   credit_limit: number
+  payment_terms: string
   current_debt: number
   is_active: boolean
   notes: string | null
@@ -93,10 +122,14 @@ export interface Transaction {
   notes: string | null
   transaction_type: TransactionType
   original_transaction_id: string | null
+  status: 'completed' | 'voided'
+  order_status: 'pending' | 'approved' | 'processing' | 'completed' | 'cancelled'
+  branch_id: string
   created_at: string
-  // Joined data
+  // Joined
   customer?: Customer | null
   user?: Profile | null
+  branch?: Branch | null
   items?: TransactionItem[]
 }
 
@@ -124,9 +157,11 @@ export interface Expense {
   description: string | null
   receipt_url: string | null
   expense_date: string
+  branch_id: string
   created_at: string
   // Joined
   user?: Profile | null
+  branch?: Branch | null
 }
 
 export interface StockAdjustment {
@@ -139,10 +174,12 @@ export interface StockAdjustment {
   qty_after: number
   reason: string | null
   reference_id: string | null
+  branch_id: string
   created_at: string
   // Joined
   product?: Product | null
   user?: Profile | null
+  branch?: Branch | null
 }
 
 export interface DebtPayment {
@@ -153,11 +190,13 @@ export interface DebtPayment {
   amount: number
   payment_method: DebtPaymentMethod
   notes: string | null
+  branch_id: string
   payment_date: string
   // Joined
   transaction?: Transaction | null
   customer?: Customer | null
   user?: Profile | null
+  branch?: Branch | null
 }
 
 export interface Category {
@@ -174,6 +213,7 @@ export interface Supplier {
   contact_person: string | null
   phone: string | null
   address: string | null
+  payment_terms: string
   is_active: boolean
   created_at: string
   updated_at: string
@@ -188,11 +228,13 @@ export interface Purchase {
   payment_status: PaymentStatus
   purchase_date: string
   notes: string | null
+  branch_id: string
   created_at: string
   updated_at: string
   // Joined
   supplier?: Supplier | null
   user?: Profile | null
+  branch?: Branch | null
   items?: PurchaseItem[]
 }
 
@@ -352,11 +394,25 @@ export interface CategoryForm {
   description?: string
 }
 
+export interface Unit {
+  id: string
+  name: string
+  description?: string
+  created_at?: string
+  updated_at?: string
+}
+
+export interface UnitForm {
+  name: string
+  description?: string
+}
+
 export interface SupplierForm {
   name: string
   contact_person?: string
   phone?: string
   address?: string
+  payment_terms: string
   is_active: boolean
 }
 

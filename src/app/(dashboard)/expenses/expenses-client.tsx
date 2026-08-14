@@ -17,11 +17,12 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 interface ExpensesClientProps {
   initialExpenses: (Expense & { profiles: { full_name: string } | null })[]
   userId: string
+  branchId: string
 }
 
 const CATEGORIES = ['Semua', 'operasional', 'logistik', 'sdm', 'lain-lain']
 
-export default function ExpensesClient({ initialExpenses, userId }: ExpensesClientProps) {
+export default function ExpensesClient({ initialExpenses, userId, branchId }: ExpensesClientProps) {
   const [expenses, setExpenses] = useState(initialExpenses)
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<string>('Semua')
@@ -269,7 +270,7 @@ export default function ExpensesClient({ initialExpenses, userId }: ExpensesClie
                       {expense.receipt_url ? (
                         <button 
                           onClick={() => viewReceipt(expense.receipt_url!)}
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-primary-50 text-primary-600 hover:bg-primary-100 transition-colors"
                           title="Lihat Bukti Lampiran"
                         >
                           <Paperclip className="w-4 h-4" />
@@ -327,6 +328,7 @@ export default function ExpensesClient({ initialExpenses, userId }: ExpensesClie
           <ExpenseForm 
             initialData={editingExpense} 
             userId={userId}
+            branchId={branchId}
             onSuccess={() => {
               setIsFormOpen(false)
               refreshData()

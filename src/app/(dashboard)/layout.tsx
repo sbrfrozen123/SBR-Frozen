@@ -1,8 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/shared/Sidebar'
+import { GlobalHeader } from '@/components/shared/GlobalHeader'
+import { TopTabBar } from '@/components/shared/TopTabBar'
 import { Toaster } from 'react-hot-toast'
 import type { Metadata } from 'next'
+import { cookies } from 'next/headers'
 
 export const metadata: Metadata = {
   title: {
@@ -36,13 +39,34 @@ export default async function DashboardLayout({
     redirect('/login')
   }
 
+  // Fetch branches for Super Admin
+  let branches: any[] = []
+  let activeBranchId = null
+
+  if (profile.role === 'super_admin') {
+    const { data } = await supabase.from('branches').select('*').order('created_at', { ascending: true })
+    if (data) branches = data
+    activeBranchId = cookies().get('active_branch_id')?.value || null
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       <Sidebar userRole={profile.role} userName={profile.full_name} />
 
       {/* Main content area */}
-      <main className="lg:pl-[72px] transition-all duration-300">
-        <div className="min-h-screen">
+      <main className="lg:pl-[72px] transition-all duration-300 min-h-screen flex flex-col">
+        {/* Global Header */}
+        <GlobalHeader 
+          userName={profile.full_name} 
+          userRole={profile.role} 
+          branches={branches} 
+          activeBranchId={activeBranchId || undefined} 
+        />
+
+        {/* Top Tab Bar (Multi-Jendela) */}
+        <TopTabBar />
+
+        <div className="flex-1 lg:pt-0">
           {children}
         </div>
       </main>

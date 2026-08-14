@@ -9,7 +9,7 @@ import {
   LayoutDashboard, ShoppingCart, Users, Package,
   Receipt, FileText, BarChart3, Settings, LogOut,
   X, Menu, ShoppingBag, Truck, Tags, Clock, AlertCircle, 
-  ChevronRight
+  ChevronRight, Scale
 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import type { UserRole } from '@/types/database'
@@ -33,7 +33,7 @@ interface ModuleGroup {
   items?: NavItem[]
 }
 
-const modules: ModuleGroup[] = [
+export const modules: ModuleGroup[] = [
   {
     id: 'dashboard',
     label: 'Dashboard',
@@ -47,11 +47,11 @@ const modules: ModuleGroup[] = [
     label: 'Penjualan',
     icon: ShoppingCart,
     color: 'text-pink-500',
-    roles: ['super_admin', 'kasir'],
+    roles: ['super_admin', 'kasir', 'sales'],
     items: [
-      { href: '/pos', icon: ShoppingCart, label: 'POS Kasir', color: 'text-pink-500', roles: ['super_admin', 'kasir'] },
-      { href: '/transactions', icon: FileText, label: 'Riwayat Transaksi', color: 'text-indigo-500', roles: ['super_admin'] },
-      { href: '/customers', icon: Users, label: 'Pelanggan', color: 'text-blue-500', roles: ['super_admin', 'kasir'] },
+      { href: '/pos', icon: ShoppingCart, label: 'Mesin Kasir (POS)', color: 'text-pink-500', roles: ['super_admin', 'kasir', 'sales'] },
+      { href: '/transactions', icon: FileText, label: 'Pesanan & Transaksi', color: 'text-indigo-500', roles: ['super_admin', 'kasir'] },
+      { href: '/customers', icon: Users, label: 'Pelanggan', color: 'text-primary-500', roles: ['super_admin', 'kasir', 'sales'] },
       { href: '/receivables', icon: AlertCircle, label: 'Piutang', color: 'text-red-500', roles: ['super_admin', 'kasir'] },
       { href: '/shifts', icon: Clock, label: 'Shift Kasir', color: 'text-orange-500', roles: ['super_admin', 'kasir'] },
     ]
@@ -76,6 +76,7 @@ const modules: ModuleGroup[] = [
     items: [
       { href: '/inventory', icon: Package, label: 'Barang & Stok', color: 'text-emerald-500', roles: ['super_admin', 'admin_gudang'] },
       { href: '/categories', icon: Tags, label: 'Kategori Barang', color: 'text-fuchsia-500', roles: ['super_admin', 'admin_gudang'] },
+      { href: '/units', icon: Scale, label: 'Satuan Barang', color: 'text-sky-500', roles: ['super_admin', 'admin_gudang'] },
     ]
   },
   {
@@ -130,11 +131,6 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [])
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
-  }
 
   const isModuleActive = (module: ModuleGroup) => {
     if (module.href === '/') return pathname === '/'
@@ -216,19 +212,6 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
           })}
         </nav>
 
-        {/* User / Logout */}
-        <div className="mt-auto flex flex-col gap-3 px-2 w-full pt-4 border-t border-dark-800">
-          <div className="w-12 h-12 rounded-xl bg-gradient-primary flex items-center justify-center text-white font-bold text-lg cursor-help" title={userName}>
-            {userName.charAt(0).toUpperCase()}
-          </div>
-          <button
-            onClick={handleLogout}
-            className="w-12 h-12 rounded-xl flex items-center justify-center text-dark-400 hover:bg-danger/10 hover:text-danger transition-colors"
-            title="Keluar"
-          >
-            <LogOut className="w-5 h-5" />
-          </button>
-        </div>
       </aside>
 
       {/* FLYOUT MENU (The Popover Submenu) */}
