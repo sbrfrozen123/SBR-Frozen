@@ -37,7 +37,7 @@ export function ExpenseForm({ initialData, userId, branchId, onSuccess, onCancel
     defaultValues: initialData ? {
       category: initialData.category,
       amount: initialData.amount,
-      payment_method: initialData.payment_method || 'tunai',
+      payment_method: (initialData.payment_method === 'tempo' ? 'tunai' : initialData.payment_method) || 'tunai',
       description: initialData.description || '',
       expense_date: initialData.expense_date,
     } : {
