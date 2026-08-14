@@ -211,7 +211,7 @@ export function StoreSettingsForm({ initialData }: StoreSettingsFormProps) {
                       onChange={handleFileChange}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     />
-                    <div className="btn-outline border-2 border-dashed border-primary-200 text-primary-700 hover:bg-primary-50 py-3 flex items-center justify-center gap-2">
+                    <div className="btn btn-outline btn-md border-2 border-dashed border-primary-200 text-primary-700 hover:bg-primary-50 py-3 flex items-center justify-center gap-2">
                       <Upload className="w-4 h-4" />
                       Pilih File Gambar Logo
                     </div>
@@ -249,7 +249,7 @@ export function StoreSettingsForm({ initialData }: StoreSettingsFormProps) {
           <button 
             type="submit" 
             disabled={loading}
-            className="btn-primary btn-lg min-w-[150px]"
+            className="btn btn-primary btn-lg min-w-[150px]"
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : (
               <>

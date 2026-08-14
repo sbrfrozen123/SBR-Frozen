@@ -132,7 +132,7 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="btn-md btn-primary"
+          className="btn btn-primary btn-md"
         >
           <Plus className="w-4 h-4 mr-2" />
           Tambah Karyawan
@@ -262,6 +262,7 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
               <button 
                 onClick={() => setIsModalOpen(false)}
                 className="text-dark-400 hover:text-dark-600 transition-colors"
+                className="btn text-dark-400 hover:text-dark-600 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -338,14 +339,14 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
                 <button 
                   type="button" 
                   onClick={() => setIsModalOpen(false)}
-                  className="btn-md btn-outline"
+                  className="btn btn-outline btn-md"
                 >
                   Batal
                 </button>
                 <button 
                   type="submit" 
                   disabled={isSubmitting}
-                  className="btn-primary min-w-[120px]"
+                  className="btn btn-primary btn-md min-w-[120px]"
                 >
                   {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Buat Akun'}
                 </button>

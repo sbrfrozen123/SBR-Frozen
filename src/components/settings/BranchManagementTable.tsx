@@ -102,7 +102,7 @@ export function BranchManagementTable({ initialBranches }: BranchManagementTable
         </div>
         <button 
           onClick={() => handleOpenModal()}
-          className="btn-primary"
+          className="btn btn-primary btn-md"
         >
           <Plus className="w-4 h-4 mr-2" />
           Tambah Cabang
@@ -223,14 +223,14 @@ export function BranchManagementTable({ initialBranches }: BranchManagementTable
                 <button 
                   type="button" 
                   onClick={handleCloseModal}
-                  className="btn-outline"
+                  className="btn btn-outline btn-md"
                   disabled={loading}
                 >
                   Batal
                 </button>
                 <button 
                   type="submit" 
-                  className="btn-primary min-w-[120px]"
+                  className="btn btn-primary btn-md min-w-[120px]"
                   disabled={loading}
                 >
                   {loading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Simpan'}
