@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Plus, Search, Filter, MoreVertical, Edit, Trash2, Users } from 'lucide-react'
+import { Plus, Search, Filter, MoreVertical, Edit, Trash2, Users, Printer, Download } from 'lucide-react'
 import { formatRupiah } from '@/lib/utils/currency'
 import { cn } from '@/lib/utils/cn'
 import { CustomerForm } from '@/components/customers/CustomerForm'
@@ -68,23 +68,71 @@ export default function CustomersClient({ initialCustomers, userRole }: Customer
     setIsFormOpen(true)
   }
 
+  const exportToCSV = () => {
+    const rows = [
+      ['No', 'Nama Pelanggan', 'Kategori', 'Kontak', 'Alamat', 'Batas Piutang', 'Termin', 'Piutang Berjalan', 'Status']
+    ]
+
+    filteredCustomers.forEach((c, index) => {
+      rows.push([
+        (index + 1).toString(),
+        `"${c.name}"`,
+        c.category,
+        `"${c.phone || '-'}"`,
+        `"${c.address || '-'}"`,
+        c.credit_limit.toString(),
+        c.payment_terms || 'COD',
+        c.current_debt.toString(),
+        c.is_active ? 'Aktif' : 'Non-aktif'
+      ])
+    })
+
+    const csvContent = rows.map(r => r.join(',')).join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.setAttribute('download', `Data_Pelanggan_${new Date().toISOString().split('T')[0]}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   return (
     <div className="p-6 space-y-6 animate-fade-in h-full flex flex-col">
       {/* Page Header */}
-      <div className="page-header flex-shrink-0">
+      <div className="page-header flex-shrink-0 print:hidden">
         <div>
           <h1 className="page-title">Database Customer</h1>
           <p className="page-subtitle">Kelola data pelanggan, kategori (retail/grosir/horeca), dan batas piutang.</p>
         </div>
-        <button onClick={openAddForm} className="btn-md btn-primary">
-          <Plus className="w-4 h-4" />
-          Tambah Customer
-        </button>
+        <div className="flex items-center gap-3">
+          <button onClick={exportToCSV} className="btn btn-outline btn-md text-dark-600">
+            <Download className="w-4 h-4" />
+            Export CSV
+          </button>
+          <button onClick={() => window.print()} className="btn btn-outline btn-md text-dark-600">
+            <Printer className="w-4 h-4" />
+            Print
+          </button>
+          <button onClick={openAddForm} className="btn btn-primary btn-md">
+            <Plus className="w-4 h-4" />
+            Tambah Customer
+          </button>
+        </div>
       </div>
+
+      <style dangerouslySetInnerHTML={{__html: `
+        @media print {
+          body { background: white !important; }
+          .print\\:hidden { display: none !important; }
+          .card { border: none !important; box-shadow: none !important; }
+          @page { size: landscape; margin: 10mm; }
+        }
+      `}} />
 
       <div className="card flex-1 flex flex-col min-h-0 overflow-hidden">
         {/* Toolbar */}
-        <div className="p-4 border-b border-dark-100 flex flex-col sm:flex-row gap-4 justify-between bg-white flex-shrink-0">
+        <div className="p-4 border-b border-dark-100 flex flex-col sm:flex-row gap-4 justify-between bg-white flex-shrink-0 print:hidden">
           <div className="relative w-full sm:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-400" />
             <input 
@@ -113,6 +161,12 @@ export default function CustomersClient({ initialCustomers, userRole }: Customer
             ))}
           </div>
         </div>
+        
+        {/* Print Header */}
+        <div className="hidden print:block text-center mb-6 pt-4">
+          <h2 className="text-xl font-bold text-dark-900">DATA PELANGGAN</h2>
+          <p className="text-dark-600">Total: {filteredCustomers.length} Pelanggan</p>
+        </div>
 
         {/* Table */}
         <div className="flex-1 overflow-auto bg-white">
@@ -126,7 +180,7 @@ export default function CustomersClient({ initialCustomers, userRole }: Customer
                 <th className="text-right">Batas Piutang</th>
                 <th className="text-right">Piutang Berjalan</th>
                 <th className="text-center">Status</th>
-                <th className="w-12"></th>
+                <th className="w-12 print:hidden"></th>
               </tr>
             </thead>
             <tbody>
@@ -189,7 +243,7 @@ export default function CustomersClient({ initialCustomers, userRole }: Customer
                         {customer.is_active ? 'Aktif' : 'Non-aktif'}
                       </span>
                     </td>
-                    <td>
+                    <td className="print:hidden">
                       <DropdownMenu.Root>
                         <DropdownMenu.Trigger asChild>
                           <button className="w-8 h-8 rounded-lg flex items-center justify-center text-dark-400 hover:bg-dark-100 hover:text-dark-900 transition-colors">
