@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Plus, Search, ShoppingBag, CheckCircle, Loader2 } from 'lucide-react'
+import { Plus, Search, ShoppingBag, CheckCircle, Loader2, Pencil } from 'lucide-react'
 import { formatRupiah } from '@/lib/utils/currency'
 import { cn } from '@/lib/utils/cn'
 import { createClient } from '@/lib/supabase/client'
@@ -103,7 +103,7 @@ export default function PurchasesClient({ initialPurchases, userRole }: Purchase
                 <th>Dibuat Oleh</th>
                 <th className="text-right">Total Transaksi</th>
                 <th className="text-center">Status</th>
-                <th className="text-center w-24">Aksi</th>
+                <th className="text-center w-28">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -149,20 +149,31 @@ export default function PurchasesClient({ initialPurchases, userRole }: Purchase
                       </span>
                     </td>
                     <td className="text-center">
-                      {purchase.payment_status === 'tempo' && ['super_admin', 'admin_gudang'].includes(userRole) && (
-                        <button 
-                          onClick={() => handleMarkAsPaid(purchase.id, purchase.invoice_number)}
-                          disabled={updatingId === purchase.id}
-                          className="btn-sm btn-outline text-success hover:bg-success hover:text-white border-success/30 hover:border-success py-1 px-2.5 mx-auto"
-                          title="Tandai Lunas"
-                        >
-                          {updatingId === purchase.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <CheckCircle className="w-4 h-4" />
-                          )}
-                        </button>
-                      )}
+                      <div className="flex items-center justify-center gap-1.5">
+                        {['super_admin', 'admin_gudang'].includes(userRole) && (
+                          <Link
+                            href={`/purchases/${purchase.id}/edit`}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-dark-400 hover:text-primary-600 hover:bg-primary-50 transition-colors"
+                            title="Edit Pembelian"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Link>
+                        )}
+                        {purchase.payment_status === 'tempo' && ['super_admin', 'admin_gudang'].includes(userRole) && (
+                          <button 
+                            onClick={() => handleMarkAsPaid(purchase.id, purchase.invoice_number)}
+                            disabled={updatingId === purchase.id}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-success-600 hover:bg-success-50 transition-colors"
+                            title="Tandai Lunas"
+                          >
+                            {updatingId === purchase.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <CheckCircle className="w-4 h-4" />
+                            )}
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))

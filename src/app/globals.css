@@ -387,5 +387,99 @@ body {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  /* ============================================================
+     PREMIUM MICRO-ANIMATIONS
+     ============================================================ */
+  .animate-fade-in {
+    animation: fadeIn 0.25s ease both;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .animate-slide-right {
+    animation: slideRight 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .animate-scale-up {
+    animation: scaleUp 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* Shimmer loading effect */
+  .shimmer {
+    background: linear-gradient(90deg, #f0f4f8 25%, #e2e8f0 50%, #f0f4f8 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  /* Ripple click effect */
+  .ripple {
+    position: relative;
+    overflow: hidden;
+  }
+  .ripple::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(255,255,255,0.3) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .ripple:active::after {
+    opacity: 1;
+  }
+
+  /* Glow pulse for important elements */
+  .glow-primary {
+    box-shadow: 0 0 0 0 rgba(233, 30, 140, 0.4);
+    animation: glowPulse 2s infinite;
+  }
+
+  /* Number/money typography refinement */
+  .text-money {
+    font-feature-settings: "tnum";
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideRight {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(233, 30, 140, 0); }
+  50% { box-shadow: 0 0 12px 4px rgba(233, 30, 140, 0.2); }
+}
+
+/* ============================================================
+   PRINT STYLES
+   ============================================================ */
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; font-size: 12px; }
+  .card { border: 1px solid #e2e8f0; box-shadow: none; }
+}

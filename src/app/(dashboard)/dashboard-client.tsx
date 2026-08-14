@@ -80,7 +80,7 @@ export default function DashboardClient({
   return (
     <div className="p-6 space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 bg-white rounded-2xl p-5 border border-dark-100 shadow-sm">
         <div>
           <h1 className="text-3xl font-black text-dark-900 tracking-tight mb-1">
             Halo, {userName} 👋

@@ -511,40 +511,54 @@ export default function POSClient({ products, customers, settings, userRole, use
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50/50">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        <div className="flex-1 overflow-y-auto p-4 md:p-5 bg-slate-50/50">
+          {filteredProducts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full py-20 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-dark-100 flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-dark-300" />
+              </div>
+              <p className="font-semibold text-dark-600">Produk tidak ditemukan</p>
+              <p className="text-sm text-dark-400 mt-1">Coba kata kunci lain</p>
+            </div>
+          ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
             {filteredProducts.map(product => {
               const price = getProductPrice(product, selectedCustomer)
               const isOutOfStock = product.stock_quantity <= 0
+              const isLowStock = product.stock_quantity > 0 && product.stock_quantity <= 5
               
               return (
                 <div 
                   key={product.id}
                   onClick={() => !isOutOfStock && addToCart(product)}
                   className={cn(
-                    'pos-product-card relative flex flex-col h-full bg-white',
-                    isOutOfStock && 'opacity-60 cursor-not-allowed filter grayscale-[0.5]'
+                    'relative flex flex-col h-full bg-white rounded-2xl border border-dark-100 p-3.5 cursor-pointer select-none',
+                    'transition-all duration-150 shadow-sm',
+                    isOutOfStock 
+                      ? 'opacity-50 cursor-not-allowed grayscale' 
+                      : 'hover:shadow-md hover:-translate-y-0.5 hover:border-primary-200 active:scale-95 active:shadow-sm'
                   )}
                 >
-                  <div className="flex-1 flex flex-col justify-between">
+                  <div className="flex-1 flex flex-col justify-between gap-2">
                     <div>
-                      <p className="text-xs text-dark-400 font-mono mb-1">{product.sku}</p>
+                      <p className="text-[10px] text-dark-400 font-mono mb-1 truncate">{product.sku}</p>
                       <h3 className="font-semibold text-dark-900 text-sm leading-tight line-clamp-2">{product.name}</h3>
                     </div>
-                    <div className="mt-3">
-                      <p className="text-primary-600 font-bold text-money">{formatRupiah(price)}</p>
-                      <p className="text-xs text-dark-500 mt-0.5">Stok: {product.stock_quantity} {product.unit}</p>
+                    <div className="mt-2">
+                      <p className="text-primary-600 font-bold text-money text-sm">{formatRupiah(price)}</p>
+                      <div className="flex items-center gap-1 mt-1">
+                        <div className={cn('w-1.5 h-1.5 rounded-full shrink-0', isLowStock ? 'bg-warning' : isOutOfStock ? 'bg-danger' : 'bg-success')} />
+                        <p className={cn('text-[11px] font-medium', isLowStock ? 'text-warning-700' : isOutOfStock ? 'text-danger' : 'text-dark-500')}>
+                          {isOutOfStock ? 'Habis' : `${product.stock_quantity} ${product.unit}`}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                  {isOutOfStock && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[1px] rounded-2xl">
-                      <span className="bg-danger text-white text-xs font-bold px-2 py-1 rounded">HABIS</span>
-                    </div>
-                  )}
                 </div>
               )
             })}
           </div>
+          )}
         </div>
       </div>
 
