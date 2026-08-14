@@ -198,14 +198,6 @@ export default function ShiftsMediaClient({ shifts, branches, initialFrom, initi
                 </table>
               </div>
 
-              {/* Footer / Signature */}
-              <div className="mt-16 flex justify-end print:mt-24">
-                <div className="text-center w-48">
-                  <p className="text-dark-600 mb-20 text-sm">Mengetahui,</p>
-                  <div className="border-b border-dark-900 w-full mb-2"></div>
-                  <p className="font-bold text-dark-900 text-sm">Manager / Admin</p>
-                </div>
-              </div>
             </div>
           </div>
         )}
