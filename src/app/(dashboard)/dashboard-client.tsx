@@ -202,7 +202,7 @@ export default function DashboardClient({
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-dark-100 flex justify-between text-xs font-medium text-dark-500">
-            <span>Operasional & Pembelian</span>
+            <span>Beban Operasional</span>
           </div>
         </div>
 
