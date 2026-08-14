@@ -261,7 +261,6 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
               <h3 className="font-bold text-lg text-dark-900">Tambah Karyawan Baru</h3>
               <button 
                 onClick={() => setIsModalOpen(false)}
-                className="text-dark-400 hover:text-dark-600 transition-colors"
                 className="btn text-dark-400 hover:text-dark-600 transition-colors"
               >
                 <X className="w-5 h-5" />
