@@ -146,23 +146,23 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
                 {category.title}
               </h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-dark-100">
+            <div className="p-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-slate-50/30">
               {category.reports.map((report, rIdx) => {
                 const Icon = report.icon
                 return (
                   <Link
                     key={rIdx}
                     href={report.href}
-                    className="flex flex-col p-6 hover:bg-primary-50/30 transition-colors group cursor-pointer"
+                    className="flex flex-col p-5 bg-white rounded-xl border border-dark-100 shadow-sm hover:shadow-md hover:border-primary-300 hover:ring-1 hover:ring-primary-300 transition-all group cursor-pointer"
                   >
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 text-dark-600 flex items-center justify-center flex-shrink-0 group-hover:bg-primary-100 group-hover:text-primary-600 transition-colors mb-4 shadow-sm border border-dark-100 group-hover:border-primary-200">
+                    <div className="w-12 h-12 rounded-xl bg-slate-50 text-dark-500 flex items-center justify-center flex-shrink-0 group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors mb-4 border border-dark-100 group-hover:border-primary-200">
                       <Icon className="w-6 h-6" />
                     </div>
-                    <div>
-                      <h3 className="font-bold text-dark-900 group-hover:text-primary-700 transition-colors text-base mb-1.5">
+                    <div className="flex-1">
+                      <h3 className="font-bold text-dark-900 group-hover:text-primary-700 transition-colors text-base mb-1.5 line-clamp-1">
                         {report.title}
                       </h3>
-                      <p className="text-sm text-dark-500 leading-relaxed font-medium">
+                      <p className="text-sm text-dark-500 leading-relaxed font-medium line-clamp-2">
                         {report.description}
                       </p>
                     </div>
