@@ -8,7 +8,11 @@ export const metadata: Metadata = {
   title: 'Laporan Pengeluaran | SBR Frozen',
 }
 
-export default async function ExpensesReportPage() {
+export default async function ExpensesReportPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined }
+}) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   
@@ -22,21 +26,56 @@ export default async function ExpensesReportPage() {
 
   if (profile?.role !== 'super_admin') redirect('/')
 
-  const branchId = await getBranchContext(supabase, user.id)
+  const userBranchId = await getBranchContext(supabase, user.id)
 
-  // Fetch expenses with user info
-  let expensesQuery = supabase
-    .from('expenses')
-    .select('id, expense_date, category, amount, description, profiles(full_name)')
-    .order('expense_date', { ascending: false })
+  const from = searchParams?.from as string
+  const to = searchParams?.to as string
+  const branch_id = searchParams?.branch as string
 
-  if (branchId) {
-    expensesQuery = expensesQuery.eq('branch_id', branchId)
+  // Fetch branches for filter
+  const { data: branches } = await supabase.from('branches').select('id, name')
+
+  let expenses: any[] = []
+
+  if (from && to) {
+    let expensesQuery = supabase
+      .from('expenses')
+      .select('id, expense_date, category, amount, description, profiles(full_name), branches(name)')
+      .order('expense_date', { ascending: false })
+
+    if (branch_id && branch_id !== 'all') {
+      expensesQuery = expensesQuery.eq('branch_id', branch_id)
+    } else if (userBranchId && !branch_id) {
+      expensesQuery = expensesQuery.eq('branch_id', userBranchId)
+    }
+
+    expensesQuery = expensesQuery.gte('expense_date', from).lte('expense_date', to)
+
+    const { data } = await expensesQuery
+    
+    expenses = (data || []).map(exp => {
+      const branch: any = Array.isArray(exp.branches) ? exp.branches[0] : exp.branches
+      const user: any = Array.isArray(exp.profiles) ? exp.profiles[0] : exp.profiles
+      
+      return {
+        id: exp.id,
+        expense_date: exp.expense_date,
+        category: exp.category,
+        amount: exp.amount,
+        description: exp.description,
+        branch_name: branch?.name || '-',
+        user_name: user?.full_name || 'Sistem'
+      }
+    })
   }
 
-  const { data: expenses } = await expensesQuery
-
   return (
-    <ExpensesReportClient expenses={expenses || []} />
+    <ExpensesReportClient 
+      expenses={expenses}
+      branches={branches || []}
+      initialFrom={from || ''}
+      initialTo={to || ''}
+      initialBranch={branch_id || ''}
+    />
   )
 }

@@ -1,157 +1,266 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { ArrowLeft, Receipt, Wallet, Calendar } from 'lucide-react'
+import { useState } from 'react'
+import { Printer, Download, RefreshCw, Settings2, X, Calendar, MapPin, ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { formatRupiah } from '@/lib/utils/currency'
 import { formatDateShort } from '@/lib/utils/dates'
 import { cn } from '@/lib/utils/cn'
 
 interface ExpensesReportClientProps {
   expenses: any[]
+  branches: any[]
+  initialFrom: string
+  initialTo: string
+  initialBranch: string
 }
 
-export default function ExpensesReportClient({ expenses }: ExpensesReportClientProps) {
-  const [period, setPeriod] = useState<'this_month' | 'last_month' | 'all'>('this_month')
+export default function ExpensesReportClient({
+  expenses,
+  branches,
+  initialFrom,
+  initialTo,
+  initialBranch
+}: ExpensesReportClientProps) {
+  const router = useRouter()
+  
+  const [showModal, setShowModal] = useState(!initialFrom || !initialTo)
+  const [fromDate, setFromDate] = useState(initialFrom)
+  const [toDate, setToDate] = useState(initialTo)
+  const [branch, setBranch] = useState(initialBranch)
+  
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
-  const { filteredExpenses, totalAmount, categoryTotals } = useMemo(() => {
-    const today = new Date()
-    const thisMonthStr = today.toISOString().slice(0, 7)
-    const lastMonthDate = new Date(today.getFullYear(), today.getMonth() - 1, 1)
-    const lastMonthStr = lastMonthDate.toISOString().slice(0, 7)
+  const formattedFrom = initialFrom ? new Date(initialFrom).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : ''
+  const formattedTo = initialTo ? new Date(initialTo).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : ''
 
-    let filterDate = ''
-    if (period === 'this_month') filterDate = thisMonthStr
-    if (period === 'last_month') filterDate = lastMonthStr
+  const displayBranch = initialBranch === 'all' || !initialBranch 
+    ? '[Semua Cabang]' 
+    : branches.find(b => b.id === initialBranch)?.name || '[Semua Cabang]'
 
-    const filtered = filterDate 
-      ? expenses.filter(e => e.expense_date.startsWith(filterDate))
-      : expenses
+  const applyFilter = () => {
+    setShowModal(false)
+    let url = `/reports/expenses-report?from=${fromDate}&to=${toDate}`
+    if (branch) url += `&branch=${branch}`
+    router.push(url)
+  }
 
-    const total = filtered.reduce((sum, e) => sum + Number(e.amount), 0)
+  const handleRefresh = () => {
+    setIsRefreshing(true)
+    router.refresh()
+    setTimeout(() => setIsRefreshing(false), 500)
+  }
 
-    const categories: Record<string, number> = {}
-    filtered.forEach(e => {
-      categories[e.category] = (categories[e.category] || 0) + Number(e.amount)
-    })
+  const totalAmount = expenses.reduce((sum, e) => sum + Number(e.amount), 0)
 
-    return { 
-      filteredExpenses: filtered,
-      totalAmount: total, 
-      categoryTotals: Object.entries(categories).sort((a, b) => b[1] - a[1])
-    }
-  }, [expenses, period])
+  const exportToCSV = () => {
+    const headers = ['Tanggal', 'Kategori', 'Keterangan', 'Cabang', 'Petugas', 'Nominal']
+    const csvData = expenses.map(item => [
+      item.expense_date,
+      item.category,
+      item.description,
+      item.branch_name,
+      item.user_name,
+      item.amount
+    ])
+    
+    const csvContent = [
+      headers.join(','),
+      ...csvData.map(row => row.map(cell => `"${cell}"`).join(',')),
+      `"","","","","TOTAL","${totalAmount}"`
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.setAttribute('download', `Laporan_Pengeluaran_${initialFrom}_${initialTo}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 
   return (
-    <div className="p-6 h-full flex flex-col space-y-6 animate-fade-in max-w-6xl mx-auto w-full">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-shrink-0">
-        <div className="flex items-center gap-4">
-          <Link href="/reports" className="w-10 h-10 rounded-xl bg-white border border-dark-100 flex items-center justify-center text-dark-500 hover:text-danger-600 transition-colors shadow-sm">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-dark-900 flex items-center gap-2">
-              <Receipt className="w-6 h-6 text-danger-500" />
-              Laporan Pengeluaran
-            </h1>
-            <p className="text-sm text-dark-500 mt-1">Rekapitulasi biaya operasional dan pengeluaran lainnya.</p>
-          </div>
-        </div>
+    <div className="bg-slate-200 min-h-screen flex flex-col items-center py-8 relative font-sans print:bg-white print:py-0 print:block">
+      {/* Global CSS for printing */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @media print {
+          body { background: white !important; }
+          .print-hidden { display: none !important; }
+          @page { size: landscape; margin: 10mm; }
+        }
+      `}} />
 
-        {/* Period Filter */}
-        <div className="flex bg-white rounded-xl border border-dark-100 p-1 shadow-sm">
-          {(['this_month', 'last_month', 'all'] as const).map((p) => (
-            <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              className={cn(
-                'px-4 py-2 text-sm font-medium rounded-lg transition-all',
-                period === p ? 'bg-danger-50 text-danger-700 shadow-sm' : 'text-dark-500 hover:text-dark-900'
-              )}
-            >
-              {p === 'this_month' ? 'Bulan Ini' : p === 'last_month' ? 'Bulan Lalu' : 'Semua Waktu'}
-            </button>
-          ))}
+      {/* Floating Toolbar (Hidden on Print) */}
+      <div className="print-hidden sticky top-4 z-40 bg-white shadow-lg border border-dark-200 rounded-full px-6 py-3 flex items-center gap-6 mb-8 transition-all">
+        <Link href="/reports" className="text-dark-500 hover:text-dark-900 transition-colors flex items-center gap-1 border-r border-dark-200 pr-4">
+          <ChevronLeft className="w-5 h-5" /> Kembali
+        </Link>
+        <div className="flex items-center gap-4">
+          <button onClick={() => setShowModal(true)} className="flex flex-col items-center text-dark-500 hover:text-primary-600 transition-colors group">
+            <Settings2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            <span className="text-[10px] font-bold mt-1">Parameter</span>
+          </button>
+          <button onClick={handleRefresh} className="flex flex-col items-center text-dark-500 hover:text-primary-600 transition-colors group">
+            <RefreshCw className={cn("w-5 h-5 group-hover:scale-110 transition-transform", isRefreshing && "animate-spin")} />
+            <span className="text-[10px] font-bold mt-1">Refresh</span>
+          </button>
+          <button onClick={exportToCSV} className="flex flex-col items-center text-dark-500 hover:text-primary-600 transition-colors group">
+            <Download className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            <span className="text-[10px] font-bold mt-1">Export</span>
+          </button>
+          <button onClick={() => window.print()} className="flex flex-col items-center text-dark-500 hover:text-primary-600 transition-colors group">
+            <Printer className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            <span className="text-[10px] font-bold mt-1">Print</span>
+          </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
-        {/* Left Column: Summary & Categories */}
-        <div className="lg:col-span-1 flex flex-col gap-6">
-          <div className="bg-white rounded-2xl border border-dark-100 p-6 shadow-sm flex flex-col justify-center text-center">
-            <div className="w-12 h-12 bg-danger-50 text-danger-600 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Wallet className="w-6 h-6" />
-            </div>
-            <p className="text-sm font-semibold text-dark-500 uppercase tracking-wide mb-1">Total Pengeluaran</p>
-            <p className="text-3xl font-bold text-danger text-money">{formatRupiah(totalAmount)}</p>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-dark-100 shadow-sm overflow-hidden flex-1 flex flex-col">
-            <div className="p-4 border-b border-dark-100 bg-slate-50">
-              <h3 className="font-bold text-dark-900">Per Kategori</h3>
-            </div>
-            <div className="flex-1 overflow-auto p-4 space-y-3">
-              {categoryTotals.length === 0 ? (
-                <div className="text-center text-dark-400 text-sm mt-4">Tidak ada data.</div>
-              ) : (
-                categoryTotals.map(([category, amount]) => (
-                  <div key={category} className="flex justify-between items-center p-3 bg-dark-50 rounded-xl">
-                    <span className="font-medium text-dark-700 capitalize">{category}</span>
-                    <span className="font-bold text-dark-900">{formatRupiah(amount)}</span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
+      {/* Report Document Page */}
+      <div className="bg-white shadow-xl max-w-[1200px] w-full mx-4 min-h-[800px] p-12 print:shadow-none print:m-0 print:max-w-none print:p-0">
+        
+        {/* Header Document */}
+        <div className="text-center mb-10">
+          <h2 className="text-sm font-bold text-dark-900 uppercase tracking-widest">SBR FROZEN</h2>
+          <h1 className="text-2xl font-bold text-[#800000] mt-1">Laporan Rincian Pengeluaran Operasional</h1>
+          <p className="text-sm text-dark-700 mt-1">
+            Dari {formattedFrom || '-'} s/d {formattedTo || '-'}
+          </p>
         </div>
 
-        {/* Right Column: Detailed List */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-dark-100 shadow-sm flex flex-col overflow-hidden">
-          <div className="p-5 border-b border-dark-100 bg-slate-50">
-            <h3 className="font-bold text-dark-900 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-dark-400" />
-              Rincian Pengeluaran
-            </h3>
-          </div>
-          <div className="flex-1 overflow-auto">
-            <table className="data-table w-full">
-              <thead className="sticky top-0 bg-white shadow-sm z-10">
-                <tr>
-                  <th>Tanggal</th>
-                  <th>Keterangan</th>
-                  <th>Kategori</th>
-                  <th className="text-right">Nominal</th>
-                  <th>Oleh</th>
+        {/* Info Right */}
+        <div className="flex justify-end mb-4">
+          <p className="text-xs italic text-dark-600">Cabang : {displayBranch}</p>
+        </div>
+
+        {/* Data Table */}
+        <div className="w-full">
+          {(!initialFrom || !initialTo) ? (
+            <div className="text-center py-20 text-dark-400 border-t border-b border-dark-200">
+              Silakan atur Parameter Laporan terlebih dahulu untuk menampilkan data.
+            </div>
+          ) : expenses.length === 0 ? (
+            <div className="text-center py-20 text-dark-400 border-t border-b border-dark-200">
+              Tidak ada data pengeluaran pada rentang tanggal ini.
+            </div>
+          ) : (
+            <table className="w-full text-xs text-left">
+              <thead>
+                <tr className="border-t-2 border-b-2 border-dark-900 text-dark-900">
+                  <th className="py-3 px-2 font-bold whitespace-nowrap">Tanggal</th>
+                  <th className="py-3 px-2 font-bold">Kategori</th>
+                  <th className="py-3 px-2 font-bold">Keterangan</th>
+                  <th className="py-3 px-2 font-bold">Cabang</th>
+                  <th className="py-3 px-2 font-bold">Petugas</th>
+                  <th className="py-3 px-2 font-bold text-right">Nominal</th>
                 </tr>
               </thead>
-              <tbody>
-                {filteredExpenses.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="text-center py-8 text-dark-400">Belum ada pengeluaran di periode ini.</td>
+              <tbody className="divide-y divide-dark-200 text-dark-700">
+                {expenses.map((item, idx) => (
+                  <tr key={`${item.id}-${idx}`} className="hover:bg-slate-50 print:hover:bg-transparent transition-colors">
+                    <td className="py-3 px-2 font-mono whitespace-nowrap text-dark-500">{formatDateShort(item.expense_date)}</td>
+                    <td className="py-3 px-2 font-medium capitalize">{item.category}</td>
+                    <td className="py-3 px-2">{item.description || '-'}</td>
+                    <td className="py-3 px-2">{item.branch_name}</td>
+                    <td className="py-3 px-2 text-dark-500">{item.user_name}</td>
+                    <td className="py-3 px-2 text-right font-semibold">{formatRupiah(item.amount).replace('Rp', '')}</td>
                   </tr>
-                ) : (
-                  filteredExpenses.map(expense => (
-                    <tr key={expense.id}>
-                      <td className="text-dark-600">{formatDateShort(expense.expense_date)}</td>
-                      <td className="font-medium text-dark-900 max-w-[200px] truncate" title={expense.description}>{expense.description}</td>
-                      <td>
-                        <span className="badge badge-primary bg-dark-50 text-dark-700 border-dark-200 capitalize">
-                          {expense.category}
-                        </span>
-                      </td>
-                      <td className="text-right font-bold text-danger">
-                        {formatRupiah(expense.amount)}
-                      </td>
-                      <td className="text-dark-500 text-sm">{expense.profiles?.full_name || 'Sistem'}</td>
-                    </tr>
-                  ))
-                )}
+                ))}
               </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-b-2 border-dark-900 font-bold text-dark-900">
+                  <td colSpan={5} className="py-3 px-2 text-right">TOTAL PENGELUARAN</td>
+                  <td className="py-3 px-2 text-right">{formatRupiah(totalAmount).replace('Rp', '')}</td>
+                </tr>
+              </tfoot>
             </table>
-          </div>
+          )}
         </div>
       </div>
+
+      {/* Parameter Modal (Hidden on Print) */}
+      {showModal && (
+        <div className="fixed inset-0 bg-dark-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 print-hidden animate-fade-in">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-slide-up">
+            <div className="bg-[#1a365d] text-white px-6 py-4 flex items-center justify-between">
+              <h3 className="font-bold">Parameter Laporan</h3>
+              <button onClick={() => initialFrom ? setShowModal(false) : null} className="text-white/70 hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="flex border-b border-dark-200 px-6 pt-2">
+              <div className="px-4 py-2 text-primary-600 font-semibold border-b-2 border-primary-600">Umum</div>
+              <div className="px-4 py-2 text-dark-500 font-medium">Kolom</div>
+            </div>
+
+            <div className="p-6 space-y-6">
+              <div>
+                <h4 className="text-lg text-dark-700 mb-4 border-b border-dark-200 pb-2">Tanggal</h4>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <label className="w-16 text-sm text-dark-700">Dari</label>
+                    <div className="flex-1 relative">
+                      <input 
+                        type="date" 
+                        value={fromDate}
+                        onChange={(e) => setFromDate(e.target.value)}
+                        className="w-full border-dark-200 rounded-lg text-sm pl-3 pr-10 py-2 focus:ring-primary-500 focus:border-primary-500 bg-blue-50 text-blue-700 font-medium"
+                      />
+                      <Calendar className="w-4 h-4 text-dark-400 absolute right-3 top-2.5 pointer-events-none" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <label className="w-16 text-sm text-dark-700">s/d</label>
+                    <div className="flex-1 relative">
+                      <input 
+                        type="date" 
+                        value={toDate}
+                        onChange={(e) => setToDate(e.target.value)}
+                        className="w-full border-dark-200 rounded-lg text-sm pl-3 pr-10 py-2 focus:ring-primary-500 focus:border-primary-500"
+                      />
+                      <Calendar className="w-4 h-4 text-dark-400 absolute right-3 top-2.5 pointer-events-none" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-lg text-dark-700 mb-4 border-b border-dark-200 pb-2">Parameter Tambahan</h4>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <label className="w-16 text-sm text-dark-700">Cabang <span className="text-danger-500">*</span></label>
+                    <div className="flex-1 relative">
+                      <select 
+                        value={branch}
+                        onChange={(e) => setBranch(e.target.value)}
+                        className="w-full border-dark-200 rounded-lg text-sm pl-3 pr-10 py-2 focus:ring-primary-500 focus:border-primary-500 appearance-none bg-blue-50/50"
+                      >
+                        <option value="all">[Semua Cabang]</option>
+                        {branches.map(b => (
+                          <option key={b.id} value={b.id}>{b.name}</option>
+                        ))}
+                      </select>
+                      <MapPin className="w-4 h-4 text-dark-400 absolute right-3 top-2.5 pointer-events-none" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-dark-200 flex justify-end">
+              <button 
+                onClick={applyFilter}
+                disabled={!fromDate || !toDate}
+                className="bg-[#1a365d] hover:bg-[#12284c] text-white px-6 py-2 rounded text-sm font-bold transition-colors disabled:opacity-50"
+              >
+                Tampilkan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }

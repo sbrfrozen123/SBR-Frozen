@@ -8,7 +8,11 @@ export const metadata: Metadata = {
   title: 'Laba Rugi | SBR Frozen',
 }
 
-export default async function ProfitLossPage() {
+export default async function ProfitLossPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined }
+}) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   
@@ -22,38 +26,62 @@ export default async function ProfitLossPage() {
 
   if (profile?.role !== 'super_admin') redirect('/')
 
-  // We need to fetch transactions, transaction_items, and expenses for the client to filter.
-  // In a large app, we'd query specifically per month. Here we just fetch enough data (e.g. recent months) 
-  // or rely on client filtering for simplicity in this demo.
-  
-  // We'll fetch all data since it's an MVP, but ideally this should be paginated or date-bound.
-  const branchId = await getBranchContext(supabase, user.id)
+  const userBranchId = await getBranchContext(supabase, user.id)
 
-  let txnsQuery = supabase.from('transactions').select('id, total_amount, created_at')
-  let itemsQuery = supabase.from('transaction_items').select('id, qty, created_at, products(hpp), transactions!inner(branch_id)')
-  let expensesQuery = supabase.from('expenses').select('id, amount, expense_date')
+  const from = searchParams?.from as string
+  const to = searchParams?.to as string
+  const branch_id = searchParams?.branch as string
 
-  if (branchId) {
-    txnsQuery = txnsQuery.eq('branch_id', branchId)
-    itemsQuery = itemsQuery.eq('transactions.branch_id', branchId)
-    expensesQuery = expensesQuery.eq('branch_id', branchId)
+  // Fetch branches for filter
+  const { data: branches } = await supabase.from('branches').select('id, name')
+
+  let transactions: any[] = []
+  let transactionItems: any[] = []
+  let expenses: any[] = []
+
+  if (from && to) {
+    let txnsQuery = supabase.from('transactions').select('id, total_amount, created_at, branch_id')
+    let itemsQuery = supabase.from('transaction_items').select('id, qty, created_at, products(hpp), transactions!inner(branch_id)')
+    let expensesQuery = supabase.from('expenses').select('id, amount, expense_date, category, branch_id')
+
+    if (branch_id && branch_id !== 'all') {
+      txnsQuery = txnsQuery.eq('branch_id', branch_id)
+      itemsQuery = itemsQuery.eq('transactions.branch_id', branch_id)
+      expensesQuery = expensesQuery.eq('branch_id', branch_id)
+    } else if (userBranchId && !branch_id) {
+      txnsQuery = txnsQuery.eq('branch_id', userBranchId)
+      itemsQuery = itemsQuery.eq('transactions.branch_id', userBranchId)
+      expensesQuery = expensesQuery.eq('branch_id', userBranchId)
+    }
+
+    txnsQuery = txnsQuery.gte('created_at', `${from}T00:00:00Z`).lte('created_at', `${to}T23:59:59Z`)
+    itemsQuery = itemsQuery.gte('created_at', `${from}T00:00:00Z`).lte('created_at', `${to}T23:59:59Z`)
+    expensesQuery = expensesQuery.gte('expense_date', from).lte('expense_date', to)
+
+    const [
+      { data: txnsData },
+      { data: itemsData },
+      { data: expData }
+    ] = await Promise.all([
+      txnsQuery,
+      itemsQuery,
+      expensesQuery
+    ])
+
+    transactions = txnsData || []
+    transactionItems = itemsData || []
+    expenses = expData || []
   }
-
-  const [
-    { data: transactions },
-    { data: transactionItems },
-    { data: expenses }
-  ] = await Promise.all([
-    txnsQuery,
-    itemsQuery,
-    expensesQuery
-  ])
 
   return (
     <ProfitLossClient 
-      transactions={transactions || []}
-      transactionItems={transactionItems || []}
-      expenses={expenses || []}
+      transactions={transactions}
+      transactionItems={transactionItems}
+      expenses={expenses}
+      branches={branches || []}
+      initialFrom={from || ''}
+      initialTo={to || ''}
+      initialBranch={branch_id || ''}
     />
   )
 }
