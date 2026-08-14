@@ -149,93 +149,93 @@ export default function DashboardClient({
       )}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 lg:gap-4">
         {/* Omset */}
-        <div className="p-5 rounded-2xl relative overflow-hidden bg-white border border-primary-100 shadow-sm group hover:shadow-md transition-all">
+        <div className="p-4 xl:p-5 rounded-2xl relative overflow-hidden bg-white border border-primary-100 shadow-sm group hover:shadow-md transition-all">
           <div className="flex justify-between items-start relative z-10">
-            <div>
-              <p className="text-xs font-bold text-primary-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-primary-500"></div> Total Omset
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-primary-600 uppercase tracking-wider mb-2 flex items-center gap-1.5 truncate">
+                <div className="w-2 h-2 rounded-full bg-primary-500 shrink-0"></div> Total Omset
               </p>
-              <p className="text-3xl font-black text-dark-900 mb-1 tracking-tight">
+              <p className="text-xl xl:text-2xl font-black text-primary-700 mb-1 tracking-tight truncate">
                 {formatRupiah(stats.omset)}
               </p>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-primary-50 flex items-center justify-center group-hover:scale-110 group-hover:bg-primary-100 transition-all duration-300">
-              <TrendingUp className="w-6 h-6 text-primary-600" />
+            <div className="w-10 h-10 xl:w-12 xl:h-12 rounded-xl bg-primary-50 shrink-0 flex items-center justify-center group-hover:scale-110 group-hover:bg-primary-100 transition-all duration-300 ml-2">
+              <TrendingUp className="w-5 h-5 xl:w-6 xl:h-6 text-primary-600" />
             </div>
           </div>
         </div>
 
         {/* Laba Bersih */}
-        <div className="p-5 rounded-2xl relative overflow-hidden bg-white border border-success-100 shadow-sm group hover:shadow-md transition-all">
+        <div className="p-4 xl:p-5 rounded-2xl relative overflow-hidden bg-white border border-success-100 shadow-sm group hover:shadow-md transition-all">
           <div className="flex justify-between items-start">
-            <div>
-              <p className="text-xs font-bold text-success-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-success-500"></div> Laba Bersih
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-success-600 uppercase tracking-wider mb-2 flex items-center gap-1.5 truncate">
+                <div className="w-2 h-2 rounded-full bg-success-500 shrink-0"></div> Laba Bersih
               </p>
-              <p className="text-3xl font-black text-dark-900 mb-1 tracking-tight">
+              <p className="text-xl xl:text-2xl font-black text-success-700 mb-1 tracking-tight truncate">
                 {formatRupiah(stats.netProfit)}
               </p>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-success-50 flex items-center justify-center group-hover:scale-110 group-hover:bg-success-100 transition-all duration-300">
-              <DollarSign className="w-6 h-6 text-success-600" />
+            <div className="w-10 h-10 xl:w-12 xl:h-12 rounded-xl bg-success-50 shrink-0 flex items-center justify-center group-hover:scale-110 group-hover:bg-success-100 transition-all duration-300 ml-2">
+              <DollarSign className="w-5 h-5 xl:w-6 xl:h-6 text-success-600" />
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-dark-100 flex justify-between text-xs font-medium text-dark-500">
+          <div className="mt-3 pt-3 border-t border-dark-100 flex justify-between text-xs font-medium text-dark-500 truncate">
             <span>Laba Kotor: <span className="font-bold text-dark-700">{formatRupiah(stats.grossProfit)}</span></span>
           </div>
         </div>
 
         {/* Pengeluaran */}
-        <div className="p-5 rounded-2xl relative overflow-hidden bg-white border border-danger-100 shadow-sm group hover:shadow-md transition-all">
+        <div className="p-4 xl:p-5 rounded-2xl relative overflow-hidden bg-white border border-danger-100 shadow-sm group hover:shadow-md transition-all">
           <div className="flex justify-between items-start">
-            <div>
-              <p className="text-xs font-bold text-danger-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-danger-500"></div> Total Pengeluaran
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-danger-600 uppercase tracking-wider mb-2 flex items-center gap-1.5 truncate">
+                <div className="w-2 h-2 rounded-full bg-danger-500 shrink-0"></div> Pengeluaran
               </p>
-              <p className="text-3xl font-black text-dark-900 mb-1 tracking-tight">
+              <p className="text-xl xl:text-2xl font-black text-danger-700 mb-1 tracking-tight truncate">
                 {formatRupiah(stats.expenses)}
               </p>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-danger-50 flex items-center justify-center group-hover:scale-110 group-hover:bg-danger-100 transition-all duration-300">
-              <TrendingDown className="w-6 h-6 text-danger-600" />
+            <div className="w-10 h-10 xl:w-12 xl:h-12 rounded-xl bg-danger-50 shrink-0 flex items-center justify-center group-hover:scale-110 group-hover:bg-danger-100 transition-all duration-300 ml-2">
+              <TrendingDown className="w-5 h-5 xl:w-6 xl:h-6 text-danger-600" />
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-dark-100 flex justify-between text-xs font-medium text-dark-500">
+          <div className="mt-3 pt-3 border-t border-dark-100 flex justify-between text-xs font-medium text-dark-500 truncate">
             <span>Beban Operasional</span>
           </div>
         </div>
 
         {/* Piutang */}
-        <div className="p-5 rounded-2xl relative overflow-hidden bg-white border border-warning-200 shadow-sm group hover:shadow-md transition-all">
+        <div className="p-4 xl:p-5 rounded-2xl relative overflow-hidden bg-white border border-warning-200 shadow-sm group hover:shadow-md transition-all">
           <div className="flex justify-between items-start">
-            <div>
-              <p className="text-xs font-bold text-warning-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-warning-500"></div> Piutang Beredar
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-warning-700 uppercase tracking-wider mb-2 flex items-center gap-1.5 truncate">
+                <div className="w-2 h-2 rounded-full bg-warning-500 shrink-0"></div> Piutang
               </p>
-              <p className="text-3xl font-black text-dark-900 mb-1 tracking-tight">
+              <p className="text-xl xl:text-2xl font-black text-warning-700 mb-1 tracking-tight truncate">
                 {formatRupiah(stats.piutang)}
               </p>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-warning-50 flex items-center justify-center group-hover:scale-110 group-hover:bg-warning-100 transition-all duration-300">
-              <Wallet className="w-6 h-6 text-warning-600" />
+            <div className="w-10 h-10 xl:w-12 xl:h-12 rounded-xl bg-warning-50 shrink-0 flex items-center justify-center group-hover:scale-110 group-hover:bg-warning-100 transition-all duration-300 ml-2">
+              <Wallet className="w-5 h-5 xl:w-6 xl:h-6 text-warning-600" />
             </div>
           </div>
         </div>
         {/* Aset Barang */}
-        <div className="p-5 rounded-2xl relative overflow-hidden bg-white border border-indigo-100 shadow-sm group hover:shadow-md transition-all">
+        <div className="p-4 xl:p-5 rounded-2xl relative overflow-hidden bg-white border border-indigo-100 shadow-sm group hover:shadow-md transition-all">
           <div className="flex justify-between items-start">
-            <div>
-              <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-indigo-500"></div> Total Aset Barang
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-2 flex items-center gap-1.5 truncate">
+                <div className="w-2 h-2 rounded-full bg-indigo-500 shrink-0"></div> Aset Barang
               </p>
-              <p className="text-3xl font-black text-dark-900 mb-1 tracking-tight">
+              <p className="text-xl xl:text-2xl font-black text-indigo-700 mb-1 tracking-tight truncate">
                 {formatRupiah(stats.assetValue)}
               </p>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center group-hover:scale-110 group-hover:bg-indigo-100 transition-all duration-300">
-              <Package className="w-6 h-6 text-indigo-600" />
+            <div className="w-10 h-10 xl:w-12 xl:h-12 rounded-xl bg-indigo-50 shrink-0 flex items-center justify-center group-hover:scale-110 group-hover:bg-indigo-100 transition-all duration-300 ml-2">
+              <Package className="w-5 h-5 xl:w-6 xl:h-6 text-indigo-600" />
             </div>
           </div>
         </div>
