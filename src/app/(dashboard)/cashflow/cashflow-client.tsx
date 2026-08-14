@@ -20,7 +20,7 @@ interface CashflowClientProps {
 export default function CashflowClient({ userId, branchId, initialCash, initialBank, history }: CashflowClientProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [type, setType] = useState<'setor_kas' | 'tarik_kas' | 'mutasi_ke_bank' | 'mutasi_ke_kas'>('setor_kas')
+  const [type, setType] = useState<'saldo_awal' | 'setor_kas' | 'tarik_kas' | 'mutasi_ke_bank' | 'mutasi_ke_kas'>('saldo_awal')
   const [amount, setAmount] = useState<number>(0)
   const [paymentMethod, setPaymentMethod] = useState<'tunai' | 'transfer' | 'qris'>('tunai')
   const [description, setDescription] = useState('')
@@ -81,7 +81,7 @@ export default function CashflowClient({ userId, branchId, initialCash, initialB
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-success-100 flex items-center justify-between">
             <div>
               <p className="text-sm font-bold text-success-600 uppercase tracking-wider mb-1">Saldo Kas Tunai</p>
-              <p className="text-3xl font-black text-dark-900">{formatRupiah(initialCash)}</p>
+              <p className={`text-3xl font-black ${initialCash < 0 ? 'text-danger-600' : 'text-dark-900'}`}>{formatRupiah(initialCash)}</p>
             </div>
             <div className="w-14 h-14 rounded-full bg-success-50 flex items-center justify-center">
               <Wallet className="w-7 h-7 text-success-600" />
@@ -91,7 +91,7 @@ export default function CashflowClient({ userId, branchId, initialCash, initialB
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-primary-100 flex items-center justify-between">
             <div>
               <p className="text-sm font-bold text-primary-600 uppercase tracking-wider mb-1">Saldo Bank / ATM</p>
-              <p className="text-3xl font-black text-dark-900">{formatRupiah(initialBank)}</p>
+              <p className={`text-3xl font-black ${initialBank < 0 ? 'text-danger-600' : 'text-dark-900'}`}>{formatRupiah(initialBank)}</p>
             </div>
             <div className="w-14 h-14 rounded-full bg-primary-50 flex items-center justify-center">
               <Landmark className="w-7 h-7 text-primary-600" />
@@ -131,6 +131,7 @@ export default function CashflowClient({ userId, branchId, initialCash, initialB
                       <div className="text-xs text-dark-400">{new Date(item.created_at).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})}</div>
                     </td>
                     <td className="p-4">
+                      {item.type === 'saldo_awal' && <span className="text-xs font-bold px-2 py-1 rounded bg-indigo-100 text-indigo-700">Saldo Awal</span>}
                       {item.type === 'setor_kas' && <span className="text-xs font-bold px-2 py-1 rounded bg-success-100 text-success-700">Setor Modal</span>}
                       {item.type === 'tarik_kas' && <span className="text-xs font-bold px-2 py-1 rounded bg-danger-100 text-danger-700">Tarik Saldo</span>}
                       {item.type === 'mutasi_ke_bank' && <span className="text-xs font-bold px-2 py-1 rounded bg-primary-100 text-primary-700">Kas {'->'} Bank</span>}
@@ -167,6 +168,7 @@ export default function CashflowClient({ userId, branchId, initialCash, initialB
               <div className="form-group">
                 <label className="label">Jenis Transaksi</label>
                 <select value={type} onChange={(e) => setType(e.target.value as any)} className="input bg-white font-medium">
+                  <option value="saldo_awal">⭐ Input Saldo Awal / Saldo Sekarang</option>
                   <option value="setor_kas">Setor Dana / Modal Masuk</option>
                   <option value="tarik_kas">Tarik Dana / Ambil Uang Pribadi</option>
                   <option value="mutasi_ke_bank">Setor Uang Tunai Kasir ke Bank</option>
@@ -174,7 +176,7 @@ export default function CashflowClient({ userId, branchId, initialCash, initialB
                 </select>
               </div>
 
-              {(type === 'setor_kas' || type === 'tarik_kas') && (
+              {(type === 'setor_kas' || type === 'tarik_kas' || type === 'saldo_awal') && (
                 <div className="form-group">
                   <label className="label">Target Akun</label>
                   <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as any)} className="input bg-white">
