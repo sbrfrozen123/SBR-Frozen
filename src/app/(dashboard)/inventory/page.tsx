@@ -20,8 +20,8 @@ export default async function InventoryPage() {
     .eq('id', user.id)
     .single()
 
-  // Hanya Super Admin dan Admin Gudang yang boleh akses menu Inventaris penuh
-  if (profile?.role !== 'super_admin' && profile?.role !== 'admin_gudang') {
+  // Super Admin, Admin Gudang, dan Sales boleh akses Inventaris
+  if (!['super_admin', 'admin_gudang', 'sales'].includes(profile?.role || '')) {
     redirect('/')
   }
 
@@ -60,5 +60,5 @@ export default async function InventoryPage() {
     }
   })
 
-  return <InventoryClient initialProducts={products} userRole={profile.role} branchId={branchId} />
+  return <InventoryClient initialProducts={products} userRole={profile!.role} branchId={branchId} />
 }

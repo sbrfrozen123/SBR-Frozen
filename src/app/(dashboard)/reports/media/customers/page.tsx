@@ -19,7 +19,7 @@ export default async function CustomersMediaPage() {
     .eq('id', user.id)
     .single()
 
-  if (profile?.role !== 'super_admin' && profile?.role !== 'admin') redirect('/')
+  if (profile?.role !== 'super_admin') redirect('/')
 
   const { data: customers } = await supabase
     .from('customers')

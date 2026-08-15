@@ -19,8 +19,8 @@ export default async function CustomersPage() {
     .eq('id', user.id)
     .single()
 
-  // Hanya Super Admin dan Kasir yang boleh akses menu Customer
-  if (profile?.role !== 'super_admin' && profile?.role !== 'kasir') {
+  // Super Admin, Kasir, dan Sales boleh akses menu Customer
+  if (!['super_admin', 'kasir', 'sales'].includes(profile?.role || '')) {
     redirect('/')
   }
 
@@ -30,5 +30,5 @@ export default async function CustomersPage() {
     .select('*')
     .order('name', { ascending: true })
 
-  return <CustomersClient initialCustomers={customers || []} userRole={profile.role} />
+  return <CustomersClient initialCustomers={customers || []} userRole={profile!.role} />
 }

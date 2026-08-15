@@ -295,32 +295,103 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
         </div>
 
         {/* ROLE PERMISSIONS PANEL */}
-        <div className="w-full xl:w-80 bg-slate-50 p-6 flex-shrink-0 flex flex-col gap-4 border-t xl:border-t-0 border-dark-100">
-          <div className="flex items-center gap-2 mb-2">
+        <div className="w-full xl:w-96 bg-slate-50 p-5 flex-shrink-0 flex flex-col gap-4 border-t xl:border-t-0 border-dark-100 overflow-auto">
+          <div className="flex items-center gap-2 mb-1">
             <ShieldCheck className="w-5 h-5 text-primary-600" />
-            <h3 className="font-bold text-dark-900">Daftar Hak Akses</h3>
+            <h3 className="font-bold text-dark-900">Matriks Hak Akses</h3>
           </div>
-          
-          <div className="space-y-4">
-            <div className="bg-white p-3 rounded-xl border border-dark-100 shadow-sm">
-              <h4 className="font-bold text-sm text-dark-900 mb-1">Super Admin</h4>
-              <p className="text-xs text-dark-500 leading-relaxed">Hak akses penuh ke seluruh fitur sistem, termasuk menghapus transaksi, melihat laporan keuangan, dan mengelola pengguna lain.</p>
-            </div>
-            
-            <div className="bg-white p-3 rounded-xl border border-dark-100 shadow-sm">
-              <h4 className="font-bold text-sm text-dark-900 mb-1">Admin Gudang</h4>
-              <p className="text-xs text-dark-500 leading-relaxed">Fokus pada manajemen inventaris (stok barang), kategori, pemasok, dan pencatatan restock pembelian. Tidak bisa melihat laporan keuangan.</p>
-            </div>
-            
-            <div className="bg-white p-3 rounded-xl border border-dark-100 shadow-sm">
-              <h4 className="font-bold text-sm text-dark-900 mb-1">Kasir</h4>
-              <p className="text-xs text-dark-500 leading-relaxed">Akses ke aplikasi Kasir (POS) dan manajemen Shift. Bertugas melakukan transaksi penjualan langsung di toko fisik.</p>
-            </div>
-            
-            <div className="bg-white p-3 rounded-xl border border-dark-100 shadow-sm">
-              <h4 className="font-bold text-sm text-dark-900 mb-1">Sales Canvassing</h4>
-              <p className="text-xs text-dark-500 leading-relaxed">Hanya bisa membuat Sales Order (SO) dan melihat daftar pelanggan di lapangan. Tidak bisa mengubah stok langsung secara sepihak.</p>
-            </div>
+          <p className="text-xs text-dark-500 -mt-2">Panduan akses menu berdasarkan peran karyawan.</p>
+
+          <div className="bg-white rounded-xl border border-dark-100 shadow-sm overflow-hidden">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-dark-900 text-white">
+                  <th className="py-2.5 px-3 text-left font-bold">Menu / Modul</th>
+                  <th className="py-2.5 px-2 text-center font-bold whitespace-nowrap">Owner</th>
+                  <th className="py-2.5 px-2 text-center font-bold">Kasir</th>
+                  <th className="py-2.5 px-2 text-center font-bold whitespace-nowrap">Gudang</th>
+                  <th className="py-2.5 px-2 text-center font-bold">Sales</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-dark-100">
+                {[
+                  { menu: 'Dashboard', owner: true, kasir: true, gudang: true, sales: true },
+                  { menu: '─── POS / Kasir', owner: true, kasir: true, gudang: false, sales: true },
+                  { menu: '─── Transaksi', owner: true, kasir: true, gudang: false, sales: false },
+                  { menu: '─── Pelanggan', owner: true, kasir: true, gudang: false, sales: true },
+                  { menu: '─── Piutang', owner: true, kasir: true, gudang: false, sales: false },
+                  { menu: '─── Shift Kasir', owner: true, kasir: true, gudang: false, sales: false },
+                  { menu: 'Persediaan (Stok)', owner: true, kasir: false, gudang: true, sales: true, note: 'Sales: view only' },
+                  { menu: '─── Kategori', owner: true, kasir: false, gudang: true, sales: false },
+                  { menu: '─── Satuan', owner: true, kasir: false, gudang: true, sales: false },
+                  { menu: 'Pembelian', owner: true, kasir: false, gudang: true, sales: false },
+                  { menu: '─── Pemasok', owner: true, kasir: false, gudang: true, sales: false },
+                  { menu: 'Pengeluaran', owner: true, kasir: true, gudang: false, sales: false },
+                  { menu: 'Arus Kas', owner: true, kasir: false, gudang: false, sales: false },
+                  { menu: 'Laporan', owner: true, kasir: false, gudang: false, sales: false },
+                  { menu: 'Pengaturan', owner: true, kasir: false, gudang: false, sales: false },
+                ].map((row, idx) => (
+                  <tr key={idx} className={cn(
+                    'hover:bg-slate-50 transition-colors',
+                    row.menu.startsWith('─') ? 'bg-slate-50/50' : 'font-semibold'
+                  )}>
+                    <td className={cn(
+                      'py-2 px-3 text-dark-700',
+                      row.menu.startsWith('─') ? 'pl-4 text-dark-500 font-normal' : 'font-medium'
+                    )}>
+                      {row.menu.replace('─── ', '')}
+                      {row.note && (
+                        <span className="ml-1 text-[9px] text-orange-500 font-semibold">({row.note})</span>
+                      )}
+                    </td>
+                    {[row.owner, row.kasir, row.gudang, row.sales].map((val, i) => (
+                      <td key={i} className="py-2 px-2 text-center">
+                        {val ? (
+                          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-success-100 text-success-600">
+                            <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none">
+                              <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-dark-100 text-dark-300">
+                            <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none">
+                              <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                            </svg>
+                          </span>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Legend */}
+          <div className="flex gap-4 text-xs text-dark-500">
+            <span className="flex items-center gap-1.5">
+              <span className="w-4 h-4 rounded-full bg-success-100 text-success-600 flex items-center justify-center text-[10px]">✓</span>
+              Punya akses
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-4 h-4 rounded-full bg-dark-100 text-dark-300 flex items-center justify-center text-[10px]">✕</span>
+              Tidak bisa akses
+            </span>
+          </div>
+
+          {/* Role Badge Info */}
+          <div className="space-y-2">
+            {[
+              { role: 'super_admin', label: 'Owner / SPV', color: 'bg-purple-100 text-purple-700 border-purple-200', desc: 'Akses penuh ke seluruh menu & laporan' },
+              { role: 'kasir', label: 'Kasir', color: 'bg-blue-100 text-blue-700 border-blue-200', desc: 'POS, Transaksi, Shift, & Pengeluaran' },
+              { role: 'admin_gudang', label: 'Admin Gudang', color: 'bg-green-100 text-green-700 border-green-200', desc: 'Persediaan & Pembelian' },
+              { role: 'sales', label: 'Sales', color: 'bg-orange-100 text-orange-700 border-orange-200', desc: 'POS, Pelanggan & lihat Stok' },
+            ].map(r => (
+              <div key={r.role} className={cn('flex items-start gap-2 p-2.5 rounded-lg border text-xs', r.color)}>
+                <span className="font-bold mt-0.5 whitespace-nowrap">{r.label}</span>
+                <span className="opacity-80">{r.desc}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>

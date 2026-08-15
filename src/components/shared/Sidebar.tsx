@@ -39,7 +39,7 @@ export const modules: ModuleGroup[] = [
     label: 'Dashboard',
     icon: LayoutDashboard,
     color: 'text-indigo-500',
-    roles: ['super_admin'],
+    roles: ['super_admin', 'kasir', 'admin_gudang', 'sales'],
     href: '/'
   },
   {
@@ -72,9 +72,9 @@ export const modules: ModuleGroup[] = [
     label: 'Persediaan',
     icon: Package,
     color: 'text-emerald-500',
-    roles: ['super_admin', 'admin_gudang'],
+    roles: ['super_admin', 'admin_gudang', 'sales'],
     items: [
-      { href: '/inventory', icon: Package, label: 'Barang & Stok', color: 'text-emerald-500', roles: ['super_admin', 'admin_gudang'] },
+      { href: '/inventory', icon: Package, label: 'Barang & Stok', color: 'text-emerald-500', roles: ['super_admin', 'admin_gudang', 'sales'] },
       { href: '/categories', icon: Tags, label: 'Kategori Barang', color: 'text-fuchsia-500', roles: ['super_admin', 'admin_gudang'] },
       { href: '/units', icon: Scale, label: 'Satuan Barang', color: 'text-sky-500', roles: ['super_admin', 'admin_gudang'] },
     ]
@@ -84,10 +84,10 @@ export const modules: ModuleGroup[] = [
     label: 'Kas & Bank',
     icon: Receipt,
     color: 'text-amber-500',
-    roles: ['super_admin', 'kasir', 'admin_gudang'],
+    roles: ['super_admin', 'kasir'],
     items: [
       { href: '/cashflow', icon: Landmark, label: 'Arus Kas (Cashflow)', color: 'text-emerald-500', roles: ['super_admin'] },
-      { href: '/expenses', icon: Receipt, label: 'Pengeluaran', color: 'text-amber-500', roles: ['super_admin', 'kasir', 'admin_gudang'] },
+      { href: '/expenses', icon: Receipt, label: 'Pengeluaran', color: 'text-amber-500', roles: ['super_admin', 'kasir'] },
     ]
   },
   {

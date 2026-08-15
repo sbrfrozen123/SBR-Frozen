@@ -24,7 +24,7 @@ export default async function ShiftsMediaPage({
     .eq('id', user.id)
     .single()
 
-  if (profile?.role !== 'super_admin' && profile?.role !== 'admin') redirect('/')
+  if (profile?.role !== 'super_admin') redirect('/')
 
   const userBranchId = await getBranchContext(supabase, user.id)
 
