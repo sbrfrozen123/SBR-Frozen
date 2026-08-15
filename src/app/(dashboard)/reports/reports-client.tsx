@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { 
   BarChart3, 
   TrendingUp, 
+  TrendingDown,
   Package, 
   Receipt,
   FileText,
@@ -79,6 +80,12 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
     {
       title: 'Pembelian',
       reports: [
+        {
+          title: 'Pembelian per Pemasok',
+          description: 'Rekapitulasi total pembelian dikelompokkan per pemasok, lengkap dengan drill-down detail faktur.',
+          icon: TrendingDown,
+          href: '/reports/purchases/per-supplier',
+        },
         {
           title: 'Rincian Pembelian Barang',
           description: 'Laporan yang berisi rincian faktur pembelian ke pemasok.',
