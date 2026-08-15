@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { 
-  Search, Filter, ShoppingCart, User, Plus, Minus, Trash2, 
+import {
+  Search, Filter, ShoppingCart, User, Plus, Minus, Trash2,
   ChevronRight, CreditCard, Banknote, QrCode, Clock, CheckCircle, Printer, MessageCircle, FileText
 } from 'lucide-react'
 import { formatRupiah } from '@/lib/utils/currency'
@@ -37,14 +37,14 @@ export default function POSClient({ products, customers, settings, userRole, use
   const [categoryFilter, setCategoryFilter] = useState('Semua')
   const [cart, setCart] = useState<CartItem[]>([])
   const [selectedCustomer, setSelectedCustomer] = useState<Partial<Customer> | null>(null)
-  
+
   // Shift State
   const [activeShift, setActiveShift] = useState<CashierShift | null>(null)
   const [isShiftLoaded, setIsShiftLoaded] = useState(false)
-  
+
   // Checkout & Receipt States
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
-  const [paymentMethod, setPaymentMethod] = useState<'tunai'|'transfer'|'qris'|'tempo'>('tunai')
+  const [paymentMethod, setPaymentMethod] = useState<'tunai' | 'transfer' | 'qris' | 'tempo'>('tunai')
   const [amountPaid, setAmountPaid] = useState<number | ''>('')
   const [loading, setLoading] = useState(false)
   const [completedTxn, setCompletedTxn] = useState<any>(null)
@@ -61,7 +61,7 @@ export default function POSClient({ products, customers, settings, userRole, use
         .select('*, transaction_items(*)')
         .eq('id', editTxId)
         .single()
-      
+
       if (tx && !error) {
         setEditInvoiceNumber(tx.invoice_number)
         if (tx.customer_id) {
@@ -70,7 +70,7 @@ export default function POSClient({ products, customers, settings, userRole, use
         }
         setPaymentMethod(tx.payment_method)
         setAmountPaid(tx.amount_paid)
-        
+
         const loadedCart: CartItem[] = (tx.transaction_items || []).map((ti: any) => {
           const product = products.find(p => p.id === ti.product_id)
           if (!product) return null
@@ -80,7 +80,7 @@ export default function POSClient({ products, customers, settings, userRole, use
             unit_price: ti.unit_price
           }
         }).filter(Boolean) as CartItem[]
-        
+
         setCart(loadedCart)
         toast.success(`Mode Edit: ${tx.invoice_number}`)
       }
@@ -107,12 +107,12 @@ export default function POSClient({ products, customers, settings, userRole, use
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
       const searchTerms = search.toLowerCase().split(' ').filter(term => term.trim() !== '')
-      
+
       // Match all terms (AND logic) for multi-word search
-      const matchesSearch = searchTerms.length === 0 || searchTerms.every(term => 
+      const matchesSearch = searchTerms.length === 0 || searchTerms.every(term =>
         p.name.toLowerCase().includes(term) || p.sku.toLowerCase().includes(term)
       )
-      
+
       const matchesCategory = categoryFilter === 'Semua' || (p.category || 'Umum') === categoryFilter
       return matchesSearch && matchesCategory
     })
@@ -140,7 +140,7 @@ export default function POSClient({ products, customers, settings, userRole, use
         .eq('user_id', userId)
         .eq('status', 'open')
         .single()
-      
+
       setActiveShift(data || null)
       setIsShiftLoaded(true)
     }
@@ -160,7 +160,7 @@ export default function POSClient({ products, customers, settings, userRole, use
           toast.error('Melebihi stok yang tersedia!')
           return prev
         }
-        return prev.map(item => 
+        return prev.map(item =>
           item.product.id === product.id ? { ...item, qty: item.qty + 1 } : item
         )
       }
@@ -173,7 +173,7 @@ export default function POSClient({ products, customers, settings, userRole, use
       if (item.product.id === productId) {
         const currentQty = typeof item.qty === 'number' ? item.qty : 1
         const newQty = currentQty + delta
-        if (newQty < 1) return item 
+        if (newQty < 1) return item
         if (newQty > item.product.stock_quantity) {
           toast.error('Melebihi stok yang tersedia!')
           return item
@@ -270,7 +270,7 @@ export default function POSClient({ products, customers, settings, userRole, use
 
     setLoading(true)
     try {
-      const dateStr = new Date().toISOString().slice(2,10).replace(/-/g, '')
+      const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, '')
       const randomCode = Math.floor(1000 + Math.random() * 9000)
       const invoiceNumber = `INV-${dateStr}-${randomCode}`
       const orderStatus = (userRole === 'sales' || isSaveAsOrder) ? 'pending' : 'completed'
@@ -283,16 +283,16 @@ export default function POSClient({ products, customers, settings, userRole, use
         if (terms === 'NET 60') return 60
         return 0
       }
-      
+
       const dueDays = selectedCustomer?.payment_terms ? getDueDays(selectedCustomer.payment_terms) : 0
-      
+
       let finalInvoiceNumber = invoiceNumber;
       let txnId = "";
       let txnCreatedAt = new Date().toISOString();
 
       if (editTxId) {
         finalInvoiceNumber = editInvoiceNumber || invoiceNumber;
-        
+
         const { error: txnError } = await supabase
           .from('transactions')
           .update({
@@ -303,14 +303,14 @@ export default function POSClient({ products, customers, settings, userRole, use
             payment_method: isSaveAsOrder ? 'tempo' : paymentMethod,
             payment_status: isSaveAsOrder ? 'piutang' : (paymentMethod === 'tempo' ? 'piutang' : 'lunas'),
             amount_paid: isSaveAsOrder ? 0 : (paymentMethod === 'tempo' ? paid : total),
-            due_date: isSaveAsOrder ? null : (paymentMethod === 'tempo' ? new Date(Date.now() + dueDays*24*60*60*1000).toISOString() : null),
+            due_date: isSaveAsOrder ? null : (paymentMethod === 'tempo' ? new Date(Date.now() + dueDays * 24 * 60 * 60 * 1000).toISOString() : null),
             order_status: orderStatus,
           })
           .eq('id', editTxId)
 
         if (txnError) throw txnError
         txnId = editTxId;
-        
+
         const { error: delError } = await supabase.from('transaction_items').delete().eq('transaction_id', editTxId)
         if (delError) throw delError
 
@@ -327,7 +327,7 @@ export default function POSClient({ products, customers, settings, userRole, use
             payment_method: isSaveAsOrder ? 'tempo' : paymentMethod,
             payment_status: isSaveAsOrder ? 'piutang' : (paymentMethod === 'tempo' ? 'piutang' : 'lunas'),
             amount_paid: isSaveAsOrder ? 0 : (paymentMethod === 'tempo' ? paid : total),
-            due_date: isSaveAsOrder ? null : (paymentMethod === 'tempo' ? new Date(Date.now() + dueDays*24*60*60*1000).toISOString() : null),
+            due_date: isSaveAsOrder ? null : (paymentMethod === 'tempo' ? new Date(Date.now() + dueDays * 24 * 60 * 60 * 1000).toISOString() : null),
             branch_id: branchId,
             order_status: orderStatus
           }])
@@ -374,7 +374,7 @@ export default function POSClient({ products, customers, settings, userRole, use
       } else {
         toast.success('Transaksi berhasil diproses!')
       }
-      
+
       // Setup Receipt Data instead of closing
       setCompletedTxn({
         id: txnId,
@@ -386,7 +386,7 @@ export default function POSClient({ products, customers, settings, userRole, use
         taxAmount,
         total,
         paymentMethod,
-        amountPaid: paymentMethod === 'tempo' ? paid : paid, 
+        amountPaid: paymentMethod === 'tempo' ? paid : paid,
         change: paymentMethod === 'tunai' ? paid - total : 0,
         debt: paymentMethod === 'tempo' ? total - paid : 0
       })
@@ -416,17 +416,17 @@ export default function POSClient({ products, customers, settings, userRole, use
   const sendWhatsAppReceipt = () => {
     if (!completedTxn) return
     const { invoice_number, items, total, customer, paymentMethod } = completedTxn
-    
+
     let text = `*${settings?.store_name || 'SBR Frozen'}*\n`
     text += `Faktur Penjualan\n`
     text += `No: ${invoice_number}\n`
     text += `--------------------------------\n`
-    
+
     items.forEach((item: any) => {
       text += `${item.product.name}\n`
       text += `${item.qty} x ${formatRupiah(item.unit_price)} = ${formatRupiah(item.qty * item.unit_price)}\n`
     })
-    
+
     text += `--------------------------------\n`
     text += `Total: *${formatRupiah(total)}*\n`
     text += `Metode: ${paymentMethod.toUpperCase()}\n\n`
@@ -443,20 +443,20 @@ export default function POSClient({ products, customers, settings, userRole, use
       <div className="flex-1 flex flex-col min-w-0 border-r border-dark-100 no-print">
         {/* Header & Filter Area */}
         <div className="p-4 bg-white border-b border-dark-100 flex-shrink-0 flex flex-col gap-3 z-10 shadow-sm relative">
-          
+
           {/* Search Bar - Larger and more prominent */}
           <div className="relative w-full">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-400" />
-            <input 
+            <input
               ref={searchInputRef}
-              type="text" 
-              placeholder="Cari produk (Tekan F2)..." 
+              type="text"
+              placeholder="Cari produk (Tekan F2)..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-dark-200 text-lg rounded-2xl focus:bg-white focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all font-medium text-dark-900 placeholder:text-dark-400 shadow-inner"
             />
           </div>
-          
+
           {/* Category Dropdown */}
           <div className="flex items-center gap-2 pb-1 sm:pb-0 w-full relative z-20">
             <Filter className="w-5 h-5 text-dark-400 flex-shrink-0 hidden sm:block" />
@@ -473,9 +473,9 @@ export default function POSClient({ products, customers, settings, userRole, use
                     <p className="text-xs font-bold text-dark-400 uppercase tracking-wide mb-2">Pilih Kategori</p>
                     <div className="relative">
                       <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-400" />
-                      <input 
-                        type="text" 
-                        placeholder="Cari kategori..." 
+                      <input
+                        type="text"
+                        placeholder="Cari kategori..."
                         value={categorySearch}
                         onChange={(e) => setCategorySearch(e.target.value)}
                         onKeyDown={(e) => e.stopPropagation()}
@@ -485,7 +485,7 @@ export default function POSClient({ products, customers, settings, userRole, use
                   </div>
                   <div className="overflow-y-auto flex-1 p-1 hide-scrollbar">
                     {categories.filter(cat => cat.toLowerCase().includes(categorySearch.toLowerCase())).map(cat => (
-                      <DropdownMenu.Item 
+                      <DropdownMenu.Item
                         key={cat}
                         onClick={() => {
                           setCategoryFilter(cat)
@@ -521,58 +521,58 @@ export default function POSClient({ products, customers, settings, userRole, use
               <p className="text-sm text-dark-400 mt-1">Coba kata kunci lain</p>
             </div>
           ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-            {filteredProducts.map(product => {
-              const price = getProductPrice(product, selectedCustomer)
-              const isOutOfStock = product.stock_quantity <= 0
-              const isLowStock = product.stock_quantity > 0 && product.stock_quantity <= 5
-              
-              return (
-                <div 
-                  key={product.id}
-                  onClick={() => !isOutOfStock && addToCart(product)}
-                  className={cn(
-                    'relative flex flex-col h-full bg-white rounded-2xl border border-dark-100 p-3.5 cursor-pointer select-none',
-                    'transition-all duration-150 shadow-sm',
-                    isOutOfStock 
-                      ? 'opacity-50 cursor-not-allowed grayscale' 
-                      : 'hover:shadow-md hover:-translate-y-0.5 hover:border-primary-200 active:scale-95 active:shadow-sm'
-                  )}
-                >
-                  <div className="flex-1 flex flex-col justify-between gap-2">
-                    <div>
-                      <p className="text-[10px] text-dark-400 font-mono mb-1 truncate">{product.sku}</p>
-                      <h3 className="font-semibold text-dark-900 text-sm leading-tight line-clamp-2">{product.name}</h3>
-                    </div>
-                    <div className="mt-2">
-                      <p className="text-primary-600 font-bold text-money text-sm">{formatRupiah(price)}</p>
-                      <div className="flex items-center gap-1 mt-1">
-                        <div className={cn('w-1.5 h-1.5 rounded-full shrink-0', isLowStock ? 'bg-warning' : isOutOfStock ? 'bg-danger' : 'bg-success')} />
-                        <p className={cn('text-[11px] font-medium', isLowStock ? 'text-warning-700' : isOutOfStock ? 'text-danger' : 'text-dark-500')}>
-                          {isOutOfStock ? 'Habis' : `${product.stock_quantity} ${product.unit}`}
-                        </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+              {filteredProducts.map(product => {
+                const price = getProductPrice(product, selectedCustomer)
+                const isOutOfStock = product.stock_quantity <= 0
+                const isLowStock = product.stock_quantity > 0 && product.stock_quantity <= 5
+
+                return (
+                  <div
+                    key={product.id}
+                    onClick={() => !isOutOfStock && addToCart(product)}
+                    className={cn(
+                      'relative flex flex-col h-full bg-white rounded-2xl border border-dark-100 p-3.5 cursor-pointer select-none',
+                      'transition-all duration-150 shadow-sm',
+                      isOutOfStock
+                        ? 'opacity-50 cursor-not-allowed grayscale'
+                        : 'hover:shadow-md hover:-translate-y-0.5 hover:border-primary-200 active:scale-95 active:shadow-sm'
+                    )}
+                  >
+                    <div className="flex-1 flex flex-col justify-between gap-2">
+                      <div>
+                        <p className="text-[10px] text-dark-400 font-mono mb-1 truncate">{product.sku}</p>
+                        <h3 className="font-semibold text-dark-900 text-sm leading-tight line-clamp-2">{product.name}</h3>
+                      </div>
+                      <div className="mt-2">
+                        <p className="text-primary-600 font-bold text-money text-sm">{formatRupiah(price)}</p>
+                        <div className="flex items-center gap-1 mt-1">
+                          <div className={cn('w-1.5 h-1.5 rounded-full shrink-0', isLowStock ? 'bg-warning' : isOutOfStock ? 'bg-danger' : 'bg-success')} />
+                          <p className={cn('text-[11px] font-medium', isLowStock ? 'text-warning-700' : isOutOfStock ? 'text-danger' : 'text-dark-500')}>
+                            {isOutOfStock ? 'Habis' : `${product.stock_quantity} ${product.unit}`}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )
-            })}
-          </div>
+                )
+              })}
+            </div>
           )}
         </div>
       </div>
 
       {/* RIGHT PANEL: CART */}
       <div className="w-full md:w-[400px] xl:w-[450px] bg-white flex flex-col flex-shrink-0 shadow-[-4px_0_24px_rgba(0,0,0,0.02)] z-20 no-print">
-        
+
         {/* SHIFT MANAGEMENT BAR */}
         {isShiftLoaded && (
           <div className="p-3 border-b border-dark-100">
-            <ShiftManagement 
-              userId={userId} 
+            <ShiftManagement
+              userId={userId}
               branchId={branchId}
-              activeShift={activeShift} 
-              onShiftChange={setActiveShift} 
+              activeShift={activeShift}
+              onShiftChange={setActiveShift}
             />
           </div>
         )}
@@ -606,9 +606,9 @@ export default function POSClient({ products, customers, settings, userRole, use
                   <p className="text-xs font-bold text-dark-400 uppercase tracking-wide mb-2">Pilih Pelanggan</p>
                   <div className="relative">
                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-400" />
-                    <input 
-                      type="text" 
-                      placeholder="Cari nama pelanggan..." 
+                    <input
+                      type="text"
+                      placeholder="Cari nama pelanggan..."
                       value={customerSearch}
                       onChange={(e) => setCustomerSearch(e.target.value)}
                       onKeyDown={(e) => e.stopPropagation()}
@@ -618,7 +618,7 @@ export default function POSClient({ products, customers, settings, userRole, use
                   </div>
                 </div>
                 <div className="overflow-y-auto flex-1 p-1">
-                  <DropdownMenu.Item 
+                  <DropdownMenu.Item
                     onClick={() => {
                       setSelectedCustomer(null)
                       setCustomerSearch('')
@@ -629,7 +629,7 @@ export default function POSClient({ products, customers, settings, userRole, use
                     <span className="text-xs text-dark-400">Harga Jual Default</span>
                   </DropdownMenu.Item>
                   {customers.filter(c => c.name?.toLowerCase().includes(customerSearch.toLowerCase())).map(c => (
-                    <DropdownMenu.Item 
+                    <DropdownMenu.Item
                       key={c.id}
                       onClick={() => {
                         setSelectedCustomer(c)
@@ -663,7 +663,7 @@ export default function POSClient({ products, customers, settings, userRole, use
                     {userRole === 'super_admin' || userRole === 'kasir' ? (
                       <div className="flex items-center gap-1 mt-1">
                         <span className="text-xs text-dark-400 font-medium">Rp</span>
-                        <input 
+                        <input
                           type="text"
                           value={item.unit_price as any === '' ? '' : item.unit_price.toLocaleString('id-ID')}
                           onChange={(e) => handlePriceChange(item.product.id, e.target.value)}
@@ -675,17 +675,17 @@ export default function POSClient({ products, customers, settings, userRole, use
                       <p className="text-primary-600 font-bold text-money text-sm mt-0.5">{formatRupiah(item.unit_price)}</p>
                     )}
                   </div>
-                  
+
                   <div className="flex flex-col items-end gap-2">
                     <div className="flex items-center gap-1 bg-dark-50 rounded-lg p-0.5">
-                      <button 
+                      <button
                         onClick={() => updateQty(item.product.id, -1)}
                         className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-white hover:shadow-sm text-dark-600 transition-all"
                       >
                         <Minus className="w-3.5 h-3.5" />
                       </button>
                       {userRole === 'super_admin' || userRole === 'kasir' ? (
-                        <input 
+                        <input
                           type="number"
                           value={item.qty}
                           onChange={(e) => handleQtyChange(item.product.id, e.target.value)}
@@ -695,14 +695,14 @@ export default function POSClient({ products, customers, settings, userRole, use
                       ) : (
                         <span className="w-8 text-center text-sm font-semibold">{item.qty}</span>
                       )}
-                      <button 
+                      <button
                         onClick={() => updateQty(item.product.id, 1)}
                         className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-white hover:shadow-sm text-dark-600 transition-all"
                       >
                         <Plus className="w-3.5 h-3.5" />
                       </button>
                     </div>
-                    <button 
+                    <button
                       onClick={() => removeFromCart(item.product.id)}
                       className="text-xs text-danger/70 hover:text-danger opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1"
                     >
@@ -732,8 +732,8 @@ export default function POSClient({ products, customers, settings, userRole, use
               <span className="text-2xl font-bold text-primary-600 text-money">{formatRupiah(total)}</span>
             </div>
           </div>
-          
-          <button 
+
+          <button
             onClick={() => {
               setIsCheckoutOpen(true)
               setCompletedTxn(null)
@@ -767,15 +767,16 @@ export default function POSClient({ products, customers, settings, userRole, use
 
                 <div className="p-6 flex flex-col md:flex-row gap-6">
                   {/* Digital Receipt Preview */}
-                  <style dangerouslySetInnerHTML={{__html: `
+                  <style dangerouslySetInnerHTML={{
+                    __html: `
                     @media print {
                       body * { visibility: hidden; }
                       #printable-receipt, #printable-receipt * { visibility: visible; }
                       #printable-receipt { position: absolute; left: 0; top: 0; margin: 0; padding: 0; width: 100%; }
                     }
                   `}} />
-                  <div 
-                    id="printable-receipt" 
+                  <div
+                    id="printable-receipt"
                     className="flex-1 bg-white border border-dark-100 p-6 rounded-xl font-mono text-sm max-w-sm mx-auto shadow-sm"
                     style={{ color: '#000' }}
                   >
@@ -784,7 +785,7 @@ export default function POSClient({ products, customers, settings, userRole, use
                       {settings?.store_address && <p className="text-xs mt-1">{settings.store_address}</p>}
                       {settings?.store_phone && <p className="text-xs">{settings.store_phone}</p>}
                     </div>
-                    
+
                     <div className="border-t border-b border-dashed border-dark-200 py-2 mb-3 text-xs">
                       <div className="flex justify-between mb-1">
                         <span>No:</span>
@@ -842,14 +843,14 @@ export default function POSClient({ products, customers, settings, userRole, use
 
                   {/* Actions */}
                   <div className="flex flex-col gap-3 w-full md:w-48 flex-shrink-0 no-print">
-                    <a 
+                    <a
                       href={`/print/invoice/${completedTxn.id}?format=thermal`}
                       target="_blank"
                       className="btn-md bg-dark-900 text-white hover:bg-dark-800 w-full justify-start border-none"
                     >
                       <Printer className="w-4 h-4" /> Print Thermal
                     </a>
-                    <a 
+                    <a
                       href={`/print/invoice/${completedTxn.id}?format=a4`}
                       target="_blank"
                       className="btn-md bg-white border border-dark-200 text-dark-700 hover:bg-dark-50 w-full justify-start"
@@ -875,7 +876,7 @@ export default function POSClient({ products, customers, settings, userRole, use
                     <p className="text-sm text-dark-500 mt-0.5">Total Tagihan: <span className="font-bold text-primary-600">{formatRupiah(total)}</span></p>
                   </div>
                   <button onClick={() => setIsCheckoutOpen(false)} className="text-dark-400 hover:text-dark-600">
-                    <Trash2 className="w-5 h-5 rotate-45" /> 
+                    <Trash2 className="w-5 h-5 rotate-45" />
                   </button>
                 </div>
 
@@ -894,7 +895,7 @@ export default function POSClient({ products, customers, settings, userRole, use
                           key={method.id}
                           onClick={() => {
                             setPaymentMethod(method.id as any)
-                            if (method.id === 'tunai') setAmountPaid(total) 
+                            if (method.id === 'tunai') setAmountPaid(total)
                             else setAmountPaid('')
                           }}
                           className={cn(
@@ -916,11 +917,11 @@ export default function POSClient({ products, customers, settings, userRole, use
                       </label>
                       <div className="relative">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-dark-400 font-medium text-xl">Rp</span>
-                        <input 
-                          type="number" 
+                        <input
+                          type="number"
                           value={amountPaid}
                           onChange={(e) => setAmountPaid(e.target.value ? Number(e.target.value) : '')}
-                          className="input pl-12 h-14 text-xl font-bold text-dark-900" 
+                          className="input pl-12 h-14 text-xl font-bold text-dark-900"
                           placeholder="0"
                           autoFocus
                         />
@@ -942,9 +943,9 @@ export default function POSClient({ products, customers, settings, userRole, use
                       )}
                     </div>
                   )}
-                  
+
                   {userRole === 'sales' ? (
-                    <button 
+                    <button
                       onClick={() => handleCheckout(true)}
                       disabled={loading}
                       className="w-full btn-lg btn-primary h-14 text-lg"
@@ -958,14 +959,14 @@ export default function POSClient({ products, customers, settings, userRole, use
                     </button>
                   ) : (
                     <div className="flex gap-2">
-                      <button 
+                      <button
                         onClick={() => handleCheckout(true)}
                         disabled={loading}
                         className="w-1/2 btn-lg bg-white border border-primary text-primary hover:bg-primary-50 h-14 text-base font-bold rounded-xl"
                       >
                         {loading ? 'Memproses...' : 'Simpan Sbg Pesanan'}
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleCheckout(false)}
                         disabled={loading}
                         className="w-1/2 btn-lg btn-primary h-14 text-base font-bold rounded-xl px-2"

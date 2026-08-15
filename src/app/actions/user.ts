@@ -66,3 +66,36 @@ export async function createTeamUser(data: {
     return { success: false, error: err.message || 'Terjadi kesalahan sistem' }
   }
 }
+
+export async function updateTeamUserPassword(userId: string, newPassword: string) {
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY 
+
+    if (!supabaseUrl || !serviceRoleKey) {
+      return { 
+        success: false, 
+        error: 'Sistem belum dikonfigurasi dengan Supabase Service Role Key.' 
+      }
+    }
+
+    const adminAuthClient = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
+
+    const { error: authError } = await adminAuthClient.auth.admin.updateUserById(userId, {
+      password: newPassword
+    })
+
+    if (authError) {
+      return { success: false, error: authError.message }
+    }
+
+    return { success: true }
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Terjadi kesalahan sistem' }
+  }
+}

@@ -3,9 +3,9 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'react-hot-toast'
-import { Users, Plus, X, Loader2, ShieldCheck, Info } from 'lucide-react'
+import { Users, Plus, X, Loader2, ShieldCheck, Info, Pencil } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
-import { createTeamUser } from '@/app/actions/user'
+import { createTeamUser, updateTeamUserPassword } from '@/app/actions/user'
 
 interface Profile {
   id: string
@@ -36,6 +36,29 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
     role: 'kasir' as 'super_admin' | 'admin_gudang' | 'kasir' | 'sales',
     branch_id: initialBranches[0]?.id || ''
   })
+  
+  // Edit State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [editingUser, setEditingUser] = useState<Profile | null>(null)
+  const [editFormData, setEditFormData] = useState({
+    fullName: '',
+    role: 'kasir' as 'super_admin' | 'admin_gudang' | 'kasir' | 'sales',
+    branch_id: '',
+    status: 'active' as 'active' | 'inactive',
+    password: ''
+  })
+
+  const openEditModal = (user: Profile) => {
+    setEditingUser(user)
+    setEditFormData({
+      fullName: user.full_name,
+      role: user.role,
+      branch_id: user.branch_id || '',
+      status: user.status,
+      password: ''
+    })
+    setIsEditModalOpen(true)
+  }
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     setLoadingId(userId)
@@ -118,6 +141,45 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
     }
   }
 
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingUser) return
+    setIsSubmitting(true)
+    
+    try {
+      // Update profile
+      const updates = {
+        full_name: editFormData.fullName,
+        role: editFormData.role,
+        branch_id: editFormData.role === 'super_admin' ? null : (editFormData.branch_id || null),
+        status: editFormData.status
+      }
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', editingUser.id)
+
+      if (error) throw error
+
+      // Update password if provided
+      if (editFormData.password.trim() !== '') {
+        const passResult = await updateTeamUserPassword(editingUser.id, editFormData.password)
+        if (!passResult.success) {
+          toast.error(passResult.error || 'Gagal mengubah password, tapi profil berhasil diperbarui')
+        }
+      }
+
+      toast.success('Pengguna berhasil diperbarui!')
+      setIsEditModalOpen(false)
+      window.location.reload()
+    } catch (error: any) {
+      toast.error(error.message || 'Gagal memperbarui pengguna')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <div className="bg-white rounded-2xl border border-dark-100 shadow-sm overflow-hidden animate-fade-in flex flex-col h-full relative">
       <div className="p-6 border-b border-dark-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white">
@@ -150,6 +212,7 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
                 <th>Role</th>
                 <th>Cabang</th>
                 <th>Status</th>
+                <th className="text-center w-24">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -211,11 +274,20 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
                       <option value="inactive">Nonaktif</option>
                     </select>
                   </td>
+                  <td className="text-center">
+                    <button
+                      onClick={() => openEditModal(user)}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-dark-400 hover:text-primary-600 hover:bg-primary-50 transition-colors mx-auto"
+                      title="Edit Pengguna"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                  </td>
                 </tr>
               ))}
               {users.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="text-center py-8 text-dark-400">Belum ada karyawan yang terdaftar.</td>
+                  <td colSpan={6} className="text-center py-8 text-dark-400">Belum ada karyawan yang terdaftar.</td>
                 </tr>
               )}
             </tbody>
@@ -348,6 +420,109 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
                   className="btn btn-primary btn-md min-w-[120px]"
                 >
                   {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Buat Akun'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL EDIT KARYAWAN */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-dark-900/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-slide-up">
+            <div className="flex items-center justify-between p-5 border-b border-dark-100">
+              <h3 className="font-bold text-lg text-dark-900">Edit Karyawan</h3>
+              <button 
+                onClick={() => setIsEditModalOpen(false)}
+                className="btn text-dark-400 hover:text-dark-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdateUser} className="p-5 space-y-4">
+              <div className="form-group">
+                <label className="label">Nama Lengkap</label>
+                <input 
+                  type="text" 
+                  required
+                  value={editFormData.fullName}
+                  onChange={e => setEditFormData({...editFormData, fullName: e.target.value})}
+                  className="input" 
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="label">Password Baru (Opsional)</label>
+                <input 
+                  type="text" 
+                  minLength={6}
+                  value={editFormData.password}
+                  onChange={e => setEditFormData({...editFormData, password: e.target.value})}
+                  className="input" 
+                  placeholder="Kosongkan jika tidak ingin mengubah password"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="form-group">
+                  <label className="label">Peran Karyawan</label>
+                  <select 
+                    value={editFormData.role}
+                    onChange={e => setEditFormData({...editFormData, role: e.target.value as any})}
+                    className="input"
+                  >
+                    <option value="kasir">Kasir</option>
+                    <option value="sales">Sales</option>
+                    <option value="admin_gudang">Admin Gudang</option>
+                    <option value="super_admin">Super Admin</option>
+                  </select>
+                </div>
+                
+                <div className="form-group">
+                  <label className="label">Status Akses</label>
+                  <select 
+                    value={editFormData.status}
+                    onChange={e => setEditFormData({...editFormData, status: e.target.value as any})}
+                    className="input"
+                  >
+                    <option value="active">Aktif</option>
+                    <option value="inactive">Nonaktif</option>
+                  </select>
+                </div>
+              </div>
+
+              {editFormData.role !== 'super_admin' && (
+                <div className="form-group">
+                  <label className="label">Tugaskan ke Cabang</label>
+                  <select 
+                    value={editFormData.branch_id}
+                    onChange={e => setEditFormData({...editFormData, branch_id: e.target.value})}
+                    className="input"
+                  >
+                    <option value="">Pilih Cabang...</option>
+                    {initialBranches.map(b => (
+                      <option key={b.id} value={b.id}>{b.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="pt-4 border-t border-dark-100 flex justify-end gap-3">
+                <button 
+                  type="button" 
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="btn btn-outline btn-md"
+                >
+                  Batal
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="btn btn-primary btn-md min-w-[120px]"
+                >
+                  {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Simpan'}
                 </button>
               </div>
             </form>
