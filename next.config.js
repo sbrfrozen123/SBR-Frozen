@@ -11,7 +11,6 @@ const withPWA = require('next-pwa')({
 })
 
 const nextConfig = {
-  output: 'standalone',
   images: {
     remotePatterns: [
       {
@@ -24,7 +23,7 @@ const nextConfig = {
   },
   experimental: {
     serverActions: {
-      allowedOrigins: ['localhost:3000'],
+      allowedOrigins: ['localhost:3000', '*.vercel.app'],
     },
   },
 }
