@@ -12,6 +12,21 @@ export const metadata: Metadata = {
     template: '%s | SBR Frozen',
     default: 'Dashboard | SBR Frozen',
   },
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'SBR POS',
+    startupImage: '/icon-512.jpg',
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  icons: {
+    icon: '/icon-192.jpg',
+    apple: '/icon-192.jpg',
+    shortcut: '/icon-192.jpg',
+  },
 }
 
 export default async function DashboardLayout({
