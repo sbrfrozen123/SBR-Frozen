@@ -89,6 +89,7 @@ export function BranchManagementTable({ initialBranches }: BranchManagementTable
   }
 
   return (
+    <>
     <div className="bg-white rounded-2xl border border-dark-100 shadow-sm overflow-hidden animate-fade-in">
       <div className="p-6 border-b border-dark-100 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -112,37 +113,44 @@ export function BranchManagementTable({ initialBranches }: BranchManagementTable
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-dark-50/50 border-b border-dark-100">
-              <th className="py-4 px-6 text-xs font-bold text-dark-500 uppercase tracking-wider">Nama Cabang</th>
-              <th className="py-4 px-6 text-xs font-bold text-dark-500 uppercase tracking-wider">Alamat & Telepon</th>
-              <th className="py-4 px-6 text-xs font-bold text-dark-500 uppercase tracking-wider text-center">Status</th>
-              <th className="py-4 px-6 text-xs font-bold text-dark-500 uppercase tracking-wider text-right">Aksi</th>
+            <tr className="bg-dark-50 text-dark-500 text-xs font-semibold uppercase tracking-wider">
+              <th className="p-4 pl-6 border-b border-dark-100">Nama Cabang</th>
+              <th className="p-4 border-b border-dark-100">Alamat</th>
+              <th className="p-4 border-b border-dark-100">Status</th>
+              <th className="p-4 pr-6 border-b border-dark-100 text-right">Aksi</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-dark-100">
-            {branches.map((branch) => (
+          <tbody className="divide-y divide-dark-100 text-sm text-dark-700">
+            {branches.map(branch => (
               <tr key={branch.id} className="hover:bg-dark-50/50 transition-colors">
-                <td className="py-4 px-6">
-                  <div className="font-bold text-dark-900">{branch.name}</div>
+                <td className="p-4 pl-6 font-medium text-dark-900">
+                  {branch.name}
                 </td>
-                <td className="py-4 px-6">
-                  <div className="text-sm text-dark-700 max-w-[250px] truncate">{branch.address || '-'}</div>
-                  <div className="text-xs text-dark-400 mt-1">{branch.phone || '-'}</div>
+                <td className="p-4 max-w-xs truncate" title={branch.address || ''}>
+                  {branch.address || '-'}
                 </td>
-                <td className="py-4 px-6 text-center">
-                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                    branch.is_active ? 'bg-success-50 text-success-700' : 'bg-dark-100 text-dark-600'
-                  }`}>
-                    {branch.is_active ? 'Aktif' : 'Non-aktif'}
+                <td className="p-4">
+                  <span className={cn(
+                    "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium",
+                    branch.is_active ? "bg-success-light text-success" : "bg-dark-100 text-dark-600"
+                  )}>
+                    {branch.is_active ? 'Aktif' : 'Non-Aktif'}
                   </span>
                 </td>
-                <td className="py-4 px-6 text-right">
-                  <button
+                <td className="p-4 pr-6 text-right space-x-2">
+                  <button 
                     onClick={() => handleOpenModal(branch)}
                     className="p-2 text-dark-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
                     title="Edit Cabang"
                   >
-                    <Edit2 className="w-4 h-4" />
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(branch.id, branch.name)}
+                    className="p-2 text-dark-400 hover:text-danger hover:bg-danger-light rounded-lg transition-colors"
+                    title="Hapus Cabang"
+                  >
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </td>
               </tr>
@@ -241,6 +249,6 @@ export function BranchManagementTable({ initialBranches }: BranchManagementTable
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
