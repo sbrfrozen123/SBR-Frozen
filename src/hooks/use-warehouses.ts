@@ -1,8 +1,6 @@
 import useSWR from 'swr'
 import { createClient } from '@/lib/supabase/client'
-import type { Database } from '@/types/database'
-
-type Warehouse = Database['public']['Tables']['warehouses']['Row']
+import type { Warehouse } from '@/types/database'
 
 const supabase = createClient()
 

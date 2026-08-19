@@ -6,14 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { toast } from 'react-hot-toast'
 import { useWarehouses } from '@/hooks/use-warehouses'
 
-interface Warehouse {
-  id: string
-  branch_id: string | null
-  name: string
-  address: string | null
-  is_active: boolean
-  branches?: { id: string, name: string } | null
-}
+import type { Warehouse } from '@/types/database'
 
 interface WarehousesClientProps {
   initialWarehouses: Warehouse[]

@@ -50,7 +50,7 @@ export interface Warehouse {
   created_at: string
   updated_at: string
   // Joined
-  branch?: Branch | null
+  branches?: { id: string, name: string } | null
 }
 
 export interface StoreSettings {
