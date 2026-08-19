@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase/client'
 import { toast } from 'react-hot-toast'
 import type { Customer, UserRole } from '@/types/database'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
+import { useCustomers } from '@/hooks/use-customers'
 
 interface CustomersClientProps {
   initialCustomers: Customer[]
@@ -16,7 +17,7 @@ interface CustomersClientProps {
 }
 
 export default function CustomersClient({ initialCustomers, userRole }: CustomersClientProps) {
-  const [customers, setCustomers] = useState<Customer[]>(initialCustomers)
+  const { customers, mutate } = useCustomers(initialCustomers)
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<string>('Semua')
   
@@ -40,21 +41,21 @@ export default function CustomersClient({ initialCustomers, userRole }: Customer
     })
   }, [customers, search, categoryFilter])
 
-  const refreshData = async () => {
-    const { data } = await supabase.from('customers').select('*').order('name', { ascending: true })
-    if (data) setCustomers(data)
-  }
-
   const handleDelete = async (id: string, name: string) => {
     if (!window.confirm(`Apakah Anda yakin ingin menghapus pelanggan "${name}"? Data ini tidak dapat dikembalikan.`)) return
+    
+    // Optimistic Update
+    const previousCustomers = [...customers]
+    mutate(customers.filter(c => c.id !== id), false)
     
     try {
       const { error } = await supabase.from('customers').delete().eq('id', id)
       if (error) throw error
       toast.success('Pelanggan berhasil dihapus')
-      refreshData()
+      mutate() // Revalidate
     } catch (error: any) {
       toast.error(error.message || 'Gagal menghapus pelanggan')
+      mutate(previousCustomers, false) // Rollback
     }
   }
 
@@ -295,7 +296,7 @@ export default function CustomersClient({ initialCustomers, userRole }: Customer
             initialData={editingCustomer} 
             onSuccess={() => {
               setIsFormOpen(false)
-              refreshData()
+              mutate()
             }}
             onCancel={() => setIsFormOpen(false)}
           />

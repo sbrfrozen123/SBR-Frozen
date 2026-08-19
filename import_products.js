@@ -16,60 +16,40 @@ async function importData() {
     console.error('Error fetching warehouses:', whError);
     return;
   }
-  console.log(`Found ${warehouses.length} warehouses:`, warehouses.map(w => w.name));
-
+  
   const text = fs.readFileSync('products_data.txt', 'utf8');
   const lines = text.split('\n').filter(l => l.trim() !== '');
-  
-  // Skip header
-  lines.shift();
+  lines.shift(); // skip header
   
   let successCount = 0;
   
   for (const line of lines) {
     try {
-      // Format is: No PLU Barcode Nama Produk Satuan Stok
-      // Example: 1 50000001 AU6 AYAM 0.6 UTUH EKOR 423
-      // Some barcodes might be empty: 5 50000017 AYAM 1.1 UTUH PCS 46 (No barcode, it's PLU then Name)
-      // We can parse it by matching the pattern.
-      // Usually: Number, String (PLU), Optional String (Barcode), Text (Name), String (Unit), Number (Stock)
+      const parts = line.trim().split(/\s+/);
       
-      const match = line.match(/^(\d+)\s+([A-Za-z0-9]+)\s+([A-Za-z0-9\(\)]+)?\s+(.+?)\s+([A-Za-z]+)\s+([\d\,]+)$/);
+      const no = parts.shift();
+      const sku = parts.shift();
       
-      let sku, barcode, name, unit, stockStr;
+      const stockStr = parts.pop();
+      const unit = parts.pop();
       
-      if (match) {
-        sku = match[2];
-        barcode = match[3] || null;
-        name = match[4].trim();
-        unit = match[5];
-        stockStr = match[6];
-      } else {
-        // Fallback for tricky lines where barcode is missing and Name has numbers
-        const parts = line.trim().split(/\s+/);
-        // last is stock, 2nd to last is unit
-        stockStr = parts.pop();
-        unit = parts.pop();
-        // first is number
-        parts.shift();
-        // second is PLU
-        sku = parts.shift();
-        
-        // If the third part looks like a barcode (e.g. all caps/numbers, no spaces, length < 10)
-        // Let's assume anything before the actual name.
-        if (parts[0] && !parts[0].includes(' ') && parts[0].match(/^[A-Z0-9\(\)]+$/) && parts[0].length <= 15 && parts.length > 1) {
-             // Maybe it's a barcode, but let's be careful. Let's just join the rest as name.
-             // Wait, if it has no barcode, parts[0] is the start of the name.
-             // E.g. AYAM 1.1 UTUH -> parts = ['AYAM', '1.1', 'UTUH']
-             // It's safer to just set barcode to null for this fallback.
-        }
-        name = parts.join(' ');
-        barcode = null; // We'll just leave barcode null for tricky ones if regex fails
+      let barcode = null;
+      let name = '';
+      
+      // Heuristic for barcode: if the first remaining part is alphanumeric/parentheses only, and is known barcode
+      // Let's just look at the list: AU6, AU7, DUR, TANTUL, CBC, HAT, KUL, PAT, PAB, PAU, SAY, SLICEE, CU10, BK, (90)MD243209158078(91)260215, SON, KERANG, MINI, KEBMIN, POTONG, SOSIS, UDANG, BT, DAGI, BU, IGON, ZZ
+      // If we accidentally grab the first word of the name (e.g. AYAM), it will cause duplicate barcodes.
+      // So let's check if the first part is one of the known barcodes, or if it doesn't look like a normal word.
+      // Actually, to be 100% safe against duplicate barcode errors, we can just catch the error, and if it fails, try with barcode=null.
+      
+      // Let's try to assume parts[0] is barcode if it doesn't contain lowercase and is not AYAM/BAKSO/DAGING etc.
+      const commonFirstWords = ['AYAM', 'BAKSO', 'BAMBOE', 'BASO', 'BEBEK', 'BROKOLI', 'CEDEA', 'CHAMP', 'CIRENG', 'CUMI', 'DAGING', 'DELMONTE', 'DIMSUM', 'DONAT', 'DOSUKA', 'EDAMAME', 'ELAFROZE', 'FIESTA', 'GAS', 'GOURMET', 'GULA', 'HEMATO', 'IKAN', 'ILM', 'INDOMINA', 'IP', 'JAGUNG', 'JAMUR', 'JD', 'JEROAN', 'KACANG', 'KAMBING', 'KAMIL', 'KEBAB', 'KECAP', 'KEJU', 'KENTANG', 'KENZLER', 'KERANG', 'KIKOMAN', 'KONGKEE', 'KULIT', 'LUMPIA', 'M', 'MAYONAIS', 'MAYONASI', 'MC', 'MENTEGA', 'MINI', 'MINYAK', 'MIX', 'MOZARELLA', 'NUGGET', 'OKEY', 'OLAHAN', 'PAHA', 'PUFF', 'RIOS', 'ROTI', 'ROYCO', 'SALAM', 'SALMON', 'SAORI', 'SAOS', 'SARANA', 'SARDEN', 'SARIWANGI', 'SAUS', 'SIOMAY', 'SO', 'SOSIS', 'STKS', 'STOBERI', 'SUSHI', 'TAHU', 'TEMAN', 'TEMPURA', 'TEPUNG', 'TETELAN', 'UDANG', 'VITALIA', 'WIJEN', 'YONNA', 'ZAITUN', 'ZDAGING', 'ZZ'];
+      
+      if (parts.length > 1 && !commonFirstWords.includes(parts[0])) {
+         barcode = parts.shift();
       }
       
-      // Fix some specific tricky lines if they were parsed incorrectly
-      // The regex above will capture things mostly correctly. Let's double check.
-      // If Name contains the unit at the end, etc.
+      name = parts.join(' ');
       
       const stock = parseFloat(stockStr.replace(',', '.'));
       
@@ -80,26 +60,37 @@ async function importData() {
       
       if (!existingProd) {
         // Insert product
-        const { data: newProd, error: insertErr } = await supabase.from('products').insert([{
+        const payload = {
           sku,
-          barcode,
           name,
           unit,
           stock_quantity: stock,
           category: 'Umum'
-        }]).select().single();
+        };
+        if (barcode) payload.barcode = barcode;
         
-        if (insertErr) {
-          console.error(`Error inserting ${name} (SKU: ${sku}):`, insertErr.message);
-          continue;
+        let { data: newProd, error: insertErr } = await supabase.from('products').insert([payload]).select().single();
+        
+        if (insertErr && insertErr.code === '23505') {
+           // duplicate barcode, try again without barcode
+           payload.name = (barcode + ' ' + payload.name).trim();
+           delete payload.barcode;
+           const res = await supabase.from('products').insert([payload]).select().single();
+           if (res.error) {
+              console.error(`Error inserting ${payload.name} (SKU: ${sku}):`, res.error.message);
+              continue;
+           }
+           newProd = res.data;
+        } else if (insertErr) {
+           console.error(`Error inserting ${name} (SKU: ${sku}):`, insertErr.message);
+           continue;
         }
+        
         productId = newProd.id;
-        console.log(`+ Inserted ${name}`);
+        console.log(`+ Inserted ${payload.name}`);
       } else {
         productId = existingProd.id;
         console.log(`~ Updated ${name} (Already exists)`);
-        
-        // Optionally update stock_quantity on the product itself
         await supabase.from('products').update({ stock_quantity: stock }).eq('id', productId);
       }
       
@@ -112,19 +103,11 @@ async function importData() {
           .single();
           
         if (existingStock) {
-          await supabase.from('product_stocks')
-            .update({ stock_quantity: stock })
-            .eq('id', existingStock.id);
+          await supabase.from('product_stocks').update({ stock_quantity: stock }).eq('id', existingStock.id);
         } else {
-          await supabase.from('product_stocks')
-            .insert([{
-              product_id: productId,
-              warehouse_id: wh.id,
-              stock_quantity: stock
-            }]);
+          await supabase.from('product_stocks').insert([{ product_id: productId, warehouse_id: wh.id, stock_quantity: stock }]);
         }
       }
-      
       successCount++;
     } catch (e) {
       console.error('Exception on line:', line, e);

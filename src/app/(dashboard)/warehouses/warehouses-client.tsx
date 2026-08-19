@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Plus, Search, Edit, Trash2, MapPin, Building, Activity } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'react-hot-toast'
+import { useWarehouses } from '@/hooks/use-warehouses'
 
 interface Warehouse {
   id: string
@@ -20,7 +21,7 @@ interface WarehousesClientProps {
 }
 
 export default function WarehousesClient({ initialWarehouses, branches }: WarehousesClientProps) {
-  const [warehouses, setWarehouses] = useState<Warehouse[]>(initialWarehouses)
+  const { warehouses, mutate } = useWarehouses(initialWarehouses)
   const [search, setSearch] = useState('')
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null)
@@ -39,14 +40,6 @@ export default function WarehousesClient({ initialWarehouses, branches }: Wareho
     (w.address && w.address.toLowerCase().includes(search.toLowerCase())) ||
     (w.branches?.name && w.branches.name.toLowerCase().includes(search.toLowerCase()))
   )
-
-  const refreshData = async () => {
-    const { data } = await supabase
-      .from('warehouses')
-      .select(`*, branches(id, name)`)
-      .order('name', { ascending: true })
-    if (data) setWarehouses(data as any[])
-  }
 
   const openForm = (warehouse?: Warehouse) => {
     if (warehouse) {
@@ -69,15 +62,27 @@ export default function WarehousesClient({ initialWarehouses, branches }: Wareho
     e.preventDefault()
     if (!name.trim()) return toast.error('Nama gudang wajib diisi')
 
-    setLoading(true)
-    try {
-      const payload = {
-        name,
-        address,
-        branch_id: branchId || null,
-        is_active: isActive
-      }
+    const payload = {
+      name,
+      address,
+      branch_id: branchId || null,
+      is_active: isActive
+    }
 
+    const previousWarehouses = [...warehouses]
+    
+    // Optimistic Update
+    if (editingWarehouse) {
+      mutate(warehouses.map(w => w.id === editingWarehouse.id ? { ...w, ...payload } : w), false)
+    } else {
+      const optimisticId = `temp-${Date.now()}`
+      mutate([...warehouses, { id: optimisticId, ...payload } as any], false)
+    }
+
+    setLoading(true)
+    setIsFormOpen(false) // Close form instantly
+    
+    try {
       if (editingWarehouse) {
         const { error } = await supabase.from('warehouses').update(payload).eq('id', editingWarehouse.id)
         if (error) throw error
@@ -87,10 +92,11 @@ export default function WarehousesClient({ initialWarehouses, branches }: Wareho
         if (error) throw error
         toast.success('Gudang berhasil ditambahkan')
       }
-      setIsFormOpen(false)
-      refreshData()
+      mutate() // Revalidate real data
     } catch (error: any) {
       toast.error(error.message || 'Terjadi kesalahan')
+      mutate(previousWarehouses, false) // Rollback
+      setIsFormOpen(true) // Reopen form if error
     } finally {
       setLoading(false)
     }
@@ -98,13 +104,18 @@ export default function WarehousesClient({ initialWarehouses, branches }: Wareho
 
   const handleDelete = async (id: string, name: string) => {
     if (!window.confirm(`Hapus gudang ${name}?`)) return
+    
+    const previousWarehouses = [...warehouses]
+    mutate(warehouses.filter(w => w.id !== id), false)
+    
     try {
       const { error } = await supabase.from('warehouses').delete().eq('id', id)
       if (error) throw error
       toast.success('Gudang dihapus')
-      refreshData()
+      mutate()
     } catch (error: any) {
       toast.error('Gagal menghapus: Gudang mungkin masih memiliki stok barang.')
+      mutate(previousWarehouses, false)
     }
   }
 

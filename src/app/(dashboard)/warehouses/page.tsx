@@ -32,10 +32,7 @@ export default async function WarehousesPage() {
   // Fetch warehouses
   const { data: warehouses } = await supabase
     .from('warehouses')
-    .select(`
-      *,
-      branches (id, name)
-    `)
+    .select('id, branch_id, name, address, is_active, created_at, updated_at, branches(id, name)')
     .order('name', { ascending: true })
 
   return (
