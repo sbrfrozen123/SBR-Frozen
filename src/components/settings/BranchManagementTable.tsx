@@ -89,6 +89,27 @@ export function BranchManagementTable({ initialBranches }: BranchManagementTable
     }
   }
 
+  const handleDelete = async (id: string, name: string) => {
+    if (!window.confirm(`Yakin ingin menghapus cabang ${name}?`)) return
+    
+    setLoading(true)
+    try {
+      const { error } = await supabase
+        .from('branches')
+        .delete()
+        .eq('id', id)
+      
+      if (error) throw error
+      
+      setBranches(prev => prev.filter(b => b.id !== id))
+      toast.success('Cabang berhasil dihapus')
+    } catch (error: any) {
+      toast.error(error.message || 'Gagal menghapus cabang')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <>
     <div className="bg-white rounded-2xl border border-dark-100 shadow-sm overflow-hidden animate-fade-in">
