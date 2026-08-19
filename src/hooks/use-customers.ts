@@ -10,7 +10,7 @@ export function useCustomers(initialData?: Customer[]) {
   const fetcher = async () => {
     const { data, error } = await supabase
       .from('customers')
-      .select('id, name, phone, email, address, loyalty_points, credit_limit, current_debt, payment_terms, category, is_active, created_at')
+      .select('id, name, phone, email, address, loyalty_points, credit_limit, current_debt, payment_terms, category, is_active, created_at, notes, updated_at')
       .order('name', { ascending: true })
     
     if (error) throw error

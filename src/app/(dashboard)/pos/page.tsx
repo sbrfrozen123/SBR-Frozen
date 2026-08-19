@@ -35,8 +35,7 @@ export default async function POSPage({
   let query = supabase
     .from('products')
     .select(`
-      id, sku, barcode, name, unit, category, 
-      price_retail, price_grosir, price_horeca,
+      *,
       product_stocks (
         stock_quantity, 
         min_stock_alert, 
