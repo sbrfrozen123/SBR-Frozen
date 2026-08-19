@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Plus, Search, MoreVertical, Edit, Trash2, Truck } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { SupplierForm } from '@/components/suppliers/SupplierForm'
@@ -38,6 +38,11 @@ export default function SuppliersClient({ initialSuppliers, userRole }: Supplier
     const { data } = await supabase.from('suppliers').select('*').order('name', { ascending: true })
     if (data) setSuppliers(data)
   }
+
+  // Fetch on mount for CSR speed optimization
+  useEffect(() => {
+    refreshData()
+  }, [])
 
   const handleDelete = async (id: string, name: string) => {
     if (!window.confirm(`Apakah Anda yakin ingin menghapus pemasok "${name}"? Data ini tidak dapat dikembalikan.`)) return

@@ -365,8 +365,10 @@ export default function POSClient({ products, customers, settings, userRole, use
 
       if (orderStatus === 'completed' && defaultWarehouseId) {
         for (const item of cart) {
+          const breakdown = (item.product as any).stock_breakdown || [];
+          const currentWarehouseStock = breakdown.find((s: any) => s.warehouse_id === defaultWarehouseId)?.stock_quantity || 0;
           await supabase.from('product_stocks')
-            .update({ stock_quantity: item.product.stock_quantity - item.qty })
+            .update({ stock_quantity: currentWarehouseStock - item.qty })
             .eq('product_id', item.product.id)
             .eq('warehouse_id', defaultWarehouseId)
         }
@@ -810,12 +812,10 @@ export default function POSClient({ products, customers, settings, userRole, use
                     style={{ color: '#000' }}
                   >
                     <div className="text-center mb-4 flex flex-col items-center">
-                      {(branch?.logo_url || settings?.logo_url) && (
-                        <img src={branch?.logo_url || settings?.logo_url} alt="Logo" className="w-16 h-16 object-contain mb-2" />
-                      )}
+                      <img src="/logo.jpeg" alt="SBR Logo" className="h-12 object-contain mb-2" />
                       <h3 className="text-lg font-bold uppercase">{branch?.name || settings?.store_name || 'SBR Frozen'}</h3>
-                      {(branch?.address || settings?.store_address) && <p className="text-xs mt-1">{branch?.address || settings?.store_address}</p>}
-                      {(branch?.phone || settings?.store_phone) && <p className="text-xs">{branch?.phone || settings?.store_phone}</p>}
+                      {(branch?.address || settings?.store_address) && <p className="text-[10px] mt-1">{branch?.address || settings?.store_address}</p>}
+                      {(branch?.phone || settings?.store_phone) && <p className="text-[10px]">📞 {branch?.phone || settings?.store_phone}</p>}
                     </div>
 
                     <div className="border-t border-b border-dashed border-dark-200 py-2 mb-3 text-xs">

@@ -11,17 +11,19 @@ interface StockAdjustmentModalProps {
   products: Product[]
   branchId: string | null
   warehouseId?: string | null
+  warehouses?: any[]
   onSuccess: () => void
   onCancel: () => void
 }
 
-export function StockAdjustmentModal({ products, branchId, warehouseId, onSuccess, onCancel }: StockAdjustmentModalProps) {
+export function StockAdjustmentModal({ products, branchId, warehouseId, warehouses, onSuccess, onCancel }: StockAdjustmentModalProps) {
   const supabase = createClient()
   
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   
   // Form State
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>(warehouseId || (warehouses?.[0]?.id) || '')
   const [actualStock, setActualStock] = useState<string>('')
   const [reason, setReason] = useState<string>('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -37,23 +39,49 @@ export function StockAdjustmentModal({ products, branchId, warehouseId, onSucces
     ).slice(0, 5) // Limit to 5 results
   }, [searchQuery, products])
 
+  // Get current stock for selected warehouse
+  const currentStock = useMemo(() => {
+    if (!selectedProduct || !selectedWarehouseId) return 0
+    const breakdown = (selectedProduct as any).stock_breakdown || []
+    const stock = breakdown.find((s: any) => s.warehouse_id === selectedWarehouseId)
+    return stock ? stock.stock_quantity : 0
+  }, [selectedProduct, selectedWarehouseId])
+
   // Calculated Difference
   const diff = useMemo(() => {
     if (!selectedProduct || actualStock === '') return 0
     const actual = Number(actualStock)
     if (isNaN(actual)) return 0
-    return actual - selectedProduct.stock_quantity
-  }, [selectedProduct, actualStock])
+    return actual - currentStock
+  }, [selectedProduct, actualStock, currentStock])
 
   const handleSelectProduct = (product: Product) => {
     setSelectedProduct(product)
     setSearchQuery('')
-    setActualStock(product.stock_quantity.toString())
+    
+    // Auto fill with the current stock of selected warehouse
+    const breakdown = (product as any).stock_breakdown || []
+    const stock = breakdown.find((s: any) => s.warehouse_id === selectedWarehouseId)
+    setActualStock(stock ? stock.stock_quantity.toString() : '0')
+  }
+
+  const handleWarehouseChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newWhId = e.target.value
+    setSelectedWarehouseId(newWhId)
+    if (selectedProduct) {
+      const breakdown = (selectedProduct as any).stock_breakdown || []
+      const stock = breakdown.find((s: any) => s.warehouse_id === newWhId)
+      setActualStock(stock ? stock.stock_quantity.toString() : '0')
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedProduct || actualStock === '') return
+    if (!selectedWarehouseId) {
+      toast.error('Gudang wajib dipilih.')
+      return
+    }
     if (diff === 0) {
       toast.error('Tidak ada selisih stok untuk disesuaikan.')
       return
@@ -75,8 +103,9 @@ export function StockAdjustmentModal({ products, branchId, warehouseId, onSucces
         product_id: selectedProduct.id,
         user_id: userData.user.id,
         branch_id: branchId, // Required by DB
+        warehouse_id: selectedWarehouseId,
         type: type,
-        qty_before: selectedProduct.stock_quantity,
+        qty_before: currentStock,
         qty_change: Math.abs(diff),
         qty_after: Number(actualStock),
         reason: reason
@@ -85,15 +114,13 @@ export function StockAdjustmentModal({ products, branchId, warehouseId, onSucces
       if (insertError) throw insertError
 
       // 2. Update product_stocks
-      if (warehouseId) {
-        const { error: updateError } = await supabase
-          .from('product_stocks')
-          .update({ stock_quantity: Number(actualStock) })
-          .eq('product_id', selectedProduct.id)
-          .eq('warehouse_id', warehouseId)
+      const { error: updateError } = await supabase
+        .from('product_stocks')
+        .update({ stock_quantity: Number(actualStock) })
+        .eq('product_id', selectedProduct.id)
+        .eq('warehouse_id', selectedWarehouseId)
 
-        if (updateError) throw updateError
-      }
+      if (updateError) throw updateError
 
       toast.success('Stok berhasil disesuaikan!')
       onSuccess()
@@ -115,6 +142,20 @@ export function StockAdjustmentModal({ products, branchId, warehouseId, onSucces
       </div>
 
       <div className="p-6 overflow-y-auto">
+        <div className="mb-5">
+          <label className="block text-sm font-medium text-dark-700 mb-1.5">Gudang Lokasi Opname <span className="text-danger">*</span></label>
+          <select 
+            value={selectedWarehouseId} 
+            onChange={handleWarehouseChange}
+            className="input w-full bg-white cursor-pointer"
+          >
+            <option value="" disabled>-- Pilih Gudang --</option>
+            {warehouses?.map(w => (
+              <option key={w.id} value={w.id}>{w.name}</option>
+            ))}
+          </select>
+        </div>
+
         {!selectedProduct ? (
           <div className="space-y-4">
             <div className="relative">
@@ -183,7 +224,7 @@ export function StockAdjustmentModal({ products, branchId, warehouseId, onSucces
               <div>
                 <label className="block text-sm font-medium text-dark-700 mb-1">Stok Sistem</label>
                 <div className="input bg-dark-50 text-dark-500 flex items-center cursor-not-allowed">
-                  {selectedProduct.stock_quantity} {selectedProduct.unit}
+                  {currentStock} {selectedProduct.unit}
                 </div>
               </div>
               <div>

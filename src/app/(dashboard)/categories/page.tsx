@@ -25,10 +25,7 @@ export default async function CategoriesPage() {
   }
 
   // Fetch initial categories
-  const { data: categories } = await supabase
-    .from('categories')
-    .select('*')
-    .order('name', { ascending: true })
+  const categories: any[] = []
 
   return <CategoriesClient initialCategories={categories || []} userRole={profile.role} />
 }

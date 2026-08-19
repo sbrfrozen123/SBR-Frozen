@@ -55,7 +55,7 @@ export default async function POSPage({
   const products = (rawProducts || []).map(p => {
     const stocks = p.product_stocks || []
     const totalQty = stocks.reduce((acc: number, s: any) => acc + (Number(s.stock_quantity) || 0), 0)
-    return { ...p, stock_quantity: totalQty }
+    return { ...p, stock_quantity: totalQty, stock_breakdown: stocks }
   })
 
   // Fetch customers (only active)

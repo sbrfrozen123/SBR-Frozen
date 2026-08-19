@@ -5,9 +5,10 @@ import { formatRupiah } from '@/lib/utils/currency'
 import { formatDateShort } from '@/lib/utils/dates'
 
 export default function PrintClient({ transaction: txn, settings, format }: { transaction: any, settings: any, format: string }) {
-  const printStoreName = txn.branches?.name ? `${settings?.store_name || 'SBR Frozen'} - ${txn.branches.name}` : (settings?.store_name || 'SBR Frozen')
-  const printAddress = txn.branches?.address || settings?.store_address
+  const printStoreName = txn.branches?.name || settings?.store_name || 'SBR Frozen'
+  const printAddress = txn.branches?.address || settings?.store_address || '-'
   const printPhone = txn.branches?.phone || settings?.store_phone || '-'
+  
   useEffect(() => {
     // Automatically trigger print dialog after small delay to ensure rendering is done
     const timer = setTimeout(() => {
@@ -20,14 +21,10 @@ export default function PrintClient({ transaction: txn, settings, format }: { tr
     return (
       <div id="printable-receipt" className="text-black bg-white mx-auto" style={{ width: '58mm', padding: '10px', fontSize: '12px', fontFamily: 'monospace' }}>
         <div style={{ textAlign: 'center', marginBottom: '10px' }}>
-          {settings?.logo_url ? (
-            <img src={settings.logo_url} alt="Logo" style={{ margin: '0 auto 5px', maxHeight: '40px', objectFit: 'contain' }} />
-          ) : (
-            <div style={{ margin: '0 auto 5px', padding: '10px', border: '1px dashed #000', display: 'inline-block', fontSize: '10px' }}>LOGO TOKO</div>
-          )}
-          <br/>
-          <strong style={{ fontSize: '14px' }}>{printStoreName}</strong><br/>
-          {printAddress && <span>{printAddress}<br/></span>}
+          <img src="/logo.jpeg" alt="SBR Logo" style={{ margin: '0 auto 5px', maxHeight: '45px', objectFit: 'contain' }} />
+          <strong style={{ fontSize: '14px', textTransform: 'uppercase' }}>{printStoreName}</strong><br/>
+          {printAddress && <span style={{ fontSize: '10px' }}>{printAddress}<br/></span>}
+          {printPhone !== '-' && <span style={{ fontSize: '10px' }}>📞 {printPhone}<br/></span>}
           <span>================================</span>
         </div>
         
@@ -69,8 +66,7 @@ export default function PrintClient({ transaction: txn, settings, format }: { tr
           <span>================================</span><br/>
           <span>{settings?.receipt_footer_text || 'Terima Kasih'}</span><br/>
           <div style={{ marginTop: '5px', fontSize: '10px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <span>📞 {printPhone}</span>
-            {settings?.social_instagram && <span>📸 {settings.social_instagram}</span>}
+            {settings?.social_instagram && <span>📸 IG: {settings.social_instagram}</span>}
             {settings?.store_website && <span>🌐 {settings.store_website}</span>}
           </div>
         </div>
@@ -83,36 +79,31 @@ export default function PrintClient({ transaction: txn, settings, format }: { tr
     <div id="printable-receipt" className="bg-white text-black p-8 max-w-4xl mx-auto" style={{ fontFamily: 'sans-serif' }}>
       <div className="flex justify-between items-start border-b-2 border-black pb-4 mb-6">
         <div className="flex items-center gap-4">
-          {settings?.logo_url ? (
-            <img src={settings.logo_url} alt="Logo" className="w-16 h-16 object-contain flex-shrink-0" />
-          ) : (
-            <div className="w-16 h-16 bg-gray-100 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center flex-shrink-0">
-              <span className="text-gray-400 text-xs font-bold">LOGO</span>
-            </div>
-          )}
+          <img src="/logo.jpeg" alt="SBR Logo" className="w-20 h-20 object-contain flex-shrink-0 rounded-md" />
           <div>
             <h1 className="text-3xl font-black uppercase tracking-wider">{printStoreName}</h1>
-            <p className="text-gray-600 mt-1 max-w-sm">{printAddress}</p>
+            <p className="text-gray-600 mt-1 max-w-sm text-sm">{printAddress}</p>
+            {printPhone !== '-' && <p className="text-gray-600 mt-0.5 text-sm font-medium">📞 {printPhone}</p>}
           </div>
         </div>
         <div className="text-right">
           <h2 className="text-4xl font-black text-gray-200 uppercase tracking-widest mb-2">INVOICE</h2>
           <p className="font-bold text-lg">{txn.invoice_number}</p>
-          <p className="text-gray-600">Tanggal: {formatDateShort(txn.created_at)}</p>
+          <p className="text-gray-500">Tanggal: {formatDateShort(txn.created_at)}</p>
         </div>
       </div>
 
       <div className="flex justify-between mb-8">
         <div>
-          <h3 className="text-gray-500 font-bold uppercase text-sm mb-1">Tagihan Kepada:</h3>
+          <p className="text-xs font-bold text-gray-400 mb-1 uppercase">TAGIHAN KEPADA:</p>
           <p className="font-bold text-lg">{txn.customers?.name || 'Pelanggan Umum'}</p>
-          {txn.customers?.address && <p className="text-gray-600 max-w-xs">{txn.customers.address}</p>}
-          {txn.customers?.phone && <p className="text-gray-600">{txn.customers.phone}</p>}
+          {txn.customers?.address && <p className="text-gray-600 text-sm max-w-xs mt-1">{txn.customers.address}</p>}
+          {txn.customers?.phone && <p className="text-gray-600 text-sm mt-0.5">{txn.customers.phone}</p>}
         </div>
         <div className="text-right">
-          <h3 className="text-gray-500 font-bold uppercase text-sm mb-1">Kasir:</h3>
+          <p className="text-xs font-bold text-gray-400 mb-1 uppercase">KASIR:</p>
           <p className="font-bold">{txn.profiles?.full_name}</p>
-          <p className="text-gray-600 capitalize">Metode: {txn.payment_method}</p>
+          <p className="text-gray-500 text-sm mt-1">Metode: {txn.payment_method === 'tunai' ? 'Tunai' : txn.payment_method === 'tempo' ? 'Tempo (Piutang)' : txn.payment_method.toUpperCase()}</p>
         </div>
       </div>
 

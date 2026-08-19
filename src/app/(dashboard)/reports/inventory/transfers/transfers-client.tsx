@@ -35,7 +35,7 @@ export default function TransfersClient({ userRole }: TransfersClientProps) {
           creator:profiles!stock_transfers_user_id_fkey(full_name),
           receiver:profiles!stock_transfers_received_by_fkey(full_name),
           items:stock_transfer_items(
-            id, quantity, product:products(name, sku, unit)
+            id, qty_sent, qty_received, product:products(name, sku, unit)
           )
         `)
 

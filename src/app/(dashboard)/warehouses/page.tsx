@@ -29,11 +29,8 @@ export default async function WarehousesPage() {
     .select('*')
     .order('name')
 
-  // Fetch warehouses
-  const { data: warehouses } = await supabase
-    .from('warehouses')
-    .select('*, branches(id, name)')
-    .order('name', { ascending: true })
+  // Fetch initial warehouses
+  const warehouses: any[] = []
 
   return (
     <WarehousesClient 

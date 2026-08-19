@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { Plus, Search, Filter, MoreVertical, Edit, Trash2, AlertTriangle, Package, ClipboardCheck, Download, Upload, ChevronRight } from 'lucide-react'
+import { Plus, Search, Filter, MoreVertical, Edit, Trash2, AlertTriangle, Package, ClipboardCheck, Download, Upload, ChevronRight, Info } from 'lucide-react'
 import { formatRupiah } from '@/lib/utils/currency'
 import { cn } from '@/lib/utils/cn'
 import { ProductForm } from '@/components/inventory/ProductForm'
@@ -57,7 +57,7 @@ export default function InventoryClient({ initialProducts, userRole, branchId, d
         stock_quantity, 
         min_stock_alert, 
         warehouse_id,
-        warehouses!inner (branch_id)
+        warehouses!inner (id, name, branch_id)
       )
     `).order('name', { ascending: true })
     
@@ -69,7 +69,7 @@ export default function InventoryClient({ initialProducts, userRole, branchId, d
       const stocks = p.product_stocks || []
       const totalQty = stocks.reduce((acc: number, s: any) => acc + (Number(s.stock_quantity) || 0), 0)
       const minAlert = stocks.length === 1 ? stocks[0].min_stock_alert : p.min_stock_alert
-      return { ...p, stock_quantity: totalQty, min_stock_alert: minAlert }
+      return { ...p, stock_quantity: totalQty, min_stock_alert: minAlert, stock_breakdown: stocks }
     })
     setProducts(mapped)
   }
@@ -341,14 +341,40 @@ export default function InventoryClient({ initialProducts, userRole, branchId, d
                         {product.stock_quantity <= product.min_stock_alert && (
                           <span title="Stok Menipis!"><AlertTriangle className="w-4 h-4 text-warning" /></span>
                         )}
-                        <span className={cn(
-                          'font-bold',
-                          product.stock_quantity <= 0 ? 'text-danger' : 
-                          product.stock_quantity <= product.min_stock_alert ? 'text-warning-dark' : 'text-dark-900'
-                        )}>
-                          {product.stock_quantity}
-                        </span>
-                        <span className="text-[10px] text-dark-400 uppercase tracking-wider">{product.unit}</span>
+                        <div className="flex flex-col items-end">
+                          <div className="flex items-center gap-1">
+                            <span className={cn(
+                              'font-bold',
+                              product.stock_quantity <= 0 ? 'text-danger' : 
+                              product.stock_quantity <= product.min_stock_alert ? 'text-warning-dark' : 'text-dark-900'
+                            )}>
+                              {product.stock_quantity}
+                            </span>
+                            <span className="text-[10px] text-dark-400 uppercase tracking-wider">{product.unit}</span>
+                            
+                            <DropdownMenu.Root>
+                              <DropdownMenu.Trigger asChild>
+                                <button className="text-primary-600 hover:bg-primary-50 p-0.5 rounded cursor-pointer outline-none ml-1">
+                                  <Info className="w-3.5 h-3.5" />
+                                </button>
+                              </DropdownMenu.Trigger>
+                              <DropdownMenu.Portal>
+                                <DropdownMenu.Content className="min-w-[200px] bg-white rounded-xl shadow-lg border border-dark-100 p-2 z-50 animate-fade-in" align="end" sideOffset={5}>
+                                  <div className="text-xs font-bold text-dark-800 mb-2 px-1 border-b border-dark-50 pb-2">Rincian Stok per Gudang</div>
+                                  {(product as any).stock_breakdown?.map((stk: any) => (
+                                    <div key={stk.warehouse_id} className="flex justify-between items-center text-xs py-1.5 px-1 border-b border-dark-50/50 last:border-0">
+                                      <span className="text-dark-600">{stk.warehouses?.name || 'Gudang'}</span>
+                                      <span className="font-bold text-dark-900 bg-slate-50 px-2 py-0.5 rounded">{stk.stock_quantity}</span>
+                                    </div>
+                                  ))}
+                                  {(!(product as any).stock_breakdown || (product as any).stock_breakdown.length === 0) && (
+                                    <div className="text-xs text-dark-400 text-center py-3 bg-slate-50 rounded-lg border border-dashed border-dark-200 mt-1">Belum ada alokasi stok gudang</div>
+                                  )}
+                                </DropdownMenu.Content>
+                              </DropdownMenu.Portal>
+                            </DropdownMenu.Root>
+                          </div>
+                        </div>
                       </div>
                     </td>
                     <td className="text-right">
@@ -429,6 +455,7 @@ export default function InventoryClient({ initialProducts, userRole, branchId, d
             products={products}
             branchId={branchId}
             warehouseId={defaultWarehouseId}
+            warehouses={warehouses}
             onSuccess={() => {
               setIsAdjustmentModalOpen(false)
               refreshData()
