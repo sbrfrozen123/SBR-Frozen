@@ -35,8 +35,8 @@ export default function AdjustmentsClient({
   const formattedTo = initialTo ? new Date(initialTo).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : ''
 
   const displayBranch = initialBranch === 'all' || !initialBranch 
-    ? '[Semua Cabang]' 
-    : branches.find(b => b.id === initialBranch)?.name || '[Semua Cabang]'
+    ? '[Semua Gudang]' 
+    : branches.find(b => b.id === initialBranch)?.name || '[Semua Gudang]'
 
   const applyFilter = () => {
     setShowModal(false)
@@ -129,7 +129,7 @@ export default function AdjustmentsClient({
 
         {/* Info Right */}
         <div className="flex justify-end mb-4">
-          <p className="text-xs italic text-dark-600">Cabang : {displayBranch}</p>
+          <p className="text-xs italic text-dark-600">Gudang : {displayBranch}</p>
         </div>
 
         {/* Data Table */}
@@ -239,14 +239,14 @@ export default function AdjustmentsClient({
                 <h4 className="text-lg text-dark-700 mb-4 border-b border-dark-200 pb-2">Parameter Tambahan</h4>
                 <div className="space-y-4">
                   <div className="flex items-center gap-4">
-                    <label className="w-16 text-sm text-dark-700">Cabang <span className="text-danger-500">*</span></label>
+                    <label className="w-16 text-sm text-dark-700">Gudang <span className="text-danger-500">*</span></label>
                     <div className="flex-1 relative">
                       <select 
                         value={branch}
                         onChange={(e) => setBranch(e.target.value)}
                         className="w-full border-dark-200 rounded-lg text-sm pl-3 pr-10 py-2 focus:ring-primary-500 focus:border-primary-500 appearance-none bg-blue-50/50"
                       >
-                        <option value="all">[Semua Cabang]</option>
+                        <option value="all">[Semua Gudang]</option>
                         {branches.map(b => (
                           <option key={b.id} value={b.id}>{b.name}</option>
                         ))}

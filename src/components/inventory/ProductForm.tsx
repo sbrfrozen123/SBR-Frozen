@@ -224,9 +224,14 @@ export function ProductForm({ initialData, warehouseId, onSuccess, onCancel }: P
             <h3 className="text-sm font-bold text-dark-900 uppercase tracking-wide mb-4">Pengaturan Stok</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="form-group">
-                <label className="label">Stok Tersedia *</label>
+                <label className="label">StokTersedia *</label>
                 <input type="number" step="0.01" {...register('stock_quantity')} className={`input ${errors.stock_quantity ? 'input-error' : ''}`} />
                 {errors.stock_quantity && <span className="text-xs text-danger mt-1">{errors.stock_quantity.message}</span>}
+              </div>
+              <div className="form-group">
+                <label className="label">Batas Minimum Stok (Warning)</label>
+                <input type="number" step="0.01" {...register('min_stock_alert')} className={`input ${errors.min_stock_alert ? 'input-error' : ''}`} />
+                {errors.min_stock_alert && <span className="text-xs text-danger mt-1">{errors.min_stock_alert.message}</span>}
               </div>
             </div>
             

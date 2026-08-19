@@ -271,9 +271,11 @@ export default function InventoryClient({ initialProducts, userRole, branchId, d
                 <th className="w-12 text-center border-l-0">No</th>
                 <th>Info Produk</th>
                 <th>Kategori</th>
+                <th>Barcode</th>
                 <th className="text-right">HPP</th>
                 <th className="text-right">Harga Jual</th>
                 <th className="text-right">Stok Aktif</th>
+                <th className="text-right">Min. Stok</th>
                 <th className="text-right">Nilai Stok</th>
                 <th className="text-center">Status</th>
                 <th className="w-10 text-center border-r-0">#</th>
@@ -299,6 +301,9 @@ export default function InventoryClient({ initialProducts, userRole, branchId, d
                     <td>
                       <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px]">{product.category || 'Umum'}</span>
                     </td>
+                    <td>
+                      <div className="text-sm font-mono text-dark-600">{product.barcode || '-'}</div>
+                    </td>
                     <td className="text-right text-money text-dark-700">
                       {formatRupiah(product.hpp)}
                     </td>
@@ -319,6 +324,9 @@ export default function InventoryClient({ initialProducts, userRole, branchId, d
                         </span>
                         <span className="text-[10px] text-dark-400 uppercase tracking-wider">{product.unit}</span>
                       </div>
+                    </td>
+                    <td className="text-right">
+                      <span className="text-dark-600 font-medium">{product.min_stock_alert}</span>
                     </td>
                     <td className="text-right text-dark-700 font-medium">
                       {formatRupiah(product.hpp * product.stock_quantity)}

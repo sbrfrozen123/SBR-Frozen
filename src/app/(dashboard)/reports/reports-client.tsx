@@ -58,6 +58,12 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
       title: 'Penjualan',
       reports: [
         {
+          title: 'Laporan Penjualan per Shift',
+          description: 'Rincian pendapatan kasir per sesi shift.',
+          icon: Clock,
+          href: '/reports/sales/by-shift',
+        },
+        {
           title: 'Grafik Penjualan',
           description: 'Laporan grafik penjualan berdasarkan kasir.',
           icon: BarChart3,
@@ -103,6 +109,12 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
     {
       title: 'Persediaan',
       reports: [
+        {
+          title: 'Histori Transfer Barang',
+          description: 'Pantau riwayat pergerakan stok antar gudang.',
+          icon: FileText,
+          href: '/reports/inventory/transfers',
+        },
         {
           title: 'Nilai Persediaan Barang',
           description: 'Laporan nilai aset stok berjalan per cabang.',

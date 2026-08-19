@@ -168,13 +168,11 @@ export default function WarehousesClient({ initialWarehouses, branches }: Wareho
               </div>
             </div>
             <div className="border-t border-dark-50 bg-dark-50/50 p-3 flex justify-end gap-2">
-              <button onClick={() => openForm(w)} className="btn-secondary py-1.5 px-3 text-sm">
+              <button onClick={() => openForm(w)} className="w-8 h-8 rounded-lg flex items-center justify-center text-dark-500 hover:bg-dark-100 hover:text-primary-600 transition-colors" title="Edit">
                 <Edit className="w-4 h-4" />
-                Edit
               </button>
-              <button onClick={() => handleDelete(w.id, w.name)} className="btn-secondary py-1.5 px-3 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 border-transparent">
+              <button onClick={() => handleDelete(w.id, w.name)} className="w-8 h-8 rounded-lg flex items-center justify-center text-dark-500 hover:bg-red-50 hover:text-red-600 transition-colors" title="Hapus">
                 <Trash2 className="w-4 h-4" />
-                Hapus
               </button>
             </div>
           </div>

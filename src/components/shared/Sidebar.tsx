@@ -227,7 +227,7 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
           />
           
           <div 
-            className="fixed top-1/2 -translate-y-1/2 left-[84px] w-[340px] max-h-[85vh] bg-white border border-dark-100 rounded-[24px] shadow-[0_0_40px_rgba(0,0,0,0.15)] z-[45] animate-slide-right flex flex-col overflow-hidden"
+            className="fixed top-0 bottom-0 left-[72px] w-[320px] h-screen bg-white border-r border-dark-100 shadow-[20px_0_40px_rgba(0,0,0,0.05)] z-[45] animate-slide-right flex flex-col overflow-hidden"
           >
           {(() => {
             const mod = modules.find(m => m.id === activeModule)

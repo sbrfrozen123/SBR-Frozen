@@ -32,8 +32,8 @@ export default async function InventoryValuePage({
   const isLoaded = searchParams?.load === 'true'
   const branch_id = searchParams?.branch as string
 
-  // Fetch branches for filter
-  const { data: branches } = await supabase.from('branches').select('id, name')
+  // Fetch warehouses for filter
+  const { data: warehouses } = await supabase.from('warehouses').select('id, name')
 
   let productsData: any[] = []
 
@@ -44,17 +44,12 @@ export default async function InventoryValuePage({
         stock_quantity, 
         min_stock_alert, 
         warehouse_id, 
-        warehouses!inner (
-          branch_id,
-          branches (name)
-        ), 
+        warehouses (id, name), 
         products(id, name, sku, hpp, is_active, unit)
       `)
 
     if (branch_id && branch_id !== 'all') {
-      productsQuery = productsQuery.eq('warehouses.branch_id', branch_id)
-    } else if (userBranchId && !branch_id) {
-      productsQuery = productsQuery.eq('warehouses.branch_id', userBranchId)
+      productsQuery = productsQuery.eq('warehouse_id', branch_id) // branch_id is actually warehouse_id param here
     }
 
     const { data } = await productsQuery
@@ -67,7 +62,6 @@ export default async function InventoryValuePage({
       .map(ps => {
         const prod: any = Array.isArray(ps.products) ? ps.products[0] : ps.products
         const warehouse: any = Array.isArray(ps.warehouses) ? ps.warehouses[0] : ps.warehouses
-        const branch: any = warehouse?.branches ? (Array.isArray(warehouse.branches) ? warehouse.branches[0] : warehouse.branches) : null
         return {
           id: prod?.id,
           name: prod?.name,
@@ -76,7 +70,7 @@ export default async function InventoryValuePage({
           unit: prod?.unit || '-',
           stock_quantity: ps.stock_quantity,
           min_stock: ps.min_stock_alert,
-          branch_name: branch?.name || '-'
+          branch_name: warehouse?.name || '-'
         }
       })
       .sort((a, b) => a.name.localeCompare(b.name))
@@ -85,7 +79,7 @@ export default async function InventoryValuePage({
   return (
     <ValueClient 
       products={productsData} 
-      branches={branches || []}
+      branches={warehouses || []}
       isLoaded={isLoaded}
       initialBranch={branch_id || ''}
     />

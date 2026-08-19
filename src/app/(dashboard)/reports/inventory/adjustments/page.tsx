@@ -32,8 +32,8 @@ export default async function InventoryAdjustmentsPage({
   const to = searchParams?.to as string
   const branch_id = searchParams?.branch as string
 
-  // Fetch branches for filter
-  const { data: branches } = await supabase.from('branches').select('id, name')
+  // Fetch warehouses for filter
+  const { data: warehouses } = await supabase.from('warehouses').select('id, name')
 
   let adjustmentsData: any[] = []
 
@@ -44,14 +44,12 @@ export default async function InventoryAdjustmentsPage({
         id, type, qty_change, reason, created_at, 
         products(name, sku, unit), 
         profiles(full_name),
-        branches(name)
+        warehouses(name)
       `)
       .order('created_at', { ascending: false })
 
     if (branch_id && branch_id !== 'all') {
-      adjustmentsQuery = adjustmentsQuery.eq('branch_id', branch_id)
-    } else if (userBranchId && !branch_id) {
-      adjustmentsQuery = adjustmentsQuery.eq('branch_id', userBranchId)
+      adjustmentsQuery = adjustmentsQuery.eq('warehouse_id', branch_id) // branch_id is now warehouse_id
     }
     
     // Use created_at for filtering dates
@@ -62,7 +60,7 @@ export default async function InventoryAdjustmentsPage({
     
     adjustmentsData = (data || []).map(adj => {
       const prod: any = Array.isArray(adj.products) ? adj.products[0] : adj.products
-      const branch: any = Array.isArray(adj.branches) ? adj.branches[0] : adj.branches
+      const warehouse: any = Array.isArray(adj.warehouses) ? adj.warehouses[0] : adj.warehouses
       const user: any = Array.isArray(adj.profiles) ? adj.profiles[0] : adj.profiles
       
       return {
@@ -74,7 +72,7 @@ export default async function InventoryAdjustmentsPage({
         product_name: prod?.name || '-',
         product_sku: prod?.sku || '-',
         unit: prod?.unit || '-',
-        branch_name: branch?.name || '-',
+        branch_name: warehouse?.name || '-', // still map to branch_name prop for client component compatibility
         user_name: user?.full_name || 'Sistem'
       }
     })
@@ -83,7 +81,7 @@ export default async function InventoryAdjustmentsPage({
   return (
     <AdjustmentsClient 
       adjustments={adjustmentsData} 
-      branches={branches || []}
+      branches={warehouses || []}
       initialFrom={from || ''}
       initialTo={to || ''}
       initialBranch={branch_id || ''}
