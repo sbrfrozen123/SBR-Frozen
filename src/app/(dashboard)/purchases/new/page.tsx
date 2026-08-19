@@ -37,6 +37,11 @@ export default async function NewPurchasePage() {
     .eq('is_active', true)
     .order('name', { ascending: true })
 
+  const { data: warehouses } = await supabase
+    .from('warehouses')
+    .select('*')
+    .order('name', { ascending: true })
+
   const branchId = profile?.branch_id || null
 
   let defaultWarehouseId = null
@@ -49,6 +54,7 @@ export default async function NewPurchasePage() {
     <NewPurchaseClient 
       products={products || []} 
       suppliers={suppliers || []} 
+      warehouses={warehouses || []}
       userId={user.id}
       branchId={branchId}
       defaultWarehouseId={defaultWarehouseId}

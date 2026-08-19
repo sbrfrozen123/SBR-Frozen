@@ -32,10 +32,10 @@ export default async function TransfersPage() {
   const { data: transfers } = await supabase.from('stock_transfers')
     .select(`
       *,
-      from_wh:from_warehouse_id(name),
-      to_wh:to_warehouse_id(name),
-      creator:user_id(full_name),
-      receiver:received_by(full_name),
+      from_wh:warehouses!from_warehouse_id(name),
+      to_wh:warehouses!to_warehouse_id(name),
+      creator:profiles!stock_transfers_user_id_fkey(full_name),
+      receiver:profiles!stock_transfers_received_by_fkey(full_name),
       items:stock_transfer_items(
         *,
         products(name, sku)

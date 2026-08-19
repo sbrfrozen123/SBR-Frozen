@@ -157,22 +157,23 @@ export function BranchManagementTable({ initialBranches }: BranchManagementTable
           </tbody>
         </table>
       </div>
+    </div>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-slide-up">
-            <div className="flex items-center justify-between p-6 border-b border-dark-100">
-              <h2 className="text-xl font-bold text-dark-900">
-                {editingBranch ? 'Edit Cabang' : 'Tambah Cabang Baru'}
-              </h2>
-              <button 
-                onClick={handleCloseModal}
-                className="text-dark-400 hover:text-dark-600 hover:bg-dark-50 p-2 rounded-full transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
+    {isModalOpen && (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+        <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-slide-up">
+          <div className="flex items-center justify-between p-6 border-b border-dark-100">
+            <h2 className="text-xl font-bold text-dark-900">
+              {editingBranch ? 'Edit Cabang' : 'Tambah Cabang Baru'}
+            </h2>
+            <button 
+              onClick={handleCloseModal}
+              className="text-dark-400 hover:text-dark-600 hover:bg-dark-50 p-2 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          
             <form onSubmit={handleSubmit} className="p-6 space-y-5">
               <div className="form-group">
                 <label className="label">Nama Cabang *</label>

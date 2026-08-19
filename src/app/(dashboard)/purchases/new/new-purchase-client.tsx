@@ -20,6 +20,7 @@ interface CartItem {
 interface NewPurchaseClientProps {
   products: Product[]
   suppliers: Supplier[]
+  warehouses: any[]
   userId: string
   branchId: string | null
   defaultWarehouseId?: string | null
@@ -126,6 +127,7 @@ export default function NewPurchaseClient({ products, suppliers, userId, branchI
   const [invoiceNumber, setInvoiceNumber] = useState(`INV-BUY-${Date.now()}`)
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split('T')[0])
   const [supplierId, setSupplierId] = useState('')
+  const [warehouseId, setWarehouseId] = useState(defaultWarehouseId || '')
   const [paymentStatus, setPaymentStatus] = useState<'lunas' | 'tempo'>('lunas')
   const [paymentMethod, setPaymentMethod] = useState<'tunai' | 'transfer' | 'qris' | 'tempo'>('tunai')
   const [notes, setNotes] = useState('')
@@ -206,6 +208,7 @@ export default function NewPurchaseClient({ products, suppliers, userId, branchI
 
   const handleSave = async () => {
     if (!supplierId) return toast.error('Pilih pemasok terlebih dahulu')
+    if (!warehouseId) return toast.error('Pilih gudang tujuan terlebih dahulu')
     if (!invoiceNumber.trim()) return toast.error('Nomor Invoice wajib diisi')
     if (validItems.length === 0) return toast.error('Belum ada produk valid yang dimasukkan')
 
@@ -217,6 +220,7 @@ export default function NewPurchaseClient({ products, suppliers, userId, branchI
         .insert([{
           invoice_number: invoiceNumber,
           supplier_id: supplierId,
+          warehouse_id: warehouseId || null,
           user_id: userId,
           branch_id: branchId,
           total_amount: totalAmount,
@@ -259,20 +263,20 @@ export default function NewPurchaseClient({ products, suppliers, userId, branchI
         
         // Update product_stocks for the warehouse
         let branchStock = 0;
-        if (defaultWarehouseId) {
+        if (warehouseId) {
           const { data: currentStock } = await supabase
             .from('product_stocks')
             .select('stock_quantity')
             .eq('product_id', item.product.id)
-            .eq('warehouse_id', defaultWarehouseId)
+            .eq('warehouse_id', warehouseId)
             .single()
           
           branchStock = currentStock ? Number(currentStock.stock_quantity) : 0;
           
           if (currentStock) {
-            await supabase.from('product_stocks').update({ stock_quantity: branchStock + item.qty }).eq('product_id', item.product.id).eq('warehouse_id', defaultWarehouseId)
+            await supabase.from('product_stocks').update({ stock_quantity: branchStock + item.qty }).eq('product_id', item.product.id).eq('warehouse_id', warehouseId)
           } else {
-            await supabase.from('product_stocks').insert([{ product_id: item.product.id, warehouse_id: defaultWarehouseId, stock_quantity: item.qty }])
+            await supabase.from('product_stocks').insert([{ product_id: item.product.id, warehouse_id: warehouseId, stock_quantity: item.qty }])
           }
         }
         
@@ -280,6 +284,7 @@ export default function NewPurchaseClient({ products, suppliers, userId, branchI
         await supabase.from('stock_adjustments').insert([{
           product_id: item.product.id,
           branch_id: branchId,
+          warehouse_id: warehouseId || null,
           user_id: userId,
           type: 'tambah',
           qty_before: branchStock,
@@ -353,7 +358,7 @@ export default function NewPurchaseClient({ products, suppliers, userId, branchI
             Informasi Faktur
           </h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5">
             <div className="form-group">
               <label className="label">Pemasok *</label>
               <select 
@@ -364,6 +369,20 @@ export default function NewPurchaseClient({ products, suppliers, userId, branchI
                 <option value="" disabled>-- Pilih Pemasok --</option>
                 {suppliers.map(s => (
                   <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="form-group">
+              <label className="label">Gudang Tujuan *</label>
+              <select 
+                value={warehouseId}
+                onChange={(e) => setWarehouseId(e.target.value)}
+                className="input bg-white font-medium"
+              >
+                <option value="" disabled>-- Pilih Gudang --</option>
+                {warehouses.map(w => (
+                  <option key={w.id} value={w.id}>{w.name}</option>
                 ))}
               </select>
             </div>

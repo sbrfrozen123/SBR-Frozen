@@ -304,7 +304,15 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
               ))}
               {users.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="text-center py-8 text-dark-400">Belum ada karyawan yang terdaftar.</td>
+                  <td colSpan={6} className="py-16">
+                    <div className="flex flex-col items-center justify-center text-dark-400">
+                      <div className="w-12 h-12 bg-dark-50 rounded-full flex items-center justify-center mb-3">
+                        <Users className="w-6 h-6 text-dark-300" />
+                      </div>
+                      <p className="font-medium text-dark-600">Belum ada karyawan</p>
+                      <p className="text-sm mt-1">Tambahkan karyawan pertama Anda untuk memberikan akses sistem.</p>
+                    </div>
+                  </td>
                 </tr>
               )}
             </tbody>

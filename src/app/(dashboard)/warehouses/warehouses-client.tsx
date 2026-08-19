@@ -116,7 +116,7 @@ export default function WarehousesClient({ initialWarehouses, branches }: Wareho
           <h1 className="text-2xl sm:text-3xl font-bold text-dark-900 tracking-tight">Manajemen Gudang</h1>
           <p className="text-dark-500 mt-1">Kelola data gudang dan alokasi cabang.</p>
         </div>
-        <button onClick={() => openForm()} className="btn-primary flex items-center gap-2">
+        <button onClick={() => openForm()} className="btn btn-primary btn-md flex items-center gap-2">
           <Plus className="w-5 h-5" />
           <span>Tambah Gudang</span>
         </button>
