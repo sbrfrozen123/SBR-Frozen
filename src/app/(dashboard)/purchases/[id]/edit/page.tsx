@@ -56,6 +56,11 @@ export default async function EditPurchasePage({ params }: { params: { id: strin
     .eq('is_active', true)
     .order('name', { ascending: true })
 
+  const { data: warehouses } = await supabase
+    .from('warehouses')
+    .select('*')
+    .order('name', { ascending: true })
+
   const branchId = profile?.branch_id || null
 
   let defaultWarehouseId = null
@@ -69,6 +74,7 @@ export default async function EditPurchasePage({ params }: { params: { id: strin
       purchase={purchase}
       products={products || []} 
       suppliers={suppliers || []} 
+      warehouses={warehouses || []}
       userId={user.id}
       branchId={branchId}
       defaultWarehouseId={defaultWarehouseId}

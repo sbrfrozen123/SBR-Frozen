@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'react-hot-toast'
-import { Edit2, Loader2, MapPin, Plus, Save, Store, X } from 'lucide-react'
+import { Edit, Trash2, Loader2, MapPin, Plus, Save, Store, X } from 'lucide-react'
+import { cn } from '@/lib/utils/cn'
 import type { Branch } from '@/types/database'
 
 interface BranchManagementTableProps {

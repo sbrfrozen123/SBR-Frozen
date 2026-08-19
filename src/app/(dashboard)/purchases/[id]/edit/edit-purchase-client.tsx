@@ -23,6 +23,7 @@ interface EditPurchaseClientProps {
   purchase: any
   products: Product[]
   suppliers: Supplier[]
+  warehouses: any[]
   userId: string
   branchId: string | null
   defaultWarehouseId?: string | null
@@ -99,7 +100,7 @@ function ProductCombobox({
   )
 }
 
-export default function EditPurchaseClient({ purchase, products, suppliers, userId, branchId, defaultWarehouseId }: EditPurchaseClientProps) {
+export default function EditPurchaseClient({ purchase, products, suppliers, warehouses, userId, branchId, defaultWarehouseId }: EditPurchaseClientProps) {
   const router = useRouter()
   const supabase = createClient()
 

@@ -10,7 +10,7 @@ export function useWarehouses(initialData?: Warehouse[]) {
   const fetcher = async () => {
     const { data, error } = await supabase
       .from('warehouses')
-      .select('id, branch_id, name, address, is_active, created_at, updated_at, branches(id, name)')
+      .select('*, branches(id, name)')
       .order('name', { ascending: true })
     
     if (error) throw error

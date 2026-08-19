@@ -119,7 +119,7 @@ function ProductCombobox({
   )
 }
 
-export default function NewPurchaseClient({ products, suppliers, userId, branchId, defaultWarehouseId }: NewPurchaseClientProps) {
+export default function NewPurchaseClient({ products, suppliers, warehouses, userId, branchId, defaultWarehouseId }: NewPurchaseClientProps) {
   const router = useRouter()
   const supabase = createClient()
   
