@@ -21,7 +21,8 @@ interface NewPurchaseClientProps {
   products: Product[]
   suppliers: Supplier[]
   userId: string
-  branchId: string
+  branchId: string | null
+  defaultWarehouseId?: string | null
 }
 
 function ProductCombobox({ 
@@ -117,7 +118,7 @@ function ProductCombobox({
   )
 }
 
-export default function NewPurchaseClient({ products, suppliers, userId, branchId }: NewPurchaseClientProps) {
+export default function NewPurchaseClient({ products, suppliers, userId, branchId, defaultWarehouseId }: NewPurchaseClientProps) {
   const router = useRouter()
   const supabase = createClient()
   
@@ -256,20 +257,23 @@ export default function NewPurchaseClient({ products, suppliers, userId, branchI
           .eq('id', item.product.id)
         if (stockError) throw stockError
         
-        // Update product_stocks for the branch
-        const { data: currentStock } = await supabase
-          .from('product_stocks')
-          .select('stock_quantity')
-          .eq('product_id', item.product.id)
-          .eq('branch_id', branchId)
-          .single()
-        
-        const branchStock = currentStock ? Number(currentStock.stock_quantity) : 0;
-        
-        if (currentStock) {
-          await supabase.from('product_stocks').update({ stock_quantity: branchStock + item.qty }).eq('product_id', item.product.id).eq('branch_id', branchId)
-        } else {
-          await supabase.from('product_stocks').insert([{ product_id: item.product.id, branch_id: branchId, stock_quantity: item.qty }])
+        // Update product_stocks for the warehouse
+        let branchStock = 0;
+        if (defaultWarehouseId) {
+          const { data: currentStock } = await supabase
+            .from('product_stocks')
+            .select('stock_quantity')
+            .eq('product_id', item.product.id)
+            .eq('warehouse_id', defaultWarehouseId)
+            .single()
+          
+          branchStock = currentStock ? Number(currentStock.stock_quantity) : 0;
+          
+          if (currentStock) {
+            await supabase.from('product_stocks').update({ stock_quantity: branchStock + item.qty }).eq('product_id', item.product.id).eq('warehouse_id', defaultWarehouseId)
+          } else {
+            await supabase.from('product_stocks').insert([{ product_id: item.product.id, warehouse_id: defaultWarehouseId, stock_quantity: item.qty }])
+          }
         }
         
         // Log to stock adjustments

@@ -9,11 +9,13 @@ import { cn } from '@/lib/utils/cn'
 
 interface StockAdjustmentModalProps {
   products: Product[]
+  branchId: string | null
+  warehouseId?: string | null
   onSuccess: () => void
   onCancel: () => void
 }
 
-export function StockAdjustmentModal({ products, onSuccess, onCancel }: StockAdjustmentModalProps) {
+export function StockAdjustmentModal({ products, branchId, warehouseId, onSuccess, onCancel }: StockAdjustmentModalProps) {
   const supabase = createClient()
   
   const [searchQuery, setSearchQuery] = useState('')
@@ -72,6 +74,7 @@ export function StockAdjustmentModal({ products, onSuccess, onCancel }: StockAdj
       const { error: insertError } = await supabase.from('stock_adjustments').insert({
         product_id: selectedProduct.id,
         user_id: userData.user.id,
+        branch_id: branchId, // Required by DB
         type: type,
         qty_before: selectedProduct.stock_quantity,
         qty_change: Math.abs(diff),
@@ -81,13 +84,16 @@ export function StockAdjustmentModal({ products, onSuccess, onCancel }: StockAdj
 
       if (insertError) throw insertError
 
-      // 2. Update products stock
-      const { error: updateError } = await supabase
-        .from('products')
-        .update({ stock_quantity: Number(actualStock) })
-        .eq('id', selectedProduct.id)
+      // 2. Update product_stocks
+      if (warehouseId) {
+        const { error: updateError } = await supabase
+          .from('product_stocks')
+          .update({ stock_quantity: Number(actualStock) })
+          .eq('product_id', selectedProduct.id)
+          .eq('warehouse_id', warehouseId)
 
-      if (updateError) throw updateError
+        if (updateError) throw updateError
+      }
 
       toast.success('Stok berhasil disesuaikan!')
       onSuccess()

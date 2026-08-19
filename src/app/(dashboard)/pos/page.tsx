@@ -31,18 +31,23 @@ export default async function POSPage({
 
   const branchId = await getBranchContext(supabase, user.id)
 
-  // Fetch products (only active) and branch stocks
+  // Fetch products (only active) and branch stocks via warehouses
   let query = supabase
     .from('products')
     .select(`
       *,
-      product_stocks (stock_quantity, min_stock_alert, branch_id)
+      product_stocks (
+        stock_quantity, 
+        min_stock_alert, 
+        warehouse_id,
+        warehouses!inner (branch_id)
+      )
     `)
     .eq('is_active', true)
     .order('name', { ascending: true })
 
   if (branchId) {
-    query = query.eq('product_stocks.branch_id', branchId)
+    query = query.eq('product_stocks.warehouses.branch_id', branchId)
   }
 
   const { data: rawProducts } = await query
@@ -67,6 +72,17 @@ export default async function POSPage({
     .limit(1)
     .single()
 
+  // Fetch branch details and its default warehouse
+  let branch = null
+  let defaultWarehouseId = null
+  if (branchId) {
+    const { data } = await supabase.from('branches').select('*').eq('id', branchId).single()
+    branch = data
+    
+    const { data: wh } = await supabase.from('warehouses').select('id').eq('branch_id', branchId).limit(1).single()
+    defaultWarehouseId = wh?.id || null
+  }
+
   return (
     <POSClient 
       products={products} 
@@ -75,6 +91,8 @@ export default async function POSPage({
       userRole={profile.role}
       userId={user.id}
       branchId={branchId}
+      branch={branch}
+      defaultWarehouseId={defaultWarehouseId}
       editTxId={searchParams?.edit}
     />
   )

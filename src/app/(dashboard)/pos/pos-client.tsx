@@ -21,6 +21,8 @@ interface POSClientProps {
   userRole: UserRole
   userId: string
   branchId: string | null
+  branch?: any
+  defaultWarehouseId?: string | null
   editTxId?: string
 }
 
@@ -30,7 +32,7 @@ interface CartItem {
   unit_price: number
 }
 
-export default function POSClient({ products, customers, settings, userRole, userId, branchId, editTxId }: POSClientProps) {
+export default function POSClient({ products, customers, settings, userRole, userId, branchId, branch, defaultWarehouseId, editTxId }: POSClientProps) {
   const [search, setSearch] = useState('')
   const [customerSearch, setCustomerSearch] = useState('')
   const [categorySearch, setCategorySearch] = useState('')
@@ -110,7 +112,9 @@ export default function POSClient({ products, customers, settings, userRole, use
 
       // Match all terms (AND logic) for multi-word search
       const matchesSearch = searchTerms.length === 0 || searchTerms.every(term =>
-        p.name.toLowerCase().includes(term) || p.sku.toLowerCase().includes(term)
+        p.name.toLowerCase().includes(term) || 
+        p.sku.toLowerCase().includes(term) ||
+        (p.barcode && p.barcode.toLowerCase() === term) // Exact barcode match usually
       )
 
       const matchesCategory = categoryFilter === 'Semua' || (p.category || 'Umum') === categoryFilter
@@ -277,6 +281,8 @@ export default function POSClient({ products, customers, settings, userRole, use
 
       const getDueDays = (terms: string) => {
         if (!terms) return 0
+        if (terms === 'NET 3') return 3
+        if (terms === 'NET 5') return 5
         if (terms === 'NET 7') return 7
         if (terms === 'NET 14') return 14
         if (terms === 'NET 30') return 30
@@ -354,12 +360,12 @@ export default function POSClient({ products, customers, settings, userRole, use
       const { error: itemsError } = await supabase.from('transaction_items').insert(txnItems)
       if (itemsError) throw itemsError
 
-      if (orderStatus === 'completed') {
+      if (orderStatus === 'completed' && defaultWarehouseId) {
         for (const item of cart) {
           await supabase.from('product_stocks')
             .update({ stock_quantity: item.product.stock_quantity - item.qty })
             .eq('product_id', item.product.id)
-            .eq('branch_id', branchId)
+            .eq('warehouse_id', defaultWarehouseId)
         }
       }
 
@@ -417,7 +423,7 @@ export default function POSClient({ products, customers, settings, userRole, use
     if (!completedTxn) return
     const { invoice_number, items, total, customer, paymentMethod } = completedTxn
 
-    let text = `*${settings?.store_name || 'SBR Frozen'}*\n`
+    let text = `*${branch?.name || settings?.store_name || 'SBR Frozen'}*\n`
     text += `Faktur Penjualan\n`
     text += `No: ${invoice_number}\n`
     text += `--------------------------------\n`
@@ -437,6 +443,20 @@ export default function POSClient({ products, customers, settings, userRole, use
     window.open(url, '_blank')
   }
 
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value
+    setSearch(val)
+    
+    // Auto add if it's an exact barcode scan
+    if (val.trim() !== '') {
+      const exactMatch = products.find(p => p.barcode === val.trim() || p.sku === val.trim())
+      if (exactMatch) {
+        addToCart(exactMatch)
+        setSearch('')
+      }
+    }
+  }
+
   return (
     <div className="h-screen flex flex-col md:flex-row overflow-hidden bg-slate-50">
       {/* LEFT PANEL: PRODUCT GRID */}
@@ -450,9 +470,9 @@ export default function POSClient({ products, customers, settings, userRole, use
             <input
               ref={searchInputRef}
               type="text"
-              placeholder="Cari produk (Tekan F2)..."
+              placeholder="Cari produk (Tekan F2) atau Scan Barcode..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={handleSearch}
               className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-dark-200 text-lg rounded-2xl focus:bg-white focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all font-medium text-dark-900 placeholder:text-dark-400 shadow-inner"
             />
           </div>
@@ -780,10 +800,13 @@ export default function POSClient({ products, customers, settings, userRole, use
                     className="flex-1 bg-white border border-dark-100 p-6 rounded-xl font-mono text-sm max-w-sm mx-auto shadow-sm"
                     style={{ color: '#000' }}
                   >
-                    <div className="text-center mb-4">
-                      <h3 className="text-lg font-bold uppercase">{settings?.store_name || 'SBR Frozen'}</h3>
-                      {settings?.store_address && <p className="text-xs mt-1">{settings.store_address}</p>}
-                      {settings?.store_phone && <p className="text-xs">{settings.store_phone}</p>}
+                    <div className="text-center mb-4 flex flex-col items-center">
+                      {(branch?.logo_url || settings?.logo_url) && (
+                        <img src={branch?.logo_url || settings?.logo_url} alt="Logo" className="w-16 h-16 object-contain mb-2" />
+                      )}
+                      <h3 className="text-lg font-bold uppercase">{branch?.name || settings?.store_name || 'SBR Frozen'}</h3>
+                      {(branch?.address || settings?.store_address) && <p className="text-xs mt-1">{branch?.address || settings?.store_address}</p>}
+                      {(branch?.phone || settings?.store_phone) && <p className="text-xs">{branch?.phone || settings?.store_phone}</p>}
                     </div>
 
                     <div className="border-t border-b border-dashed border-dark-200 py-2 mb-3 text-xs">

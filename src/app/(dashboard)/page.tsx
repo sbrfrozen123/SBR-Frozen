@@ -91,8 +91,8 @@ export default async function DashboardPage({
   // 4. Fetch low stock products (based on product_stocks)
   let lowStockQuery = supabase
     .from('product_stocks')
-    .select('stock_quantity, min_stock_alert, branch_id, products(id, name, is_active)')
-  if (branchId) lowStockQuery = lowStockQuery.eq('branch_id', branchId)
+    .select('stock_quantity, min_stock_alert, warehouse_id, warehouses!inner(branch_id), products(id, name, is_active)')
+  if (branchId) lowStockQuery = lowStockQuery.eq('warehouses.branch_id', branchId)
   const { data: lowStockData } = await lowStockQuery
 
   const actualLowStock = (lowStockData || [])
@@ -112,8 +112,8 @@ export default async function DashboardPage({
   // 5. Fetch Total Inventory Value (Asset)
   let inventoryQuery = supabase
     .from('product_stocks')
-    .select('stock_quantity, branch_id, products(id, hpp, is_active)')
-  if (branchId) inventoryQuery = inventoryQuery.eq('branch_id', branchId)
+    .select('stock_quantity, warehouse_id, warehouses!inner(branch_id), products(id, hpp, is_active)')
+  if (branchId) inventoryQuery = inventoryQuery.eq('warehouses.branch_id', branchId)
   const { data: inventoryData } = await inventoryQuery
   
   const totalAssetValue = (inventoryData || [])

@@ -75,6 +75,8 @@ export const modules: ModuleGroup[] = [
     roles: ['super_admin', 'admin_gudang', 'sales'],
     items: [
       { href: '/inventory', icon: Package, label: 'Barang & Stok', color: 'text-emerald-500', roles: ['super_admin', 'admin_gudang', 'sales'] },
+      { href: '/warehouses', icon: Landmark, label: 'Gudang', color: 'text-indigo-500', roles: ['super_admin', 'admin_gudang'] },
+      { href: '/stock-transfers', icon: Truck, label: 'Transfer Stok', color: 'text-blue-500', roles: ['super_admin', 'admin_gudang'] },
       { href: '/categories', icon: Tags, label: 'Kategori Barang', color: 'text-fuchsia-500', roles: ['super_admin', 'admin_gudang'] },
       { href: '/units', icon: Scale, label: 'Satuan Barang', color: 'text-sky-500', roles: ['super_admin', 'admin_gudang'] },
     ]

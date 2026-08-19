@@ -43,15 +43,18 @@ export default async function InventoryValuePage({
       .select(`
         stock_quantity, 
         min_stock_alert, 
-        branch_id, 
-        branches(name), 
+        warehouse_id, 
+        warehouses!inner (
+          branch_id,
+          branches (name)
+        ), 
         products(id, name, sku, hpp, is_active, unit)
       `)
 
     if (branch_id && branch_id !== 'all') {
-      productsQuery = productsQuery.eq('branch_id', branch_id)
+      productsQuery = productsQuery.eq('warehouses.branch_id', branch_id)
     } else if (userBranchId && !branch_id) {
-      productsQuery = productsQuery.eq('branch_id', userBranchId)
+      productsQuery = productsQuery.eq('warehouses.branch_id', userBranchId)
     }
 
     const { data } = await productsQuery
@@ -63,7 +66,8 @@ export default async function InventoryValuePage({
       })
       .map(ps => {
         const prod: any = Array.isArray(ps.products) ? ps.products[0] : ps.products
-        const branch: any = Array.isArray(ps.branches) ? ps.branches[0] : ps.branches
+        const warehouse: any = Array.isArray(ps.warehouses) ? ps.warehouses[0] : ps.warehouses
+        const branch: any = warehouse?.branches ? (Array.isArray(warehouse.branches) ? warehouse.branches[0] : warehouse.branches) : null
         return {
           id: prod?.id,
           name: prod?.name,

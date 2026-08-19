@@ -15,9 +15,10 @@ interface InventoryClientProps {
   initialProducts: Product[]
   userRole: UserRole
   branchId: string | null
+  defaultWarehouseId?: string | null
 }
 
-export default function InventoryClient({ initialProducts, userRole, branchId }: InventoryClientProps) {
+export default function InventoryClient({ initialProducts, userRole, branchId, defaultWarehouseId }: InventoryClientProps) {
   const [products, setProducts] = useState<Product[]>(initialProducts)
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<string>('Semua')
@@ -50,10 +51,15 @@ export default function InventoryClient({ initialProducts, userRole, branchId }:
   const refreshData = async () => {
     let query = supabase.from('products').select(`
       *,
-      product_stocks (stock_quantity, min_stock_alert, branch_id)
+      product_stocks (
+        stock_quantity, 
+        min_stock_alert, 
+        warehouse_id,
+        warehouses!inner (branch_id)
+      )
     `).order('name', { ascending: true })
     
-    if (branchId) query = query.eq('product_stocks.branch_id', branchId)
+    if (branchId) query = query.eq('product_stocks.warehouses.branch_id', branchId)
 
     const { data: rawProducts } = await query
     const mapped = (rawProducts || []).map(p => {
@@ -372,7 +378,7 @@ export default function InventoryClient({ initialProducts, userRole, branchId }:
         <div className="modal-overlay">
           <ProductForm 
             initialData={editingProduct} 
-            branchId={branchId || undefined}
+            warehouseId={defaultWarehouseId || undefined}
             onSuccess={() => {
               setIsFormOpen(false)
               refreshData()
@@ -387,6 +393,8 @@ export default function InventoryClient({ initialProducts, userRole, branchId }:
         <div className="modal-overlay">
           <StockAdjustmentModal 
             products={products}
+            branchId={branchId}
+            warehouseId={defaultWarehouseId}
             onSuccess={() => {
               setIsAdjustmentModalOpen(false)
               refreshData()

@@ -143,6 +143,8 @@ export function CustomerForm({ initialData, onSuccess, onCancel }: CustomerFormP
                 <label className="label">Tempo Pembayaran (Termin)</label>
                 <select {...register('payment_terms')} className={`input bg-white ${errors.payment_terms ? 'input-error' : ''}`}>
                   <option value="COD">COD (Tunai saat terima)</option>
+                  <option value="NET 3">Net 3 Hari</option>
+                  <option value="NET 5">Net 5 Hari</option>
                   <option value="NET 7">Net 7 Hari</option>
                   <option value="NET 14">Net 14 Hari</option>
                   <option value="NET 30">Net 30 Hari</option>

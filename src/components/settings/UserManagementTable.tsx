@@ -231,17 +231,29 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
                     </div>
                   </td>
                   <td>
-                    <select
-                      value={user.role}
-                      onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                      disabled={loadingId === user.id}
-                      className="input py-1 px-2 text-sm bg-dark-50 h-8 font-medium w-auto min-w-[140px]"
-                    >
-                      <option value="super_admin">Super Admin</option>
-                      <option value="admin_gudang">Admin Gudang</option>
-                      <option value="kasir">Kasir</option>
-                      <option value="sales">Sales Canvassing</option>
-                    </select>
+                    <div className="flex flex-col gap-1">
+                      <select
+                        value={user.role}
+                        onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                        disabled={loadingId === user.id}
+                        className={cn(
+                          "input py-1 px-2 text-xs font-bold h-8 w-auto min-w-[140px] uppercase",
+                          user.role === 'super_admin' ? 'bg-indigo-100 text-indigo-700' :
+                          user.role === 'admin_gudang' ? 'bg-orange-100 text-orange-700' :
+                          user.role === 'sales' ? 'bg-blue-100 text-blue-700' :
+                          'bg-emerald-100 text-emerald-700'
+                        )}
+                      >
+                        <option value="super_admin">Super Admin</option>
+                        <option value="admin_gudang">Admin Gudang</option>
+                        <option value="kasir">Kasir Toko</option>
+                        <option value="sales">Sales Canvassing</option>
+                      </select>
+                      {user.role === 'super_admin' && <span className="text-[10px] text-dark-400 leading-tight">Akses penuh sistem</span>}
+                      {user.role === 'admin_gudang' && <span className="text-[10px] text-dark-400 leading-tight">Akses stok & pembelian</span>}
+                      {user.role === 'kasir' && <span className="text-[10px] text-dark-400 leading-tight">Akses POS & shift</span>}
+                      {user.role === 'sales' && <span className="text-[10px] text-dark-400 leading-tight">Canvassing lapangan</span>}
+                    </div>
                   </td>
                   <td>
                     {user.role === 'super_admin' ? (

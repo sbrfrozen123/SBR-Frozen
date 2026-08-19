@@ -35,9 +35,22 @@ export interface Branch {
   name: string
   address: string | null
   phone: string | null
+  logo_url: string | null
   is_active: boolean
   created_at: string
   updated_at: string
+}
+
+export interface Warehouse {
+  id: string
+  branch_id: string | null
+  name: string
+  address: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  // Joined
+  branch?: Branch | null
 }
 
 export interface StoreSettings {
@@ -66,6 +79,7 @@ export interface Product {
   name: string
   category: string | null
   sku: string
+  barcode: string | null
   unit: string
   hpp: number
   price_retail: number
@@ -84,12 +98,27 @@ export interface Product {
 export interface ProductStock {
   id: string
   product_id: string
-  branch_id: string
+  warehouse_id: string
   stock_quantity: number
   min_stock_alert: number
   updated_at: string
   // Joined
-  branch?: Branch | null
+  warehouse?: Warehouse | null
+}
+
+export interface ProductBatch {
+  id: string
+  product_id: string
+  warehouse_id: string
+  batch_number: string | null
+  stock_quantity: number
+  production_date: string | null
+  exp_date: string | null
+  created_at: string
+  updated_at: string
+  // Joined
+  product?: Product | null
+  warehouse?: Warehouse | null
 }
 
 export interface Customer {
@@ -164,6 +193,40 @@ export interface Expense {
   // Joined
   user?: Profile | null
   branch?: Branch | null
+}
+
+export interface StockTransfer {
+  id: string
+  reference_number: string
+  from_warehouse_id: string
+  to_warehouse_id: string
+  user_id: string
+  received_by: string | null
+  status: 'pending' | 'in_transit' | 'completed' | 'cancelled'
+  transfer_date: string
+  receive_date: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+  // Joined
+  from_warehouse?: Warehouse | null
+  to_warehouse?: Warehouse | null
+  user?: Profile | null
+  receiver?: Profile | null
+  items?: StockTransferItem[]
+}
+
+export interface StockTransferItem {
+  id: string
+  transfer_id: string
+  product_id: string
+  batch_id: string | null
+  qty_sent: number
+  qty_received: number
+  notes: string | null
+  // Joined
+  product?: Product | null
+  batch?: ProductBatch | null
 }
 
 export interface StockAdjustment {
@@ -359,6 +422,7 @@ export interface ProductForm {
   name: string
   category: string
   sku: string
+  barcode?: string
   unit: string
   hpp: number
   price_retail: number

@@ -27,7 +27,7 @@ export default async function InventoryPage() {
 
   const branchId = await getBranchContext(supabase, user.id)
 
-  // Fetch initial products with their stocks
+  // Fetch initial products with their stocks via warehouses
   let query = supabase
     .from('products')
     .select(`
@@ -35,13 +35,14 @@ export default async function InventoryPage() {
       product_stocks (
         stock_quantity,
         min_stock_alert,
-        branch_id
+        warehouse_id,
+        warehouses!inner (branch_id)
       )
     `)
     .order('name', { ascending: true })
     
   if (branchId) {
-    query = query.eq('product_stocks.branch_id', branchId)
+    query = query.eq('product_stocks.warehouses.branch_id', branchId)
   }
 
   const { data: rawProducts } = await query
@@ -60,5 +61,11 @@ export default async function InventoryPage() {
     }
   })
 
-  return <InventoryClient initialProducts={products} userRole={profile!.role} branchId={branchId} />
+  let defaultWarehouseId = null
+  if (branchId) {
+    const { data: wh } = await supabase.from('warehouses').select('id').eq('branch_id', branchId).limit(1).single()
+    defaultWarehouseId = wh?.id || null
+  }
+
+  return <InventoryClient initialProducts={products} userRole={profile!.role} branchId={branchId} defaultWarehouseId={defaultWarehouseId} />
 }

@@ -131,23 +131,28 @@ export default function TransactionHistoryClient({ transactions: initialTransact
 
       if (updateError) throw updateError
 
-      // 2. Deduct stock for branch
+      // 2. Deduct stock for branch via default warehouse
       const txnBranchId = selectedTxn.branch_id || branchId
-      for (const item of selectedTxn.transaction_items) {
-        // Here we just fetch current stock and subtract. A safer way is using RPC but we'll do simple for now.
-        const { data: stockData } = await supabase
-          .from('product_stocks')
-          .select('stock_quantity')
-          .eq('product_id', item.product_id)
-          .eq('branch_id', txnBranchId)
-          .single()
+      const { data: wh } = await supabase.from('warehouses').select('id').eq('branch_id', txnBranchId).limit(1).single()
+      const txnWarehouseId = wh?.id
 
-        if (stockData) {
-          await supabase
+      if (txnWarehouseId) {
+        for (const item of selectedTxn.transaction_items) {
+          // Here we just fetch current stock and subtract. A safer way is using RPC but we'll do simple for now.
+          const { data: stockData } = await supabase
             .from('product_stocks')
-            .update({ stock_quantity: stockData.stock_quantity - item.qty })
+            .select('stock_quantity')
             .eq('product_id', item.product_id)
-            .eq('branch_id', txnBranchId)
+            .eq('warehouse_id', txnWarehouseId)
+            .single()
+
+          if (stockData) {
+            await supabase
+              .from('product_stocks')
+              .update({ stock_quantity: stockData.stock_quantity - item.qty })
+              .eq('product_id', item.product_id)
+              .eq('warehouse_id', txnWarehouseId)
+          }
         }
       }
 

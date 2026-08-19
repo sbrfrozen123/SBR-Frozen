@@ -13,6 +13,7 @@ const productSchema = z.object({
   name: z.string().min(1, 'Nama produk wajib diisi'),
   category: z.string().min(1, 'Kategori wajib diisi'),
   sku: z.string().min(1, 'SKU wajib diisi'),
+  barcode: z.string().optional(),
   unit: z.string().min(1, 'Satuan wajib diisi'),
   hpp: z.coerce.number().min(0, 'HPP tidak boleh negatif'),
   price_retail: z.coerce.number().min(0, 'Harga jual tidak boleh negatif'),
@@ -25,12 +26,12 @@ const productSchema = z.object({
 
 interface ProductFormProps {
   initialData?: Product
-  branchId?: string
+  warehouseId?: string
   onSuccess: () => void
   onCancel: () => void
 }
 
-export function ProductForm({ initialData, branchId, onSuccess, onCancel }: ProductFormProps) {
+export function ProductForm({ initialData, warehouseId, onSuccess, onCancel }: ProductFormProps) {
   const [loading, setLoading] = useState(false)
   const [categories, setCategories] = useState<{id: string, name: string}[]>([])
   const [units, setUnits] = useState<{id: string, name: string}[]>([])
@@ -53,6 +54,7 @@ export function ProductForm({ initialData, branchId, onSuccess, onCancel }: Prod
       name: initialData.name,
       category: initialData.category || 'Umum',
       sku: initialData.sku,
+      barcode: initialData.barcode || '',
       unit: initialData.unit,
       hpp: initialData.hpp,
       price_retail: initialData.price_retail,
@@ -63,6 +65,7 @@ export function ProductForm({ initialData, branchId, onSuccess, onCancel }: Prod
       is_active: initialData.is_active,
     } : {
       sku: 'PRD' + Math.floor(100000 + Math.random() * 900000).toString(),
+      barcode: '',
       category: 'Umum',
       unit: 'Pcs',
       hpp: 0,
@@ -85,16 +88,16 @@ export function ProductForm({ initialData, branchId, onSuccess, onCancel }: Prod
           .eq('id', initialData.id)
         if (error) throw error
         
-        // Also update product_stocks if branchId exists
-        if (branchId) {
+        // Also update product_stocks if warehouseId exists
+        if (warehouseId) {
           const { error: stockError } = await supabase
             .from('product_stocks')
             .upsert({
               product_id: initialData.id,
-              branch_id: branchId,
+              warehouse_id: warehouseId,
               stock_quantity: data.stock_quantity,
               min_stock_alert: data.min_stock_alert
-            }, { onConflict: 'product_id, branch_id' })
+            }, { onConflict: 'product_id, warehouse_id' })
           if (stockError) throw stockError
         }
         
@@ -107,8 +110,8 @@ export function ProductForm({ initialData, branchId, onSuccess, onCancel }: Prod
           .single()
         if (error) throw error
         
-        // Update initial stock in product_stocks (row already created by trigger) if branchId exists
-        if (branchId && newProduct) {
+        // Update initial stock in product_stocks (row already created by trigger) if warehouseId exists
+        if (warehouseId && newProduct) {
           const { error: stockError } = await supabase
             .from('product_stocks')
             .update({
@@ -116,7 +119,7 @@ export function ProductForm({ initialData, branchId, onSuccess, onCancel }: Prod
               min_stock_alert: data.min_stock_alert
             })
             .eq('product_id', newProduct.id)
-            .eq('branch_id', branchId)
+            .eq('warehouse_id', warehouseId)
           if (stockError) throw stockError
         }
         
@@ -157,6 +160,11 @@ export function ProductForm({ initialData, branchId, onSuccess, onCancel }: Prod
                 <label className="label">SKU (Kode Barang) *</label>
                 <input {...register('sku')} className={`input ${errors.sku ? 'input-error' : ''}`} placeholder="Cth: FCN-500" />
                 {errors.sku && <span className="text-xs text-danger mt-1">{errors.sku.message}</span>}
+              </div>
+              <div className="form-group">
+                <label className="label">Barcode</label>
+                <input {...register('barcode')} className={`input ${errors.barcode ? 'input-error' : ''}`} placeholder="Scan atau ketik barcode..." />
+                {errors.barcode && <span className="text-xs text-danger mt-1">{errors.barcode.message}</span>}
               </div>
               <div className="form-group">
                 <label className="label">Kategori</label>

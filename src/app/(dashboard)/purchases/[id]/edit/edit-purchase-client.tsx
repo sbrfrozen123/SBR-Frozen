@@ -24,7 +24,8 @@ interface EditPurchaseClientProps {
   products: Product[]
   suppliers: Supplier[]
   userId: string
-  branchId: string
+  branchId: string | null
+  defaultWarehouseId?: string | null
 }
 
 function ProductCombobox({ 
@@ -98,7 +99,7 @@ function ProductCombobox({
   )
 }
 
-export default function EditPurchaseClient({ purchase, products, suppliers, userId, branchId }: EditPurchaseClientProps) {
+export default function EditPurchaseClient({ purchase, products, suppliers, userId, branchId, defaultWarehouseId }: EditPurchaseClientProps) {
   const router = useRouter()
   const supabase = createClient()
 
@@ -204,14 +205,16 @@ export default function EditPurchaseClient({ purchase, products, suppliers, user
             stock_quantity: Math.max(0, currentProduct.stock_quantity - oldItem.qty)
           }).eq('id', oldItem.product_id)
         }
-        // Revert branch stock
-        const { data: branchStockData } = await supabase
-          .from('product_stocks').select('stock_quantity')
-          .eq('product_id', oldItem.product_id).eq('branch_id', branchId).single()
-        if (branchStockData) {
-          await supabase.from('product_stocks').update({
-            stock_quantity: Math.max(0, Number(branchStockData.stock_quantity) - oldItem.qty)
-          }).eq('product_id', oldItem.product_id).eq('branch_id', branchId)
+        // Revert branch stock via warehouse
+        if (defaultWarehouseId) {
+          const { data: branchStockData } = await supabase
+            .from('product_stocks').select('stock_quantity')
+            .eq('product_id', oldItem.product_id).eq('warehouse_id', defaultWarehouseId).single()
+          if (branchStockData) {
+            await supabase.from('product_stocks').update({
+              stock_quantity: Math.max(0, Number(branchStockData.stock_quantity) - oldItem.qty)
+            }).eq('product_id', oldItem.product_id).eq('warehouse_id', defaultWarehouseId)
+          }
         }
       }
 
@@ -235,15 +238,18 @@ export default function EditPurchaseClient({ purchase, products, suppliers, user
           hpp: item.unit_price
         }).eq('id', item.product.id)
 
-        // Update branch stock
-        const { data: bStock } = await supabase.from('product_stocks').select('stock_quantity')
-          .eq('product_id', item.product.id).eq('branch_id', branchId).single()
-        const bQty = bStock ? Number(bStock.stock_quantity) : 0
-        if (bStock) {
-          await supabase.from('product_stocks').update({ stock_quantity: bQty + item.qty })
-            .eq('product_id', item.product.id).eq('branch_id', branchId)
-        } else {
-          await supabase.from('product_stocks').insert([{ product_id: item.product.id, branch_id: branchId, stock_quantity: item.qty }])
+        // Update branch stock via warehouse
+        let bQty = 0
+        if (defaultWarehouseId) {
+          const { data: bStock } = await supabase.from('product_stocks').select('stock_quantity')
+            .eq('product_id', item.product.id).eq('warehouse_id', defaultWarehouseId).single()
+          bQty = bStock ? Number(bStock.stock_quantity) : 0
+          if (bStock) {
+            await supabase.from('product_stocks').update({ stock_quantity: bQty + item.qty })
+              .eq('product_id', item.product.id).eq('warehouse_id', defaultWarehouseId)
+          } else {
+            await supabase.from('product_stocks').insert([{ product_id: item.product.id, warehouse_id: defaultWarehouseId, stock_quantity: item.qty }])
+          }
         }
 
         // Log stock adjustment
