@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Plus, Search, Filter, MoreVertical, Edit, Trash2, AlertTriangle, Package, ClipboardCheck, Download, Upload, ChevronRight } from 'lucide-react'
 import { formatRupiah } from '@/lib/utils/currency'
 import { cn } from '@/lib/utils/cn'
@@ -16,12 +16,14 @@ interface InventoryClientProps {
   userRole: UserRole
   branchId: string | null
   defaultWarehouseId?: string | null
+  warehouses: any[]
 }
 
-export default function InventoryClient({ initialProducts, userRole, branchId, defaultWarehouseId }: InventoryClientProps) {
+export default function InventoryClient({ initialProducts, userRole, branchId, defaultWarehouseId, warehouses }: InventoryClientProps) {
   const [products, setProducts] = useState<Product[]>(initialProducts)
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<string>('Semua')
+  const [warehouseFilter, setWarehouseFilter] = useState<string>('all')
   const [categorySearch, setCategorySearch] = useState('')
   const [isImporting, setIsImporting] = useState(false)
   
@@ -60,6 +62,7 @@ export default function InventoryClient({ initialProducts, userRole, branchId, d
     `).order('name', { ascending: true })
     
     if (branchId) query = query.eq('product_stocks.warehouses.branch_id', branchId)
+    if (warehouseFilter !== 'all') query = query.eq('product_stocks.warehouse_id', warehouseFilter)
 
     const { data: rawProducts } = await query
     const mapped = (rawProducts || []).map(p => {
@@ -70,6 +73,11 @@ export default function InventoryClient({ initialProducts, userRole, branchId, d
     })
     setProducts(mapped)
   }
+
+  // Effect to re-fetch when warehouse filter changes
+  useEffect(() => {
+    refreshData()
+  }, [warehouseFilter])
 
   const handleDelete = async (id: string, name: string) => {
     if (!window.confirm(`Apakah Anda yakin ingin menghapus produk "${name}"? Data ini tidak dapat dikembalikan.`)) return
@@ -260,6 +268,21 @@ export default function InventoryClient({ initialProducts, userRole, branchId, d
                 </DropdownMenu.Content>
               </DropdownMenu.Portal>
             </DropdownMenu.Root>
+            {/* WAREHOUSE FILTER */}
+            {warehouses && warehouses.length > 0 && (
+              <div className="flex items-center gap-2 pb-1 sm:pb-0 w-full sm:w-auto relative">
+                <select
+                  value={warehouseFilter}
+                  onChange={(e) => setWarehouseFilter(e.target.value)}
+                  className="input py-2 text-sm font-medium w-full sm:w-[200px] bg-white border-dark-200 focus:border-primary shadow-sm rounded-lg"
+                >
+                  <option value="all">Semua Gudang</option>
+                  {warehouses.map(wh => (
+                    <option key={wh.id} value={wh.id}>{wh.name} {wh.branches?.name ? `(${wh.branches.name})` : ''}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </div>
 
@@ -269,6 +292,7 @@ export default function InventoryClient({ initialProducts, userRole, branchId, d
             <thead className="sticky top-0 z-10">
               <tr>
                 <th className="w-12 text-center border-l-0">No</th>
+                <th>ID / PLU</th>
                 <th>Info Produk</th>
                 <th>Kategori</th>
                 <th>Barcode</th>
@@ -295,8 +319,10 @@ export default function InventoryClient({ initialProducts, userRole, branchId, d
                   <tr key={product.id} className={product.stock_quantity <= product.min_stock_alert ? 'bg-danger-light/20' : ''}>
                     <td className="text-center text-dark-400 border-l-0">{index + 1}</td>
                     <td>
-                      <div className="text-dark-900 truncate max-w-[200px] sm:max-w-xs">{product.name}</div>
-                      <div className="text-[10px] text-dark-400 font-mono mt-0.5 tracking-wider">{product.sku}</div>
+                      <div className="text-sm font-mono text-dark-900 bg-slate-50 px-2 py-1 rounded inline-block">{product.sku}</div>
+                    </td>
+                    <td>
+                      <div className="text-dark-900 truncate max-w-[200px] sm:max-w-xs font-semibold">{product.name}</div>
                     </td>
                     <td>
                       <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px]">{product.category || 'Umum'}</span>

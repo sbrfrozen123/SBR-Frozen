@@ -15,16 +15,18 @@ export default function TransfersClient({ userRole }: TransfersClientProps) {
   const [transfers, setTransfers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
   const supabase = createClient()
 
   useEffect(() => {
     fetchTransfers()
-  }, [])
+  }, [fromDate, toDate])
 
   const fetchTransfers = async () => {
     try {
       setLoading(true)
-      const { data, error } = await supabase
+      let query = supabase
         .from('stock_transfers')
         .select(`
           *,
@@ -36,7 +38,11 @@ export default function TransfersClient({ userRole }: TransfersClientProps) {
             id, quantity, product:products(name, sku, unit)
           )
         `)
-        .order('created_at', { ascending: false })
+
+      if (fromDate) query.gte('created_at', `${fromDate}T00:00:00.000Z`)
+      if (toDate) query.lte('created_at', `${toDate}T23:59:59.999Z`)
+
+      const { data, error } = await query.order('created_at', { ascending: false })
 
       if (error) throw error
       setTransfers(data || [])
@@ -85,6 +91,11 @@ export default function TransfersClient({ userRole }: TransfersClientProps) {
               onChange={(e) => setSearch(e.target.value)}
               className="input pl-9"
             />
+          </div>
+          <div className="flex items-center gap-2">
+            <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="input w-36 text-sm" />
+            <span className="text-dark-400">-</span>
+            <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="input w-36 text-sm" />
           </div>
         </div>
 

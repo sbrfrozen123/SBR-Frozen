@@ -14,6 +14,7 @@ interface Profile {
   status: 'active' | 'inactive'
   branch_id: string | null
   branch?: { name: string } | null
+  id_role?: string | null
 }
 
 interface UserManagementTableProps {
@@ -34,7 +35,8 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
     password: '',
     fullName: '',
     role: 'kasir' as 'super_admin' | 'admin_gudang' | 'kasir' | 'sales',
-    branch_id: initialBranches[0]?.id || ''
+    branch_id: initialBranches[0]?.id || '',
+    id_role: ''
   })
   
   // Edit State
@@ -45,7 +47,8 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
     role: 'kasir' as 'super_admin' | 'admin_gudang' | 'kasir' | 'sales',
     branch_id: '',
     status: 'active' as 'active' | 'inactive',
-    password: ''
+    password: '',
+    id_role: ''
   })
 
   const openEditModal = (user: Profile) => {
@@ -55,7 +58,8 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
       role: user.role,
       branch_id: user.branch_id || '',
       status: user.status,
-      password: ''
+      password: '',
+      id_role: user.id_role || ''
     })
     setIsEditModalOpen(true)
   }
@@ -131,7 +135,7 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
 
       toast.success('Pengguna berhasil dibuat! Silakan refresh halaman jika belum muncul.')
       setIsModalOpen(false)
-      setFormData({ email: '', password: '', fullName: '', role: 'kasir', branch_id: initialBranches[0]?.id || '' })
+      setFormData({ email: '', password: '', fullName: '', role: 'kasir', branch_id: initialBranches[0]?.id || '', id_role: '' })
       // Idealnya kita memanggil server action revalidatePath, atau sekadar reload data.
       window.location.reload()
     } catch (error: any) {
@@ -152,7 +156,8 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
         full_name: editFormData.fullName,
         role: editFormData.role,
         branch_id: editFormData.role === 'super_admin' ? null : (editFormData.branch_id || null),
-        status: editFormData.status
+        status: editFormData.status,
+        id_role: editFormData.id_role || null
       }
       
       const { error } = await supabase
@@ -226,7 +231,7 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
                       </div>
                       <div>
                         <div className="font-semibold text-dark-900">{user.full_name}</div>
-                        <div className="text-xs text-dark-400">ID: {user.id.slice(0, 8)}</div>
+                        <div className="text-xs text-dark-400">ID Role: {user.id_role || '-'}</div>
                       </div>
                     </div>
                   </td>
@@ -434,6 +439,10 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
                   placeholder="Misal: Budi Santoso"
                 />
               </div>
+              <div className="form-group">
+                <label className="label">ID Role (Opsional)</label>
+                <input type="text" value={formData.id_role} onChange={(e) => setFormData({...formData, id_role: e.target.value})} className="input" placeholder="Misal: KSR-001" />
+              </div>
 
               <div className="form-group">
                 <label className="label">Alamat Email (Untuk Login)</label>
@@ -526,14 +535,12 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
             
             <form onSubmit={handleUpdateUser} className="p-5 space-y-4">
               <div className="form-group">
-                <label className="label">Nama Lengkap</label>
-                <input 
-                  type="text" 
-                  required
-                  value={editFormData.fullName}
-                  onChange={e => setEditFormData({...editFormData, fullName: e.target.value})}
-                  className="input" 
-                />
+                <label className="label">Nama Lengkap *</label>
+                <input type="text" value={editFormData.fullName} onChange={(e) => setEditFormData({...editFormData, fullName: e.target.value})} className="input" required />
+              </div>
+              <div className="form-group">
+                <label className="label">ID Role</label>
+                <input type="text" value={editFormData.id_role} onChange={(e) => setEditFormData({...editFormData, id_role: e.target.value})} className="input" placeholder="Misal: KSR-001" />
               </div>
 
               <div className="form-group">

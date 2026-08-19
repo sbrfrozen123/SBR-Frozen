@@ -222,12 +222,12 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
         <>
           {/* Backdrop (Click to close) */}
           <div 
-            className="fixed inset-0 z-[40] bg-black/5 lg:bg-black/10 transition-opacity"
+            className="fixed inset-0 z-[40] bg-black/5 lg:bg-transparent transition-opacity"
             onClick={() => setActiveModule(null)}
           />
           
           <div 
-            className="fixed top-0 bottom-0 left-[72px] w-[320px] h-screen bg-white border-r border-dark-100 shadow-[20px_0_40px_rgba(0,0,0,0.05)] z-[45] animate-slide-right flex flex-col overflow-hidden"
+            className="fixed top-20 left-[84px] w-auto max-w-[400px] max-h-[80vh] bg-white rounded-xl border border-dark-200 shadow-2xl z-[45] animate-fade-in flex flex-col overflow-hidden"
           >
           {(() => {
             const mod = modules.find(m => m.id === activeModule)
@@ -236,28 +236,24 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
 
             return (
               <>
-                <div className="h-16 flex flex-shrink-0 items-center px-6 border-b border-dark-100 bg-[#FEF6F7]">
+                <div className="flex-shrink-0 px-5 py-4 border-b border-dark-100 bg-[#FEF6F7]">
                   <h2 className="font-bold text-lg text-dark-900 flex items-center gap-2">
-                    <mod.icon className={cn("w-5 h-5", mod.color)} />
                     {mod.label}
                   </h2>
                 </div>
-                <div className="p-5 overflow-y-auto no-scrollbar">
-                  <div className="grid grid-cols-2 gap-3">
+                <div className="p-4 overflow-y-auto no-scrollbar">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {items.map((item) => (
                       <Link
                         key={item.href}
                         href={item.href}
-                        onClick={() => {
-                          setActiveModule(null)
-                          setMobileOpen(false)
-                        }}
-                        className="group flex flex-col items-center text-center gap-2 p-4 bg-white rounded-xl border border-dark-100 shadow-sm hover:shadow-md hover:border-primary-200 transition-all"
+                        onClick={() => setActiveModule(null)}
+                        className="group flex flex-col items-center justify-center gap-2 p-3 bg-white rounded-xl border border-dark-200 hover:border-primary-500 hover:bg-primary-50/50 transition-all text-center h-[90px]"
                       >
-                        <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm", item.color.replace('text-', 'bg-').replace('500', '50'))}>
-                          <item.icon className={cn("w-6 h-6", item.color)} />
+                        <div className={cn("p-2 rounded-lg transition-colors", mod.color.replace('text-', 'bg-').replace('500', '100'), mod.color)}>
+                          <item.icon className="w-6 h-6" />
                         </div>
-                        <span className="text-[13px] font-medium text-dark-700 group-hover:text-primary-600 transition-colors">
+                        <span className="text-xs font-semibold text-dark-700 group-hover:text-primary-600 line-clamp-2 leading-tight">
                           {item.label}
                         </span>
                       </Link>

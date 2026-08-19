@@ -30,6 +30,7 @@ interface CartItem {
   product: Product
   qty: number
   unit_price: number
+  discount_amount?: number
 }
 
 export default function POSClient({ products, customers, settings, userRole, userId, branchId, branch, defaultWarehouseId, editTxId }: POSClientProps) {
@@ -79,7 +80,8 @@ export default function POSClient({ products, customers, settings, userRole, use
           return {
             product,
             qty: ti.qty,
-            unit_price: ti.unit_price
+            unit_price: ti.unit_price,
+            discount_amount: ti.discount_amount || 0
           }
         }).filter(Boolean) as CartItem[]
 
@@ -168,7 +170,7 @@ export default function POSClient({ products, customers, settings, userRole, use
           item.product.id === product.id ? { ...item, qty: item.qty + 1 } : item
         )
       }
-      return [...prev, { product, qty: 1, unit_price: getProductPrice(product, selectedCustomer) }]
+      return [...prev, { product, qty: 1, unit_price: getProductPrice(product, selectedCustomer), discount_amount: 0 }]
     })
   }
 
@@ -216,20 +218,20 @@ export default function POSClient({ products, customers, settings, userRole, use
     }))
   }
 
-  const handlePriceChange = (productId: string, val: string) => {
+  const handleDiscountChange = (productId: string, val: string) => {
     if (val === '') {
-      setCart(prev => prev.map(item => item.product.id === productId ? { ...item, unit_price: '' as any } : item))
+      setCart(prev => prev.map(item => item.product.id === productId ? { ...item, discount_amount: '' as any } : item))
       return
     }
-    const price = parseInt(val.replace(/\D/g, ''))
-    if (isNaN(price)) return
-    setCart(prev => prev.map(item => item.product.id === productId ? { ...item, unit_price: price } : item))
+    const discount = parseInt(val.replace(/\D/g, ''))
+    if (isNaN(discount)) return
+    setCart(prev => prev.map(item => item.product.id === productId ? { ...item, discount_amount: discount } : item))
   }
 
-  const handlePriceBlur = (productId: string) => {
+  const handleDiscountBlur = (productId: string) => {
     setCart(prev => prev.map(item => {
       if (item.product.id === productId) {
-        if (!item.unit_price || (item.unit_price as any) < 0) return { ...item, unit_price: 0 }
+        if (!item.discount_amount || (item.discount_amount as any) < 0) return { ...item, discount_amount: 0 }
       }
       return item
     }))
@@ -239,7 +241,7 @@ export default function POSClient({ products, customers, settings, userRole, use
     setCart(prev => prev.filter(item => item.product.id !== productId))
   }
 
-  const subtotal = cart.reduce((sum, item) => sum + (item.unit_price * item.qty), 0)
+  const subtotal = cart.reduce((sum, item) => sum + ((item.unit_price * item.qty) - (item.discount_amount || 0)), 0)
   const taxRate = settings?.tax_percentage || 0
   const taxAmount = (subtotal * taxRate) / 100
   const total = subtotal + taxAmount
@@ -354,7 +356,8 @@ export default function POSClient({ products, customers, settings, userRole, use
         unit: item.product.unit,
         unit_price: item.unit_price,
         hpp_snapshot: item.product.hpp,
-        subtotal: item.qty * item.unit_price
+        discount_amount: item.discount_amount || 0,
+        subtotal: (item.qty * item.unit_price) - (item.discount_amount || 0)
       }))
 
       const { error: itemsError } = await supabase.from('transaction_items').insert(txnItems)
@@ -430,7 +433,9 @@ export default function POSClient({ products, customers, settings, userRole, use
 
     items.forEach((item: any) => {
       text += `${item.product.name}\n`
-      text += `${item.qty} x ${formatRupiah(item.unit_price)} = ${formatRupiah(item.qty * item.unit_price)}\n`
+      text += `${item.qty} x ${formatRupiah(item.unit_price)}`
+      if (item.discount_amount > 0) text += ` - Diskon ${formatRupiah(item.discount_amount)}`
+      text += ` = ${formatRupiah((item.qty * item.unit_price) - (item.discount_amount || 0))}\n`
     })
 
     text += `--------------------------------\n`
@@ -680,20 +685,24 @@ export default function POSClient({ products, customers, settings, userRole, use
                 <div key={item.product.id} className="flex gap-3 p-3 rounded-xl border border-dark-100 bg-white hover:border-primary-200 transition-colors group">
                   <div className="flex-1 min-w-0">
                     <h4 className="text-sm font-semibold text-dark-900 line-clamp-1">{item.product.name}</h4>
+                    <p className="text-primary-600 font-bold text-money text-sm mt-0.5">{formatRupiah(item.unit_price)}</p>
                     {userRole === 'super_admin' || userRole === 'kasir' ? (
                       <div className="flex items-center gap-1 mt-1">
-                        <span className="text-xs text-dark-400 font-medium">Rp</span>
+                        <span className="text-[10px] text-danger-600 font-medium bg-danger-50 px-1 rounded border border-danger-100">Diskon</span>
                         <input
                           type="text"
-                          value={item.unit_price as any === '' ? '' : item.unit_price.toLocaleString('id-ID')}
-                          onChange={(e) => handlePriceChange(item.product.id, e.target.value)}
-                          onBlur={() => handlePriceBlur(item.product.id)}
-                          className="w-24 text-primary-600 font-bold text-money text-sm bg-white border border-dark-200 rounded px-1.5 py-0.5 focus:border-primary-400 focus:outline-none transition-colors"
+                          value={item.discount_amount as any === '' ? '' : item.discount_amount?.toLocaleString('id-ID')}
+                          onChange={(e) => handleDiscountChange(item.product.id, e.target.value)}
+                          onBlur={() => handleDiscountBlur(item.product.id)}
+                          className="w-20 text-danger-600 font-bold text-money text-xs bg-white border border-danger-200 rounded px-1 py-0.5 focus:border-danger-400 focus:outline-none transition-colors text-right"
+                          placeholder="0"
                         />
                       </div>
-                    ) : (
-                      <p className="text-primary-600 font-bold text-money text-sm mt-0.5">{formatRupiah(item.unit_price)}</p>
-                    )}
+                    ) : item.discount_amount ? (
+                      <p className="text-danger-600 font-bold text-money text-xs mt-1 border border-danger-100 bg-danger-50 rounded px-1 inline-block">
+                        Diskon: {formatRupiah(item.discount_amount)}
+                      </p>
+                    ) : null}
                   </div>
 
                   <div className="flex flex-col items-end gap-2">

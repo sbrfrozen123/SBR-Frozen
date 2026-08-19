@@ -35,7 +35,7 @@ export default async function SettingsPage() {
   // Fetch all users for user management
   const { data: users } = await supabase
     .from('profiles')
-    .select('id, full_name, role, status, branch_id, branch:branches(name)')
+    .select('id, full_name, role, status, branch_id, id_role, branch:branches(name)')
     .order('created_at', { ascending: true })
 
   // Fetch branches

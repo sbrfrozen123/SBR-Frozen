@@ -107,7 +107,7 @@ export function ExpenseForm({ initialData, userId, branchId, onSuccess, onCancel
   }
 
   return (
-    <div className="bg-white rounded-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="bg-white rounded-2xl w-full max-w-xl flex flex-col max-h-[90vh] shadow-2xl">
       <div className="flex items-center justify-between p-6 border-b border-dark-100 flex-shrink-0">
         <h2 className="text-xl font-bold text-dark-900">
           {initialData ? 'Edit Pengeluaran' : 'Catat Pengeluaran Baru'}
@@ -195,7 +195,7 @@ export function ExpenseForm({ initialData, userId, branchId, onSuccess, onCancel
         </form>
       </div>
 
-      <div className="p-6 border-t border-dark-100 bg-dark-50 flex justify-end gap-3 flex-shrink-0">
+      <div className="p-6 border-t border-dark-100 bg-white rounded-b-2xl flex justify-end gap-3 flex-shrink-0">
         <button type="button" onClick={onCancel} className="btn-md btn-outline bg-white">
           Batal
         </button>

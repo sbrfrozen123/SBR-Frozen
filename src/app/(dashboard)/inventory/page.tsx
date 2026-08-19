@@ -62,10 +62,15 @@ export default async function InventoryPage() {
   })
 
   let defaultWarehouseId = null
+  let warehouses = []
   if (branchId) {
-    const { data: wh } = await supabase.from('warehouses').select('id').eq('branch_id', branchId).limit(1).single()
-    defaultWarehouseId = wh?.id || null
+    const { data: wh } = await supabase.from('warehouses').select('*').eq('branch_id', branchId)
+    warehouses = wh || []
+    defaultWarehouseId = warehouses[0]?.id || null
+  } else {
+    const { data: wh } = await supabase.from('warehouses').select('*, branches(name)')
+    warehouses = wh || []
   }
 
-  return <InventoryClient initialProducts={products} userRole={profile!.role} branchId={branchId} defaultWarehouseId={defaultWarehouseId} />
+  return <InventoryClient initialProducts={products} userRole={profile!.role} branchId={branchId} defaultWarehouseId={defaultWarehouseId} warehouses={warehouses} />
 }

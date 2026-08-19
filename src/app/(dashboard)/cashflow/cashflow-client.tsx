@@ -20,7 +20,7 @@ interface CashflowClientProps {
 export default function CashflowClient({ userId, branchId, initialCash, initialBank, history }: CashflowClientProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [type, setType] = useState<'saldo_awal' | 'setor_kas' | 'tarik_kas' | 'mutasi_ke_bank' | 'mutasi_ke_kas'>('saldo_awal')
+  const [type, setType] = useState<'saldo_awal' | 'setor_kas' | 'tarik_kas' | 'mutasi_ke_bank' | 'mutasi_ke_kas' | 'pendapatan_lain'>('saldo_awal')
   const [amount, setAmount] = useState<number>(0)
   const [paymentMethod, setPaymentMethod] = useState<'tunai' | 'transfer' | 'qris'>('tunai')
   const [description, setDescription] = useState('')
@@ -133,6 +133,7 @@ export default function CashflowClient({ userId, branchId, initialCash, initialB
                     <td className="p-4">
                       {item.type === 'saldo_awal' && <span className="text-xs font-bold px-2 py-1 rounded bg-indigo-100 text-indigo-700">Saldo Awal</span>}
                       {item.type === 'setor_kas' && <span className="text-xs font-bold px-2 py-1 rounded bg-success-100 text-success-700">Setor Modal</span>}
+                      {item.type === 'pendapatan_lain' && <span className="text-xs font-bold px-2 py-1 rounded bg-success-100 text-success-700">Pendapatan Lain</span>}
                       {item.type === 'tarik_kas' && <span className="text-xs font-bold px-2 py-1 rounded bg-danger-100 text-danger-700">Tarik Saldo</span>}
                       {item.type === 'mutasi_ke_bank' && <span className="text-xs font-bold px-2 py-1 rounded bg-primary-100 text-primary-700">Kas {'->'} Bank</span>}
                       {item.type === 'mutasi_ke_kas' && <span className="text-xs font-bold px-2 py-1 rounded bg-warning-100 text-warning-700">Bank {'->'} Kas</span>}
@@ -171,12 +172,13 @@ export default function CashflowClient({ userId, branchId, initialCash, initialB
                   <option value="saldo_awal">⭐ Input Saldo Awal / Saldo Sekarang</option>
                   <option value="setor_kas">Setor Dana / Modal Masuk</option>
                   <option value="tarik_kas">Tarik Dana / Ambil Uang Pribadi</option>
-                  <option value="mutasi_ke_bank">Setor Uang Tunai Kasir ke Bank</option>
-                  <option value="mutasi_ke_kas">Tarik Uang Bank ke Kasir</option>
+                  <option value="mutasi_ke_bank">🏦 Mutasi Kas Fisik ke Saldo Bank</option>
+                  <option value="mutasi_ke_kas">🏦 Mutasi Saldo Bank ke Kas Fisik</option>
+                  <option value="pendapatan_lain">💰 Input Pendapatan Lain-lain</option>
                 </select>
               </div>
 
-              {(type === 'setor_kas' || type === 'tarik_kas' || type === 'saldo_awal') && (
+              {(type === 'setor_kas' || type === 'tarik_kas' || type === 'saldo_awal' || type === 'pendapatan_lain') && (
                 <div className="form-group">
                   <label className="label">Target Akun</label>
                   <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as any)} className="input bg-white">
