@@ -11,7 +11,7 @@ import { toast } from 'react-hot-toast'
 import type { Product, UserRole } from '@/types/database'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import jsPDF from 'jspdf'
-import 'jspdf-autotable'
+import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
 import { FileText, FileSpreadsheet } from 'lucide-react'
 import { createPortal } from 'react-dom'
@@ -171,7 +171,7 @@ export default function InventoryClient({ initialProducts, userRole, branchId, d
       formatRupiah(row['Nilai Stok'])
     ])
 
-    ;(doc as any).autoTable({
+    autoTable(doc, {
       startY: 35,
       head: [['ID Barang', 'Nama Barang', 'Kategori', 'Satuan', 'HPP', 'Harga Jual', 'Gudang', 'Stok', 'Nilai Stok']],
       body: tableData,
