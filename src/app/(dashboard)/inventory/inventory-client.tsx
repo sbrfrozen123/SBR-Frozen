@@ -10,6 +10,7 @@ import { createClient } from '@/lib/supabase/client'
 import { toast } from 'react-hot-toast'
 import type { Product, UserRole } from '@/types/database'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
+import { createPortal } from 'react-dom'
 
 interface InventoryClientProps {
   initialProducts: Product[]
@@ -31,8 +32,13 @@ export default function InventoryClient({ initialProducts, userRole, branchId, d
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | undefined>(undefined)
+  const [mounted, setMounted] = useState(false)
 
   const supabase = createClient()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Extract unique categories for filter
   const categories = useMemo(() => {
@@ -434,7 +440,7 @@ export default function InventoryClient({ initialProducts, userRole, branchId, d
       </div>
 
       {/* Form Modal */}
-      {isFormOpen && (
+      {mounted && isFormOpen && createPortal(
         <div className="modal-overlay">
           <ProductForm 
             initialData={editingProduct} 
@@ -445,11 +451,12 @@ export default function InventoryClient({ initialProducts, userRole, branchId, d
             }}
             onCancel={() => setIsFormOpen(false)}
           />
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Adjustment Modal */}
-      {isAdjustmentModalOpen && (
+      {mounted && isAdjustmentModalOpen && createPortal(
         <div className="modal-overlay">
           <StockAdjustmentModal 
             products={products}
@@ -462,7 +469,8 @@ export default function InventoryClient({ initialProducts, userRole, branchId, d
             }}
             onCancel={() => setIsAdjustmentModalOpen(false)}
           />
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

@@ -159,61 +159,69 @@ export default function CashflowClient({ userId, branchId, initialCash, initialB
       {/* Modal Mutasi */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-dark-900/50 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl animate-scale-up">
-            <div className="p-5 border-b border-dark-100 flex justify-between items-center">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl animate-scale-up overflow-hidden">
+            <div className="px-6 py-4 border-b border-dark-100 flex justify-between items-center bg-dark-50/50">
               <h2 className="text-lg font-bold text-dark-900">Catat Mutasi Dana</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-dark-400 hover:text-dark-600">✕</button>
+              <button onClick={() => setIsModalOpen(false)} className="text-dark-400 hover:text-dark-600 transition-colors bg-white rounded-lg p-1">✕</button>
             </div>
             
-            <form onSubmit={handleMutasi} className="p-5 space-y-4">
-              <div className="form-group">
-                <label className="label">Jenis Transaksi</label>
-                <select value={type} onChange={(e) => setType(e.target.value as any)} className="input bg-white font-medium">
-                  <option value="saldo_awal">⭐ Input Saldo Awal / Saldo Sekarang</option>
-                  <option value="setor_kas">Setor Dana / Modal Masuk</option>
-                  <option value="tarik_kas">Tarik Dana / Ambil Uang Pribadi</option>
-                  <option value="mutasi_ke_bank">🏦 Mutasi Kas Fisik ke Saldo Bank</option>
-                  <option value="mutasi_ke_kas">🏦 Mutasi Saldo Bank ke Kas Fisik</option>
-                  <option value="pendapatan_lain">💰 Input Pendapatan Lain-lain</option>
-                </select>
-              </div>
-
-              {(type === 'setor_kas' || type === 'tarik_kas' || type === 'saldo_awal' || type === 'pendapatan_lain') && (
+            <form onSubmit={handleMutasi} className="p-6 space-y-5 bg-slate-50">
+              <div className="bg-white p-5 rounded-2xl border border-dark-100 shadow-sm space-y-4">
                 <div className="form-group">
-                  <label className="label">Target Akun</label>
-                  <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as any)} className="input bg-white">
-                    <option value="tunai">Kas Tunai (Laci)</option>
-                    <option value="transfer">Bank / ATM</option>
+                  <label className="label">Jenis Transaksi</label>
+                  <select value={type} onChange={(e) => setType(e.target.value as any)} className="input bg-white font-medium">
+                    <option value="saldo_awal">⭐ Input Saldo Awal / Saldo Sekarang</option>
+                    <option value="setor_kas">Setor Dana / Modal Masuk</option>
+                    <option value="tarik_kas">Tarik Dana / Ambil Uang Pribadi</option>
+                    <option value="mutasi_ke_bank">🏦 Mutasi Kas Fisik ke Saldo Bank</option>
+                    <option value="mutasi_ke_kas">🏦 Mutasi Saldo Bank ke Kas Fisik</option>
+                    <option value="pendapatan_lain">💰 Input Pendapatan Lain-lain</option>
                   </select>
                 </div>
-              )}
 
-              <div className="form-group">
-                <label className="label">Nominal Mutasi (Rp)</label>
-                <input 
-                  type="number" 
-                  min="0"
-                  value={amount || ''}
-                  onChange={(e) => setAmount(Number(e.target.value))}
-                  className="input" 
-                  autoFocus
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {(type === 'setor_kas' || type === 'tarik_kas' || type === 'saldo_awal' || type === 'pendapatan_lain') && (
+                    <div className="form-group">
+                      <label className="label">Target Akun</label>
+                      <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as any)} className="input bg-white">
+                        <option value="tunai">Kas Tunai (Laci)</option>
+                        <option value="transfer">Bank / ATM</option>
+                      </select>
+                    </div>
+                  )}
+
+                  <div className={`form-group ${(type === 'setor_kas' || type === 'tarik_kas' || type === 'saldo_awal' || type === 'pendapatan_lain') ? '' : 'md:col-span-2'}`}>
+                    <label className="label">Nominal Mutasi (Rp)</label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-dark-400 font-medium text-sm">Rp</span>
+                      <input 
+                        type="number" 
+                        min="0"
+                        value={amount || ''}
+                        onChange={(e) => setAmount(Number(e.target.value))}
+                        className="input pl-10" 
+                        placeholder="0"
+                        autoFocus
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="label">Keterangan Singkat</label>
+                  <input 
+                    type="text" 
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="input" 
+                    placeholder="Cth: Setor omset mingguan ke BCA"
+                  />
+                </div>
               </div>
 
-              <div className="form-group">
-                <label className="label">Keterangan</label>
-                <input 
-                  type="text" 
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="input" 
-                  placeholder="Cth: Setor omset mingguan ke BCA"
-                />
-              </div>
-
-              <div className="pt-4 flex justify-end gap-3">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="btn-md btn-outline bg-white">Batal</button>
-                <button type="submit" disabled={loading} className="btn-md btn-primary px-6">
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="btn-md btn-outline bg-white shadow-sm">Batal</button>
+                <button type="submit" disabled={loading} className="btn-md btn-primary px-6 shadow-sm">
                   {loading ? 'Menyimpan...' : 'Simpan Mutasi'}
                 </button>
               </div>

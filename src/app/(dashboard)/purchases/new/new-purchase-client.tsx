@@ -90,7 +90,7 @@ function ProductCombobox({
       </div>
       
       {isActive && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-dark-100 rounded-xl shadow-xl max-h-60 overflow-y-auto z-50 animate-slide-up">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-dark-100 rounded-xl shadow-2xl max-h-[400px] overflow-y-auto z-[100] animate-slide-up">
           <div className="p-1">
             {filtered.length === 0 ? (
               <p className="p-3 text-sm text-center text-dark-400">Barang tidak ditemukan.</p>

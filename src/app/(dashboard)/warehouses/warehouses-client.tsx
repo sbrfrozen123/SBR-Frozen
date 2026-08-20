@@ -171,12 +171,12 @@ export default function WarehousesClient({ initialWarehouses, branches }: Wareho
                 </div>
               </div>
             </div>
-            <div className="border-t border-dark-50 bg-dark-50/50 p-3 flex justify-end gap-2">
-              <button onClick={() => openForm(w)} className="w-8 h-8 rounded-lg flex items-center justify-center text-dark-500 hover:bg-dark-100 hover:text-primary-600 transition-colors" title="Edit">
-                <Edit className="w-4 h-4" />
+            <div className="border-t border-dark-50 bg-dark-50/50 p-4 flex justify-end gap-2 mt-auto">
+              <button onClick={() => openForm(w)} className="btn-sm bg-white border border-dark-200 text-dark-600 hover:bg-dark-50 hover:text-primary-600 transition-colors shadow-sm">
+                <Edit className="w-4 h-4 mr-1.5" /> Edit
               </button>
-              <button onClick={() => handleDelete(w.id, w.name)} className="w-8 h-8 rounded-lg flex items-center justify-center text-dark-500 hover:bg-red-50 hover:text-red-600 transition-colors" title="Hapus">
-                <Trash2 className="w-4 h-4" />
+              <button onClick={() => handleDelete(w.id, w.name)} className="btn-sm bg-white border border-danger/20 text-danger-600 hover:bg-danger-50 transition-colors shadow-sm">
+                <Trash2 className="w-4 h-4 mr-1.5" /> Hapus
               </button>
             </div>
           </div>

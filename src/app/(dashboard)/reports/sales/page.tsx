@@ -36,6 +36,7 @@ export default async function SalesReportPage({
   const from = (searchParams?.from as string) || firstDayOfMonth
   const to = (searchParams?.to as string) || lastDayOfMonthStr
   const tab = (searchParams?.tab as string) || 'ringkasan'
+  const warehouseId = searchParams?.warehouse as string || ''
 
   // Fetch detailed sales
   let salesQuery = supabase
@@ -45,6 +46,7 @@ export default async function SalesReportPage({
       customers ( name ),
       profiles ( full_name ),
       branches ( name ),
+      warehouses ( name ),
       transaction_items (
         id, qty, unit, unit_price, subtotal, product_name, product_sku,
         products ( name, sku )
@@ -53,6 +55,7 @@ export default async function SalesReportPage({
     .order('created_at', { ascending: false })
 
   if (branchId) salesQuery = salesQuery.eq('branch_id', branchId)
+  if (warehouseId) salesQuery = salesQuery.eq('warehouse_id', warehouseId)
   
   // Date filtering
   if (from) salesQuery = salesQuery.gte('created_at', from)
@@ -64,13 +67,17 @@ export default async function SalesReportPage({
   }
 
   const { data: salesData } = await salesQuery
+  
+  const { data: warehouses } = await supabase.from('warehouses').select('id, name').eq('is_active', true)
 
   return (
     <SalesClient 
       salesData={salesData || []} 
+      warehouses={warehouses || []}
       initialFrom={from}
       initialTo={to}
       initialTab={tab}
+      initialWarehouseId={warehouseId}
     />
   )
 }

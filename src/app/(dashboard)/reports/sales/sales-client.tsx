@@ -19,19 +19,22 @@ import {
 
 interface SalesClientProps {
   salesData: any[] // From transactions table
+  warehouses: { id: string, name: string }[]
   initialFrom: string
   initialTo: string
   initialTab: string
+  initialWarehouseId: string
 }
 
-export default function SalesClient({ salesData, initialFrom, initialTo, initialTab }: SalesClientProps) {
+export default function SalesClient({ salesData, warehouses, initialFrom, initialTo, initialTab, initialWarehouseId }: SalesClientProps) {
   const router = useRouter()
   const [fromDate, setFromDate] = useState(initialFrom)
   const [toDate, setToDate] = useState(initialTo)
   const [activeTab, setActiveTab] = useState<'ringkasan' | 'rincian' | 'terlaris'>(initialTab as any || 'ringkasan')
+  const [warehouseId, setWarehouseId] = useState(initialWarehouseId)
 
   const applyFilter = () => {
-    router.push(`/reports/sales?from=${fromDate}&to=${toDate}&tab=${activeTab}`)
+    router.push(`/reports/sales?from=${fromDate}&to=${toDate}&tab=${activeTab}${warehouseId ? `&warehouse=${warehouseId}` : ''}`)
   }
 
   // Summaries
@@ -66,6 +69,7 @@ export default function SalesClient({ salesData, initialFrom, initialTo, initial
           unit: item.unit || '-',
           salesman: sale.profiles?.full_name || '-',
           branch: sale.branches?.name || '-',
+          warehouse: sale.warehouses?.name || '-',
           unit_price: item.unit_price,
           subtotal: item.subtotal,
           payment_amount: sale.amount_paid,
@@ -125,6 +129,18 @@ export default function SalesClient({ salesData, initialFrom, initialTo, initial
         </div>
 
         <div className="flex items-center gap-3 bg-white p-2 rounded-xl border border-dark-100 shadow-sm w-full md:w-auto">
+          <div className="flex items-center gap-2 px-2 border-r border-dark-100 mr-2 pr-4">
+            <select
+              value={warehouseId}
+              onChange={(e) => setWarehouseId(e.target.value)}
+              className="text-sm border-none focus:ring-0 text-dark-700 bg-transparent pr-8 py-1"
+            >
+              <option value="">Semua Gudang</option>
+              {warehouses.map(w => (
+                <option key={w.id} value={w.id}>{w.name}</option>
+              ))}
+            </select>
+          </div>
           <div className="flex items-center gap-2 px-2">
             <Calendar className="w-4 h-4 text-dark-400" />
             <input 
@@ -267,7 +283,7 @@ export default function SalesClient({ salesData, initialFrom, initialTo, initial
                         <td className="px-6 py-4 text-right font-medium text-dark-900">{item.qty}</td>
                         <td className="px-6 py-4 text-dark-500">{item.unit}</td>
                         <td className="px-6 py-4 text-dark-600">{item.salesman}</td>
-                        <td className="px-6 py-4 text-dark-600">{item.branch}</td>
+                        <td className="px-6 py-4 text-dark-600">{item.warehouse}</td>
                         <td className="px-6 py-4 text-right text-dark-600">{formatRupiah(item.unit_price)}</td>
                         <td className="px-6 py-4 text-right font-semibold text-primary-600">{formatRupiah(item.subtotal)}</td>
                       </tr>

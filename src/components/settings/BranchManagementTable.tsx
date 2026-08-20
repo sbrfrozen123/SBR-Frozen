@@ -22,6 +22,7 @@ export function BranchManagementTable({ initialBranches }: BranchManagementTable
     name: '',
     address: '',
     phone: '',
+    instagram: '',
     is_active: true
   })
 
@@ -32,6 +33,7 @@ export function BranchManagementTable({ initialBranches }: BranchManagementTable
         name: branch.name,
         address: branch.address || '',
         phone: branch.phone || '',
+        instagram: branch.instagram || '',
         is_active: branch.is_active
       })
     } else {
@@ -40,6 +42,7 @@ export function BranchManagementTable({ initialBranches }: BranchManagementTable
         name: '',
         address: '',
         phone: '',
+        instagram: '',
         is_active: true
       })
     }
@@ -225,6 +228,17 @@ export function BranchManagementTable({ initialBranches }: BranchManagementTable
                   onChange={(e) => setFormData(prev => ({...prev, phone: e.target.value}))}
                   className="input"
                   placeholder="0812..."
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="label">Instagram Cabang</label>
+                <input 
+                  type="text" 
+                  value={formData.instagram}
+                  onChange={(e) => setFormData(prev => ({...prev, instagram: e.target.value}))}
+                  className="input"
+                  placeholder="@sbrfrozen.cabang"
                 />
               </div>
 

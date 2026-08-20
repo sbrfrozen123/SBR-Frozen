@@ -325,6 +325,7 @@ export default function TransactionHistoryClient({ transactions: initialTransact
                 <th className="py-3 px-4 font-semibold border-r border-dark-700">Tanggal</th>
                 <th className="py-3 px-4 font-semibold border-r border-dark-700">Pelanggan</th>
                 <th className="py-3 px-4 font-semibold border-r border-dark-700">Sales/Pembuat</th>
+                <th className="py-3 px-4 font-semibold border-r border-dark-700">Gudang</th>
                 <th className="py-3 px-4 font-semibold border-r border-dark-700">Keterangan</th>
                 <th className="py-3 px-4 font-semibold border-r border-dark-700">Status Pesanan</th>
                 <th className="py-3 px-4 font-semibold border-r border-dark-700">Status Pembayaran</th>
@@ -333,7 +334,7 @@ export default function TransactionHistoryClient({ transactions: initialTransact
             </thead>
             <tbody className="divide-y divide-dark-100 text-dark-800 bg-white">
               {filtered.length === 0 ? (
-                <tr><td colSpan={9} className="text-center py-12 text-dark-400">Tidak ada data untuk ditampilkan.</td></tr>
+                <tr><td colSpan={10} className="text-center py-12 text-dark-400">Tidak ada data untuk ditampilkan.</td></tr>
               ) : (
                 filtered.map((txn, idx) => (
                   <tr 
@@ -364,6 +365,9 @@ export default function TransactionHistoryClient({ transactions: initialTransact
                     <td className="py-3 px-4 border-r border-dark-100 text-dark-800 flex items-center gap-2">
                       <User className="w-4 h-4 text-dark-400" />
                       {txn.profiles?.full_name}
+                    </td>
+                    <td className="py-3 px-4 border-r border-dark-100 text-dark-800">
+                      {txn.warehouses?.name || '-'}
                     </td>
                     <td className="py-3 px-4 border-r border-dark-100 truncate max-w-[200px] text-dark-600" title={txn.payment_method}>
                       {txn.transaction_items?.[0]?.product_name ? `${txn.transaction_items[0].product_name} ${txn.transaction_items.length > 1 ? `(+${txn.transaction_items.length-1} lainnya)` : ''}` : txn.payment_method}

@@ -30,6 +30,7 @@ export default async function TransactionsPage() {
       *,
       profiles(full_name),
       customers(name, phone),
+      warehouses(name),
       transaction_items(
         id,
         product_id,

@@ -117,46 +117,53 @@ export function ExpenseForm({ initialData, userId, branchId, onSuccess, onCancel
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6">
-        <form id="expense-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          <div className="form-group">
-            <label className="label">Tanggal Pengeluaran *</label>
-            <input type="date" {...register('expense_date')} className={`input ${errors.expense_date ? 'input-error' : ''}`} required />
-            {errors.expense_date && <span className="text-xs text-danger mt-1">{errors.expense_date.message}</span>}
-          </div>
+      <div className="flex-1 overflow-y-auto p-6 bg-slate-50">
+        <form id="expense-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <div className="bg-white p-5 rounded-2xl border border-dark-100 shadow-sm space-y-5">
+            <h3 className="text-sm font-bold text-dark-900 uppercase tracking-wide mb-2">Rincian Pengeluaran</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="form-group">
+                <label className="label">Tanggal Pengeluaran *</label>
+                <input type="date" {...register('expense_date')} className={`input ${errors.expense_date ? 'input-error' : ''}`} required />
+                {errors.expense_date && <span className="text-xs text-danger mt-1">{errors.expense_date.message}</span>}
+              </div>
 
-          <div className="form-group">
-            <label className="label">Kategori *</label>
-            <select {...register('category')} className="input bg-white">
-              <option value="operasional">Operasional (Listrik, Air, Internet, dll)</option>
-              <option value="logistik">Logistik (Ongkir, BBM, Plastik, dll)</option>
-              <option value="sdm">SDM (Gaji, Lembur, Konsumsi, dll)</option>
-              <option value="lain-lain">Lain-lain</option>
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label className="label">Nominal (Rp) *</label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-dark-400 font-medium text-sm">Rp</span>
-              <input type="number" {...register('amount')} className={`input pl-10 ${errors.amount ? 'input-error' : ''}`} />
+              <div className="form-group">
+                <label className="label">Kategori *</label>
+                <select {...register('category')} className="input bg-white">
+                  <option value="operasional">Operasional (Listrik, Air, dll)</option>
+                  <option value="logistik">Logistik (Ongkir, BBM, dll)</option>
+                  <option value="sdm">SDM (Gaji, Lembur, dll)</option>
+                  <option value="lain-lain">Lain-lain</option>
+                </select>
+              </div>
             </div>
-            {errors.amount && <span className="text-xs text-danger mt-1">{errors.amount.message}</span>}
-          </div>
 
-          <div className="form-group">
-            <label className="label">Sumber Dana (Metode Pembayaran) *</label>
-            <select {...register('payment_method')} className="input bg-white">
-              <option value="tunai">Tunai (Laci Kasir)</option>
-              <option value="transfer">Transfer (Rekening Bank)</option>
-              <option value="qris">QRIS (Rekening Bank)</option>
-            </select>
-          </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="form-group">
+                <label className="label">Nominal (Rp) *</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-dark-400 font-medium text-sm">Rp</span>
+                  <input type="number" {...register('amount')} className={`input pl-10 ${errors.amount ? 'input-error' : ''}`} placeholder="0" />
+                </div>
+                {errors.amount && <span className="text-xs text-danger mt-1">{errors.amount.message}</span>}
+              </div>
 
-          <div className="form-group">
-            <label className="label">Keterangan / Deskripsi *</label>
-            <textarea {...register('description')} rows={3} className={`input resize-none ${errors.description ? 'input-error' : ''}`} placeholder="Cth: Bayar listrik bulan Agustus..." />
-            {errors.description && <span className="text-xs text-danger mt-1">{errors.description.message}</span>}
+              <div className="form-group">
+                <label className="label">Sumber Dana (Metode) *</label>
+                <select {...register('payment_method')} className="input bg-white">
+                  <option value="tunai">Tunai (Laci Kasir)</option>
+                  <option value="transfer">Transfer (Bank)</option>
+                  <option value="qris">QRIS (Bank)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="label">Keterangan / Deskripsi *</label>
+              <textarea {...register('description')} rows={2} className={`input resize-none ${errors.description ? 'input-error' : ''}`} placeholder="Cth: Bayar listrik bulan Agustus..." />
+              {errors.description && <span className="text-xs text-danger mt-1">{errors.description.message}</span>}
+            </div>
           </div>
 
           <div className="form-group">

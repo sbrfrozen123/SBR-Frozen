@@ -35,6 +35,7 @@ export interface Branch {
   name: string
   address: string | null
   phone: string | null
+  instagram: string | null
   logo_url: string | null
   is_active: boolean
   created_at: string
@@ -155,11 +156,13 @@ export interface Transaction {
   status: 'completed' | 'voided'
   order_status: 'pending' | 'approved' | 'processing' | 'completed' | 'cancelled'
   branch_id: string
+  warehouse_id: string | null
   created_at: string
   // Joined
   customer?: Customer | null
   user?: Profile | null
   branch?: Branch | null
+  warehouse?: Warehouse | null
   items?: TransactionItem[]
 }
 

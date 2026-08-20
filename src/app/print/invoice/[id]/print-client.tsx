@@ -66,7 +66,7 @@ export default function PrintClient({ transaction: txn, settings, format }: { tr
           <span>================================</span><br/>
           <span>{settings?.receipt_footer_text || 'Terima Kasih'}</span><br/>
           <div style={{ marginTop: '5px', fontSize: '10px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            {settings?.social_instagram && <span>📸 IG: {settings.social_instagram}</span>}
+            {(txn.branches?.instagram || settings?.social_instagram) && <span>📸 IG: {txn.branches?.instagram || settings?.social_instagram}</span>}
             {settings?.store_website && <span>🌐 {settings.store_website}</span>}
           </div>
         </div>
@@ -154,10 +154,10 @@ export default function PrintClient({ transaction: txn, settings, format }: { tr
             <span>📞</span>
             <span>{printPhone}</span>
           </div>
-          {settings?.social_instagram && (
+          {(txn.branches?.instagram || settings?.social_instagram) && (
             <div className="flex items-center gap-2">
               <span>📸</span>
-              <span>{settings.social_instagram}</span>
+              <span>{txn.branches?.instagram || settings?.social_instagram}</span>
             </div>
           )}
           {settings?.store_website && (
