@@ -1,11 +1,68 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Search, Filter, ArrowRightLeft, CheckCircle2, CheckSquare } from 'lucide-react'
+import { Plus, Search, Filter, ArrowRightLeft, CheckCircle2, CheckSquare, ChevronDown, X } from 'lucide-react'
 import { formatDateShort } from '@/lib/utils/dates'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'react-hot-toast'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
+import { cn } from '@/lib/utils/cn'
+
+function SearchableProductSelect({ value, onChange, products }: { value: string, onChange: (val: string) => void, products: any[] }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  
+  const selectedProduct = products.find(p => p.id === value);
+  const filtered = products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()) || p.sku.toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <div className="relative flex-1 min-w-[200px]">
+      <div 
+        className={cn("input bg-white cursor-pointer flex items-center justify-between", !selectedProduct && "text-dark-400")}
+        onClick={() => setOpen(!open)}
+      >
+        <span className="truncate">{selectedProduct ? `${selectedProduct.sku} - ${selectedProduct.name}` : '-- Pilih Produk --'}</span>
+        <ChevronDown className={cn("w-4 h-4 transition-transform text-dark-400 flex-shrink-0", open ? "rotate-180" : "")} />
+      </div>
+      {open && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-dark-200 rounded-xl shadow-xl z-50 max-h-64 flex flex-col overflow-hidden">
+          <div className="p-2 border-b border-dark-100 bg-slate-50 flex-shrink-0">
+            <input 
+              type="text" 
+              autoFocus 
+              className="input w-full text-sm h-9 bg-white" 
+              placeholder="Cari SKU atau Nama..." 
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+          <div className="overflow-y-auto flex-1 p-1">
+            {filtered.length === 0 ? (
+              <div className="p-3 text-sm text-dark-400 text-center">Produk tidak ditemukan</div>
+            ) : (
+              filtered.map(p => (
+                <button 
+                  key={p.id}
+                  type="button"
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-primary-50 rounded-lg hover:text-primary-700 transition-colors flex flex-col"
+                  onClick={() => {
+                    onChange(p.id);
+                    setOpen(false);
+                    setSearch('');
+                  }}
+                >
+                  <div className="font-semibold">{p.sku}</div>
+                  <div className="text-dark-500 text-xs truncate">{p.name}</div>
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+      {open && <div className="fixed inset-0 z-40" onClick={() => setOpen(false)}></div>}
+    </div>
+  )
+}
 
 interface TransfersClientProps {
   userId: string
@@ -261,18 +318,21 @@ export default function TransfersClient({ userId, userRole, userName, branchId, 
                   {items.length === 0 && <div className="text-sm text-center text-dark-400 py-4">Belum ada barang dipilih. Klik + Tambah Baris</div>}
                   {items.map((it, idx) => (
                     <div key={idx} className="flex items-center gap-2">
-                      <select required value={it.product_id} onChange={e => {
-                        const newI = [...items]; newI[idx].product_id = e.target.value; setItems(newI)
-                      }} className="input bg-white flex-1">
-                        <option value="">-- Pilih Produk --</option>
-                        {products.map(p => <option key={p.id} value={p.id}>{p.sku} - {p.name}</option>)}
-                      </select>
+                      <SearchableProductSelect
+                        value={it.product_id}
+                        products={products}
+                        onChange={(val) => {
+                          const newI = [...items]; newI[idx].product_id = val; setItems(newI)
+                        }}
+                      />
                       <input type="number" required min={1} value={it.qty || ''} onChange={e => {
                         const newI = [...items]; newI[idx].qty = Number(e.target.value); setItems(newI)
                       }} className="input w-24 text-center bg-white" placeholder="Qty" />
                       <button type="button" onClick={() => {
                         setItems(items.filter((_, i) => i !== idx))
-                      }} className="w-10 h-10 flex-shrink-0 bg-white border border-dark-200 text-danger hover:bg-danger-50 rounded-xl flex items-center justify-center">X</button>
+                      }} className="w-10 h-10 flex-shrink-0 bg-white border border-dark-200 text-danger hover:bg-danger-50 hover:border-danger-200 rounded-xl flex items-center justify-center transition-colors">
+                        <X className="w-4 h-4" />
+                      </button>
                     </div>
                   ))}
                 </div>
