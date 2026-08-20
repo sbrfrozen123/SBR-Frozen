@@ -202,7 +202,8 @@ export interface Expense {
   category: ExpenseCategory
   amount: number
   payment_method: PaymentMethod
-  description: string | null
+    payment_account?: string | null
+    description: string | null
   receipt_url: string | null
   expense_date: string
     expense_code?: string

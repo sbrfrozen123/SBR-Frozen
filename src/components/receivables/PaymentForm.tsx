@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'react-hot-toast'
 import { Loader2, X, CheckCircle } from 'lucide-react'
@@ -17,9 +17,25 @@ export function PaymentForm({ transaction, userId, onSuccess, onCancel }: Paymen
   const [loading, setLoading] = useState(false)
   const [amount, setAmount] = useState<number | ''>('')
   const [paymentMethod, setPaymentMethod] = useState<'tunai'|'transfer'|'qris'>('tunai')
+  const [paymentAccount, setPaymentAccount] = useState<string>('')
+  const [banks, setBanks] = useState<string[]>([])
   const [notes, setNotes] = useState('')
 
   const supabase = createClient()
+
+  
+  useEffect(() => {
+    supabase.from('branches').select('bank_name_1, bank_name_2').eq('id', transaction.branch_id).single()
+      .then(({data}) => {
+        if(data) {
+          const b = []
+          if (data.bank_name_1) b.push(data.bank_name_1)
+          if (data.bank_name_2) b.push(data.bank_name_2)
+          setBanks(b)
+          if(b.length > 0) setPaymentAccount(b[0])
+        }
+      })
+  }, [transaction.branch_id, supabase])
 
   const remainingDebt = transaction.total_amount - transaction.amount_paid
 
@@ -48,6 +64,7 @@ export function PaymentForm({ transaction, userId, onSuccess, onCancel }: Paymen
           branch_id: transaction.branch_id,
           amount: paymentAmount,
           payment_method: paymentMethod,
+          payment_account: (paymentMethod === 'transfer' || paymentMethod === 'qris') ? paymentAccount : null,
           notes
         }])
 
@@ -148,6 +165,21 @@ export function PaymentForm({ transaction, userId, onSuccess, onCancel }: Paymen
               <option value="qris">QRIS</option>
             </select>
           </div>
+
+          {(paymentMethod === 'transfer' || paymentMethod === 'qris') && banks.length > 0 && (
+            <div className="form-group">
+              <label className="label">Pilih Rekening Tujuan *</label>
+              <select 
+                value={paymentAccount}
+                onChange={(e) => setPaymentAccount(e.target.value)}
+                className="input bg-white font-medium text-blue-700"
+              >
+                {banks.map(bank => (
+                  <option key={bank} value={bank}>{bank}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="form-group">
             <label className="label">Catatan Tambahan (Opsional)</label>

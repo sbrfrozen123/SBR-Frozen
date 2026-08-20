@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -14,6 +14,7 @@ const expenseSchema = z.object({
   category: z.enum(['operasional', 'logistik', 'sdm', 'lain-lain']),
   amount: z.coerce.number().min(1, 'Nominal pengeluaran wajib diisi dan > 0'),
   payment_method: z.enum(['tunai', 'transfer', 'qris']),
+  payment_account: z.string().nullable().optional(),
   description: z.string().min(1, 'Keterangan pengeluaran wajib diisi'),
   expense_date: z.string(),
 })
@@ -32,7 +33,8 @@ export function ExpenseForm({ initialData, userId, branchId, onSuccess, onCancel
   const [uploadProgress, setUploadProgress] = useState(0)
   const supabase = createClient()
 
-  const { register, handleSubmit, formState: { errors } } = useForm<z.infer<typeof expenseSchema>>({
+
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<z.infer<typeof expenseSchema>>({
     resolver: zodResolver(expenseSchema),
     defaultValues: initialData ? {
       category: initialData.category,
@@ -40,13 +42,30 @@ export function ExpenseForm({ initialData, userId, branchId, onSuccess, onCancel
       payment_method: (initialData.payment_method === 'tempo' ? 'tunai' : initialData.payment_method) || 'tunai',
       description: initialData.description || '',
       expense_date: initialData.expense_date,
+      payment_account: initialData.payment_account,
     } : {
       category: 'operasional',
       amount: 0,
       payment_method: 'tunai',
       expense_date: new Date().toISOString().split('T')[0],
-    }
+      }
   })
+
+  const [banks, setBanks] = useState<string[]>([])
+  const paymentMethod = watch('payment_method')
+
+  useEffect(() => {
+    supabase.from('branches').select('bank_name_1, bank_name_2').eq('id', branchId).single()
+      .then(({data}) => {
+        if(data) {
+          const b = []
+          if (data.bank_name_1) b.push(data.bank_name_1)
+          if (data.bank_name_2) b.push(data.bank_name_2)
+          setBanks(b)
+          if(b.length > 0 && !initialData?.payment_account) setValue('payment_account', b[0])
+        }
+      })
+  }, [branchId, supabase, setValue, initialData])
 
   const uploadReceipt = async (file: File): Promise<string> => {
     const fileExt = file.name.split('.').pop()
@@ -75,6 +94,10 @@ export function ExpenseForm({ initialData, userId, branchId, onSuccess, onCancel
         toast.dismiss('upload')
       }
 
+      
+      if (data.payment_method === 'tunai') {
+        data.payment_account = null
+      }
       const payload = {
         ...data,
         user_id: userId,
@@ -138,6 +161,17 @@ export function ExpenseForm({ initialData, userId, branchId, onSuccess, onCancel
                   <option value="lain-lain">Lain-lain</option>
                 </select>
               </div>
+
+              {(paymentMethod === 'transfer' || paymentMethod === 'qris') && banks.length > 0 && (
+                <div className="form-group md:col-span-2">
+                  <label className="label">Pilih Rekening Tujuan *</label>
+                  <select {...register('payment_account')} className="input bg-white font-medium text-blue-700">
+                    {banks.map(bank => (
+                      <option key={bank} value={bank}>{bank}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
