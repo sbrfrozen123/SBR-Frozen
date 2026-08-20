@@ -934,8 +934,8 @@ export default function POSClient({ products, customers, settings, userRole, use
                           key={method.id}
                           onClick={() => {
                             setPaymentMethod(method.id as any)
-                            if (method.id === 'tunai') setAmountPaid(total)
-                            else setAmountPaid('')
+                            if (method.id === 'tempo') setAmountPaid('')
+                              else setAmountPaid(total)
                           }}
                           className={cn(
                             'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all',
