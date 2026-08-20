@@ -117,7 +117,9 @@ export default function CategoriesClient({ initialCategories, userRole }: Catego
           <table className="data-table w-full">
             <thead className="sticky top-0 bg-dark-50 shadow-sm z-10">
               <tr>
-                <th className="w-12 text-center">No</th>
+                <th className="w-12 text-center">No</th>                  <th className="w-24">Kode ID</th>
+
+                <th className="text-left w-24">Kode ID</th>
                 <th>Nama Kategori</th>
                 <th className="text-center">Jml Produk</th>
                 <th>Deskripsi</th>
@@ -129,7 +131,7 @@ export default function CategoriesClient({ initialCategories, userRole }: Catego
             <tbody>
               {filteredCategories.length === 0 ? (
                 <tr>
-                  <td colSpan={['super_admin', 'admin_gudang'].includes(userRole) ? 5 : 4} className="text-center py-12 text-dark-400">
+                  <td colSpan={['super_admin', 'admin_gudang'].includes(userRole) ? 6 : 4} className="text-center py-12 text-dark-400">
                     <Tags className="w-12 h-12 mx-auto text-dark-200 mb-3" />
                     <p className="text-base font-medium text-dark-600">Tidak ada kategori ditemukan</p>
                     <p className="text-sm">Silakan tambahkan kategori baru atau ubah kata kunci pencarian.</p>
@@ -138,7 +140,8 @@ export default function CategoriesClient({ initialCategories, userRole }: Catego
               ) : (
                 filteredCategories.map((category, index) => (
                   <tr key={category.id}>
-                    <td className="text-center text-dark-400 text-sm">{index + 1}</td>
+                    <td className="text-center text-dark-400 text-sm">{index + 1}</td>                      <td className="font-mono text-xs text-dark-500">{category.code || '-'}</td>
+
                     <td>
                       <div className="font-semibold text-dark-900">{category.name}</div>
                     </td>
@@ -213,3 +216,4 @@ export default function CategoriesClient({ initialCategories, userRole }: Catego
     </div>
   )
 }
+

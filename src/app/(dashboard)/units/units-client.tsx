@@ -101,7 +101,9 @@ export default function UnitsClient({ initialUnits, userRole }: UnitsClientProps
           <table className="data-table w-full">
             <thead className="sticky top-0 bg-dark-50 shadow-sm z-10">
               <tr>
-                <th className="w-12 text-center">No</th>
+                <th className="w-12 text-center">No</th>                  <th className="w-24">Kode ID</th>
+
+                <th className="text-left w-24">Kode ID</th>
                 <th>Nama Satuan</th>
                 <th>Deskripsi</th>
                 {['super_admin', 'admin_gudang'].includes(userRole) && (
@@ -112,7 +114,7 @@ export default function UnitsClient({ initialUnits, userRole }: UnitsClientProps
             <tbody>
               {filteredUnits.length === 0 ? (
                 <tr>
-                  <td colSpan={['super_admin', 'admin_gudang'].includes(userRole) ? 4 : 3} className="text-center py-12 text-dark-400">
+                  <td colSpan={['super_admin', 'admin_gudang'].includes(userRole) ? 5 : 3} className="text-center py-12 text-dark-400">
                     <Tags className="w-12 h-12 mx-auto text-dark-200 mb-3" />
                     <p className="text-base font-medium text-dark-600">Tidak ada satuan ditemukan</p>
                     <p className="text-sm">Silakan tambahkan satuan baru atau ubah kata kunci pencarian.</p>
@@ -121,7 +123,8 @@ export default function UnitsClient({ initialUnits, userRole }: UnitsClientProps
               ) : (
                 filteredUnits.map((unit, index) => (
                   <tr key={unit.id}>
-                    <td className="text-center text-dark-400 text-sm">{index + 1}</td>
+                    <td className="text-center text-dark-400 text-sm">{index + 1}</td>                      <td className="font-mono text-xs text-dark-500">{unit.code || '-'}</td>
+
                     <td>
                       <div className="font-semibold text-dark-900">{unit.name}</div>
                     </td>
@@ -190,3 +193,4 @@ export default function UnitsClient({ initialUnits, userRole }: UnitsClientProps
     </div>
   )
 }
+

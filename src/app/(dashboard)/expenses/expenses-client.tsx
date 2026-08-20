@@ -219,7 +219,9 @@ export default function ExpensesClient({ initialExpenses, userId, branchId }: Ex
           <table className="data-table w-full">
             <thead className="sticky top-0 bg-dark-50 shadow-sm z-10">
               <tr>
-                <th className="w-12 text-center">No</th>
+                <th className="w-12 text-center">No</th>                  <th className="w-28">ID Pengeluaran</th>
+
+                <th className="text-left w-28">ID Pengeluaran</th>
                 <th>Tanggal</th>
                 <th>Deskripsi</th>
                 <th>Kategori</th>
@@ -232,7 +234,7 @@ export default function ExpensesClient({ initialExpenses, userId, branchId }: Ex
             <tbody>
               {filteredExpenses.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-12 text-dark-400">
+                  <td colSpan={9} className="text-center py-12 text-dark-400">
                     <Receipt className="w-12 h-12 mx-auto text-dark-200 mb-3" />
                     <p className="text-base font-medium text-dark-600">Tidak ada pengeluaran</p>
                     <p className="text-sm">Bulan ini keuangan Anda masih bersih.</p>
@@ -241,7 +243,8 @@ export default function ExpensesClient({ initialExpenses, userId, branchId }: Ex
               ) : (
                 filteredExpenses.map((expense, index) => (
                   <tr key={expense.id}>
-                    <td className="text-center text-dark-400 text-sm">{index + 1}</td>
+                    <td className="text-center text-dark-400 text-sm">{index + 1}</td>                      <td className="font-mono text-xs text-dark-500">{expense.expense_code || '-'}</td>
+
                     <td className="text-dark-600 font-medium">
                       {formatDateShort(expense.expense_date)}
                     </td>
@@ -340,3 +343,4 @@ export default function ExpensesClient({ initialExpenses, userId, branchId }: Ex
     </div>
   )
 }
+

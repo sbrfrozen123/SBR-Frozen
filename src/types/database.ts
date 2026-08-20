@@ -27,7 +27,8 @@ export interface Profile {
   updated_at: string
   branch_id: string | null
   id_role: string | null
-  custom_permissions: string[] | null
+    employee_code?: string
+    custom_permissions: string[] | null
   // Joined
   branch?: Branch | null
 }
@@ -204,7 +205,8 @@ export interface Expense {
   description: string | null
   receipt_url: string | null
   expense_date: string
-  branch_id: string
+    expense_code?: string
+    branch_id: string
   created_at: string
   // Joined
   user?: Profile | null
@@ -498,9 +500,10 @@ export interface CategoryForm {
 }
 
 export interface Unit {
-  id: string
-  name: string
-  description?: string
+    id: string
+    name: string
+    code?: string
+    description?: string
   created_at?: string
   updated_at?: string
 }

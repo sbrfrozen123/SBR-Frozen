@@ -719,3 +719,4 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
     </div>
   )
 }
+
