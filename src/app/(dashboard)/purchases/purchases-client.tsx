@@ -22,6 +22,7 @@ interface PurchaseData {
   supplier?: { name: string }
   user?: { full_name: string }
   payments?: any[]
+  items?: Array<{ qty: number; products: { name: string } | null }>
 }
 
 interface PurchasesClientProps {
@@ -88,21 +89,23 @@ export default function PurchasesClient({ initialPurchases, userRole }: Purchase
           <table className="data-table w-full">
                         <thead className="sticky top-0 bg-dark-50 shadow-sm z-10">
               <tr>
-                <th className="w-12 text-center">No</th>
-                <th>Tanggal</th>
-                <th>No. Invoice</th>
-                <th>Pemasok</th>
-                <th className="text-right">Total Transaksi</th>
-                <th className="text-right">Sudah Dibayar</th>
-                <th className="text-right">Sisa Hutang</th>
-                <th className="text-center">Status</th>
-                <th className="text-center w-28">Aksi</th>
+                <th className="w-10 text-center text-xs">No</th>
+                <th className="text-xs">Tanggal</th>
+                <th className="text-xs">No. Invoice</th>
+                <th className="text-xs">Pemasok</th>
+                <th className="text-xs">Nama Barang</th>
+                <th className="text-center text-xs">Qty</th>
+                <th className="text-right text-xs">Total</th>
+                <th className="text-right text-xs">Terbayar</th>
+                <th className="text-right text-xs">Sisa Hutang</th>
+                <th className="text-center text-xs">Status</th>
+                <th className="text-center w-24 text-xs">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {filteredPurchases.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-12 text-dark-400">
+                  <td colSpan={11} className="text-center py-12 text-dark-400">
                     <ShoppingBag className="w-12 h-12 mx-auto text-dark-200 mb-3" />
                     <p className="text-base font-medium text-dark-600">Tidak ada riwayat pembelian</p>
                   </td>
@@ -110,24 +113,31 @@ export default function PurchasesClient({ initialPurchases, userRole }: Purchase
               ) : (
                 filteredPurchases.map((purchase, index) => (
                   <tr key={purchase.id}>
-                    <td className="text-center text-dark-400 text-sm">{index + 1}</td>
-                    <td className="text-dark-600">
+                    <td className="text-center text-dark-400 text-xs">{index + 1}</td>
+                    <td className="text-dark-600 text-xs whitespace-nowrap">
                       {new Date(purchase.purchase_date).toLocaleDateString('id-ID')}
                     </td>
-                    <td className="font-mono text-primary-600 font-medium">
+                    <td className="font-mono text-primary-600 font-medium text-xs">
                       {purchase.invoice_number}
                     </td>
-                    <td className="font-semibold text-dark-900">
+                    <td className="font-semibold text-dark-900 text-sm">
                       {purchase.supplier?.name || '-'}
                     </td>
-                    
-                    <td className="text-right font-semibold text-money">
+                    <td className="text-dark-700 text-xs max-w-[180px]">
+                      {purchase.items && purchase.items.length > 0
+                        ? purchase.items.map(item => item.products?.name || '-').join(', ')
+                        : '-'}
+                    </td>
+                    <td className="text-center text-sm font-semibold">
+                      {purchase.items ? purchase.items.reduce((sum, item) => sum + (item.qty || 0), 0) : 0}
+                    </td>
+                    <td className="text-right font-semibold text-money text-sm">
                       {formatRupiah(purchase.total_amount)}
                     </td>
-                    <td className="text-right font-medium text-success-600">
+                    <td className="text-right font-medium text-success-600 text-sm">
                       {formatRupiah(purchase.amount_paid || 0)}
                     </td>
-                    <td className="text-right font-bold text-danger-600">
+                    <td className="text-right font-bold text-danger-600 text-sm">
                       {formatRupiah(Math.max(0, purchase.total_amount - (purchase.amount_paid || 0)))}
                     </td>
                     <td className="text-center">
