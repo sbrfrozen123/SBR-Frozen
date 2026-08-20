@@ -176,7 +176,6 @@ export default function CustomersClient({ initialCustomers, userRole }: Customer
             <thead className="sticky top-0 bg-dark-50 shadow-sm z-10">
               <tr>
                 <th className="w-12 text-center">No</th>
-                <th>Kode</th>
                 <th>ID Pelanggan</th>
                 <th>Nama Pelanggan</th>
                 <th>Kategori</th>
@@ -201,7 +200,9 @@ export default function CustomersClient({ initialCustomers, userRole }: Customer
                 filteredCustomers.map((customer, index) => (
                   <tr key={customer.id}>
                     <td className="text-center text-dark-500 font-medium">{index + 1}</td>
-                    <td className="font-mono text-xs text-dark-500">{customer.code || '-'}</td>
+                    <td className="font-mono text-primary-600 font-medium">
+                        {customer.customer_code || "-"}
+                      </td>
                     <td>
                       <div className="font-bold text-dark-900">{customer.name}</div>
                       {customer.address && (
