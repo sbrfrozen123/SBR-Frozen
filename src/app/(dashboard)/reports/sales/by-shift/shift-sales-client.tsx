@@ -6,6 +6,7 @@ import { FileText, Search, Download, Printer, Filter, ChevronRight, Clock, Check
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
 import { cn } from '@/lib/utils/cn'
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 
 interface ShiftSalesClientProps {
   userRole: string
@@ -17,14 +18,24 @@ export default function ShiftSalesClient({ userRole }: ShiftSalesClientProps) {
   const [search, setSearch] = useState('')
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
-  const [expandedShift, setExpandedShift] = useState<string | null>(null)
-  const [shiftItems, setShiftItems] = useState<any[]>([])
-  const [loadingItems, setLoadingItems] = useState(false)
+  const [users, setUsers] = useState<{id: string, full_name: string}[]>([])
+  const [selectedKasir, setSelectedKasir] = useState<string>('')
   const supabase = createClient()
+
+  const today = format(new Date(), 'dd MMMM yyyy, HH:mm', { locale: id })
+
+  useEffect(() => {
+    fetchUsers()
+  }, [])
 
   useEffect(() => {
     fetchShifts()
   }, [fromDate, toDate])
+
+  const fetchUsers = async () => {
+    const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'kasir')
+    if (data) setUsers(data)
+  }
 
   const fetchShifts = async () => {
     try {
@@ -39,67 +50,54 @@ export default function ShiftSalesClient({ userRole }: ShiftSalesClientProps) {
         
       if (fromDate) query.gte('start_time', `${fromDate}T00:00:00.000Z`)
       if (toDate) query.lte('start_time', `${toDate}T23:59:59.999Z`)
+      if (selectedKasir) query.eq('user_id', selectedKasir)
 
       const { data, error } = await query.order('start_time', { ascending: false })
 
       if (error) throw error
-      setShifts(data || [])
+      
+      // Auto-fetch items for all shifts to populate the column
+      const shiftsData = data || []
+      
+      // We will load items individually for all shifts here so it can be printed in a column
+      const shiftsWithItems = await Promise.all(shiftsData.map(async (shift) => {
+        const endTime = shift.end_time || new Date().toISOString()
+        const { data: txns } = await supabase
+          .from('transactions')
+          .select('id')
+          .eq('user_id', shift.user_id)
+          .gte('created_at', shift.start_time)
+          .lte('created_at', endTime)
+          .eq('order_status', 'completed')
+          
+        if (!txns || txns.length === 0) return { ...shift, shiftItems: [] }
+        
+        const txnIds = txns.map(t => t.id)
+        const { data: items } = await supabase
+          .from('transaction_items')
+          .select('product_name, qty, subtotal')
+          .in('transaction_id', txnIds)
+          
+        const aggregated = (items || []).reduce((acc: any, curr: any) => {
+          if (!acc[curr.product_name]) {
+            acc[curr.product_name] = { name: curr.product_name, qty: 0, subtotal: 0 }
+          }
+          acc[curr.product_name].qty += curr.qty
+          acc[curr.product_name].subtotal += curr.subtotal
+          return acc
+        }, {})
+        
+        return {
+          ...shift,
+          shiftItems: Object.values(aggregated).sort((a: any, b: any) => b.qty - a.qty)
+        }
+      }))
+      
+      setShifts(shiftsWithItems)
     } catch (err: any) {
       console.error(err)
     } finally {
       setLoading(false)
-    }
-  }
-
-  const loadShiftItems = async (shift: any) => {
-    if (expandedShift === shift.id) {
-      setExpandedShift(null)
-      return
-    }
-    setExpandedShift(shift.id)
-    setLoadingItems(true)
-    setShiftItems([])
-
-    try {
-      const endTime = shift.end_time || new Date().toISOString()
-      const { data: txns, error: txnsError } = await supabase
-        .from('transactions')
-        .select('id')
-        .eq('user_id', shift.user_id)
-        .gte('created_at', shift.start_time)
-        .lte('created_at', endTime)
-        .eq('order_status', 'completed')
-
-      if (txnsError) throw txnsError
-      if (!txns || txns.length === 0) {
-        setShiftItems([])
-        return
-      }
-
-      const txnIds = txns.map(t => t.id)
-      const { data: items, error: itemsError } = await supabase
-        .from('transaction_items')
-        .select('product_name, qty, subtotal')
-        .in('transaction_id', txnIds)
-
-      if (itemsError) throw itemsError
-
-      // Aggregate items by product_name
-      const aggregated = (items || []).reduce((acc: any, curr: any) => {
-        if (!acc[curr.product_name]) {
-          acc[curr.product_name] = { name: curr.product_name, qty: 0, subtotal: 0 }
-        }
-        acc[curr.product_name].qty += curr.qty
-        acc[curr.product_name].subtotal += curr.subtotal
-        return acc
-      }, {})
-
-      setShiftItems(Object.values(aggregated).sort((a: any, b: any) => b.qty - a.qty))
-
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoadingItems(false)
     }
   }
 
@@ -117,25 +115,40 @@ export default function ShiftSalesClient({ userRole }: ShiftSalesClientProps) {
   }
 
   return (
-    <div className="p-6 space-y-6 animate-fade-in h-full flex flex-col">
-      <div className="page-header flex-shrink-0">
+    <div className="p-6 space-y-6 animate-fade-in h-full flex flex-col print:p-0 print:space-y-0">
+      <div className="page-header flex-shrink-0 print:hidden">
         <div>
           <h1 className="page-title">Laporan Penjualan per Shift</h1>
           <p className="page-subtitle">Rincian pendapatan kasir per sesi shift.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2 mt-4 sm:mt-0">
           <button onClick={handleExportCSV} className="btn-md bg-white border border-dark-200 text-dark-700 hover:bg-dark-50 whitespace-nowrap">
-            <Download className="w-4 h-4" /> Export
+            <Download className="w-4 h-4" /> Export CSV
           </button>
-          <button onClick={() => window.print()} className="btn-md bg-white border border-dark-200 text-dark-700 hover:bg-dark-50 whitespace-nowrap">
-            <Printer className="w-4 h-4" /> Print
+          <button onClick={() => window.print()} className="btn btn-primary btn-md shadow-sm shadow-primary-500/20 whitespace-nowrap">
+            <Printer className="w-4 h-4 mr-2" /> Cetak PDF
           </button>
         </div>
       </div>
 
-      <div className="card flex-1 flex flex-col min-h-0 overflow-hidden">
-        <div className="p-4 border-b border-dark-100 flex gap-4 bg-white flex-shrink-0">
-          <div className="relative flex-1 max-w-md">
+      <style dangerouslySetInnerHTML={{__html: `
+        @media print {
+          body { background: white !important; }
+          .print\\:hidden { display: none !important; }
+          .print\\:block { display: block !important; }
+          .print\\:shadow-none { box-shadow: none !important; }
+          .print\\:border-none { border: none !important; }
+          .print\\:p-0 { padding: 0 !important; }
+          .print\\:m-0 { margin: 0 !important; }
+          .print\\:rounded-none { border-radius: 0 !important; }
+          .print\\:bg-transparent { background-color: transparent !important; }
+          @page { size: landscape; margin: 10mm; }
+        }
+      `}} />
+
+      <div className="card flex-1 flex flex-col min-h-0 overflow-hidden print:border-none print:shadow-none print:rounded-none">
+        <div className="p-4 border-b border-dark-100 flex flex-wrap gap-4 bg-white flex-shrink-0 print:hidden">
+          <div className="relative flex-1 min-w-[200px] max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-400" />
             <input 
               type="text" 
@@ -145,28 +158,38 @@ export default function ShiftSalesClient({ userRole }: ShiftSalesClientProps) {
               className="input pl-9"
             />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <select value={selectedKasir} onChange={e => setSelectedKasir(e.target.value)} className="input w-40 text-sm bg-white">
+              <option value="">Semua Kasir</option>
+              {users.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
+            </select>
             <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="input w-36 text-sm" />
             <span className="text-dark-400">-</span>
             <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="input w-36 text-sm" />
+            <button onClick={fetchShifts} className="btn-md btn-primary px-3"><Filter className="w-4 h-4" /></button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-auto bg-white">
+        <div className="flex-1 overflow-auto bg-white print:overflow-visible print:p-0">
+          {/* Print Header */}
+          <div className="hidden print:block text-center mb-8 border-b-2 border-dark-900 pb-6 pt-4">
+            <h1 className="text-2xl font-black text-dark-900 uppercase tracking-wider mb-2">LAPORAN RIWAYAT SHIFT KASIR</h1>
+            <h2 className="text-lg font-bold text-dark-700">SBR FROZEN POS</h2>
+            <p className="text-dark-500 mt-2 text-sm font-medium">Dicetak pada: {today}</p>
+          </div>
           <table className="data-table-dense w-full">
             <thead className="sticky top-0 z-10 bg-dark-50">
               <tr>
-                <th className="w-12 text-center border-l-0">No</th>
+                <th className="w-12 text-center border-l-0 print:border-l">No</th>
                 <th>Waktu Mulai</th>
                 <th>Waktu Selesai</th>
                 <th>Kasir</th>
-                <th>Cabang</th>
+                <th>Barang Terjual</th>
                 <th className="text-right">Modal Awal</th>
-                <th className="text-right">Total Transaksi</th>
                 <th className="text-right">Kas Sistem</th>
                 <th className="text-right">Kas Fisik</th>
                 <th className="text-right">Selisih</th>
-                <th className="text-center border-r-0">Status</th>
+                <th className="text-center border-r-0 print:border-r">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -184,18 +207,28 @@ export default function ShiftSalesClient({ userRole }: ShiftSalesClientProps) {
               ) : (
                 filteredShifts.map((s, index) => (
                   <React.Fragment key={s.id}>
-                    <tr onClick={() => loadShiftItems(s)} className="cursor-pointer hover:bg-slate-50 transition-colors">
-                      <td className="text-center text-dark-400 border-l-0">
-                        <ChevronRight className={cn("w-4 h-4 mx-auto transition-transform", expandedShift === s.id && "rotate-90")} />
-                      </td>
+                    <tr className="hover:bg-slate-50 transition-colors">
+                      <td className="text-center text-dark-400 border-l-0 print:border-l">{index + 1}</td>
                       <td>{format(new Date(s.start_time), 'dd MMM yyyy, HH:mm', { locale: id })}</td>
                     <td>{s.end_time ? format(new Date(s.end_time), 'dd MMM yyyy, HH:mm', { locale: id }) : '-'}</td>
                     <td className="font-semibold text-dark-700">{s.kasir?.full_name}</td>
-                    <td>{s.branch?.name || '-'}</td>
-                    <td className="text-right text-dark-600">{formatRupiah(s.starting_cash)}</td>
-                    <td className="text-right text-dark-600">{s.total_transactions || 0} Trx</td>
-                    <td className="text-right font-bold text-dark-900">{formatRupiah(s.expected_ending_cash || s.starting_cash)}</td>
-                    <td className="text-right font-bold text-primary-700">{s.actual_ending_cash ? formatRupiah(s.actual_ending_cash) : '-'}</td>
+                    <td className="min-w-[250px]">
+                      {s.shiftItems && s.shiftItems.length > 0 ? (
+                        <div className="flex flex-col gap-1 max-w-[280px]">
+                          {s.shiftItems.map((item: any, i: number) => (
+                            <div key={i} className="text-xs flex justify-between gap-2 border-b border-dark-50 pb-1 last:border-0 last:pb-0">
+                              <span className="truncate" title={item.name}>{item.name}</span>
+                              <span className="font-semibold whitespace-nowrap">{item.qty} pcs</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-dark-400">Belum ada penjualan</span>
+                      )}
+                    </td>
+                    <td className="text-right text-dark-600 font-mono text-sm">{formatRupiah(s.starting_cash)}</td>
+                    <td className="text-right font-bold text-dark-900 font-mono text-sm">{formatRupiah(s.expected_ending_cash || s.starting_cash)}</td>
+                    <td className="text-right font-bold text-primary-700 font-mono text-sm">{s.actual_ending_cash ? formatRupiah(s.actual_ending_cash) : '-'}</td>
                     <td className="text-right">
                       {s.actual_ending_cash !== undefined && s.actual_ending_cash !== null ? (
                         <span className={s.actual_ending_cash - (s.expected_ending_cash || 0) < 0 ? 'text-danger font-bold' : s.actual_ending_cash - (s.expected_ending_cash || 0) > 0 ? 'text-success font-bold' : 'text-dark-400'}>
@@ -203,7 +236,7 @@ export default function ShiftSalesClient({ userRole }: ShiftSalesClientProps) {
                         </span>
                       ) : '-'}
                     </td>
-                    <td className="text-center border-r-0">
+                    <td className="text-center border-r-0 print:border-r">
                       <span className={cn(
                         "badge",
                         s.status === 'closed' ? 'badge-gray' : 'badge-success'
@@ -212,36 +245,6 @@ export default function ShiftSalesClient({ userRole }: ShiftSalesClientProps) {
                       </span>
                     </td>
                   </tr>
-                  {expandedShift === s.id && (
-                    <tr className="bg-slate-50 border-b border-dark-100">
-                      <td colSpan={11} className="p-4 border-l-0 border-r-0">
-                        <div className="bg-white rounded-xl border border-dark-100 p-4 shadow-sm">
-                          <h4 className="text-sm font-bold text-dark-900 mb-3 flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-primary" /> Rincian Barang Terjual
-                          </h4>
-                          {loadingItems ? (
-                            <p className="text-sm text-dark-400">Memuat rincian...</p>
-                          ) : shiftItems.length === 0 ? (
-                            <p className="text-sm text-dark-400">Tidak ada barang terjual pada shift ini.</p>
-                          ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                              {shiftItems.map((item, idx) => (
-                                <div key={idx} className="flex justify-between items-center p-2 rounded-lg border border-dark-50 bg-slate-50/50">
-                                  <div className="truncate pr-2">
-                                    <p className="text-sm font-semibold text-dark-900 truncate" title={item.name}>{item.name}</p>
-                                    <p className="text-xs text-dark-500">{item.qty} item</p>
-                                  </div>
-                                  <div className="text-right">
-                                    <p className="text-sm font-bold text-primary-700">{formatRupiah(item.subtotal)}</p>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )}
                   </React.Fragment>
                 ))
               )}

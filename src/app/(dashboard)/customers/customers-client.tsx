@@ -291,16 +291,14 @@ export default function CustomersClient({ initialCustomers, userRole }: Customer
 
       {/* Form Modal */}
       {isFormOpen && (
-        <div className="modal-overlay">
-          <CustomerForm 
-            initialData={editingCustomer} 
-            onSuccess={() => {
-              setIsFormOpen(false)
-              mutate()
-            }}
-            onCancel={() => setIsFormOpen(false)}
-          />
-        </div>
+        <CustomerForm 
+          initialData={editingCustomer} 
+          onSuccess={() => {
+            setIsFormOpen(false)
+            mutate()
+          }}
+          onCancel={() => setIsFormOpen(false)}
+        />
       )}
     </div>
   )
