@@ -50,6 +50,7 @@ export interface Warehouse {
   name: string
   address: string | null
   is_active: boolean
+  code?: string
   created_at: string
   updated_at: string
   // Joined
@@ -134,6 +135,7 @@ export interface Customer {
   payment_terms: string
   current_debt: number
   is_active: boolean
+  code?: string
   notes: string | null
   created_at: string
   updated_at: string
@@ -272,6 +274,7 @@ export interface DebtPayment {
 export interface Category {
   id: string
   name: string
+  code?: string
   description: string | null
   created_at: string
   updated_at: string
@@ -285,6 +288,7 @@ export interface Supplier {
   address: string | null
   payment_terms: string
   is_active: boolean
+  code?: string
   created_at: string
   updated_at: string
 }
@@ -426,7 +430,7 @@ export interface ProfitLossReport {
 export interface ProductForm {
   name: string
   category: string
-  sku: string
+  sku?: string
   barcode?: string
   unit: string
   hpp: number
@@ -445,6 +449,7 @@ export interface CustomerForm {
   address?: string
   category: CustomerCategory
   credit_limit: number
+  code?: string
   notes?: string
 }
 
@@ -499,6 +504,7 @@ export interface SupplierForm {
   phone?: string
   address?: string
   payment_terms: string
+  code?: string
   is_active: boolean
 }
 

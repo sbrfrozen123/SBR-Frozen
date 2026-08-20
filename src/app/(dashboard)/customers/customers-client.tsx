@@ -35,7 +35,8 @@ export default function CustomersClient({ initialCustomers, userRole }: Customer
     return customers.filter(c => {
       const searchLower = search.toLowerCase()
       const matchesSearch = c.name.toLowerCase().includes(searchLower) || 
-                            (c.phone && c.phone.toLowerCase().includes(searchLower))
+                            (c.phone && c.phone.toLowerCase().includes(searchLower)) ||
+                            (c.code && c.code.toLowerCase().includes(searchLower))
       const matchesCategory = categoryFilter === 'Semua' || c.category === categoryFilter
       return matchesSearch && matchesCategory
     })
@@ -175,6 +176,7 @@ export default function CustomersClient({ initialCustomers, userRole }: Customer
             <thead className="sticky top-0 bg-dark-50 shadow-sm z-10">
               <tr>
                 <th className="w-12 text-center">No</th>
+                <th>Kode</th>
                 <th>Nama Pelanggan</th>
                 <th>Kategori</th>
                 <th>Kontak</th>
@@ -187,7 +189,7 @@ export default function CustomersClient({ initialCustomers, userRole }: Customer
             <tbody>
               {filteredCustomers.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-12 text-dark-400">
+                  <td colSpan={9} className="text-center py-12 text-dark-400">
                     <Users className="w-12 h-12 mx-auto text-dark-200 mb-3" />
                     <p className="text-base font-medium text-dark-600">Tidak ada pelanggan ditemukan</p>
                     <p className="text-sm">Coba sesuaikan kata kunci pencarian atau filter kategori.</p>
@@ -196,9 +198,10 @@ export default function CustomersClient({ initialCustomers, userRole }: Customer
               ) : (
                 filteredCustomers.map((customer, index) => (
                   <tr key={customer.id}>
-                    <td className="text-center text-dark-400 text-sm">{index + 1}</td>
+                    <td className="text-center text-dark-500 font-medium">{index + 1}</td>
+                    <td className="font-mono text-xs text-dark-500">{customer.code || '-'}</td>
                     <td>
-                      <div className="font-semibold text-dark-900">{customer.name}</div>
+                      <div className="font-bold text-dark-900">{customer.name}</div>
                       {customer.address && (
                         <div className="text-xs text-dark-400 mt-0.5 max-w-[200px] truncate" title={customer.address}>
                           {customer.address}

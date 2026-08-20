@@ -10,6 +10,7 @@ import { Loader2, X } from 'lucide-react'
 import type { Supplier, SupplierForm as SupplierFormType } from '@/types/database'
 
 const supplierSchema = z.object({
+  code: z.string().optional(),
   name: z.string().min(1, 'Nama pemasok wajib diisi'),
   contact_person: z.string().optional(),
   phone: z.string().optional(),
@@ -31,6 +32,7 @@ export function SupplierForm({ initialData, onSuccess, onCancel }: SupplierFormP
   const { register, handleSubmit, formState: { errors } } = useForm<z.infer<typeof supplierSchema>>({
     resolver: zodResolver(supplierSchema),
     defaultValues: initialData ? {
+      code: initialData.code || '',
       name: initialData.name,
       contact_person: initialData.contact_person || '',
       phone: initialData.phone || '',
@@ -90,7 +92,12 @@ export function SupplierForm({ initialData, onSuccess, onCancel }: SupplierFormP
               Informasi Umum
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="form-group md:col-span-2">
+              <div className="form-group">
+                <label className="label">Kode Pemasok</label>
+                <input {...register('code')} className="input" placeholder="Otomatis (Misal: SUP-0001)" disabled={!!initialData} />
+                <span className="text-[10px] text-dark-400 mt-1 italic">Kosongkan agar dibuat otomatis.</span>
+              </div>
+              <div className="form-group md:col-span-1">
                 <label className="label">Nama Perusahaan / Pemasok *</label>
                 <input {...register('name')} className={`input ${errors.name ? 'input-error' : ''}`} placeholder="Cth: PT Indofood atau Toko Jaya" />
                 {errors.name && <span className="text-xs text-danger mt-1">{errors.name.message}</span>}

@@ -12,7 +12,7 @@ import type { Product, ProductForm as ProductFormType } from '@/types/database'
 const productSchema = z.object({
   name: z.string().min(1, 'Nama produk wajib diisi'),
   category: z.string().min(1, 'Kategori wajib diisi'),
-  sku: z.string().min(1, 'SKU wajib diisi'),
+  sku: z.string().optional(),
   barcode: z.string().optional(),
   unit: z.string().min(1, 'Satuan wajib diisi'),
   hpp: z.coerce.number().min(0, 'HPP tidak boleh negatif'),
@@ -158,9 +158,10 @@ export function ProductForm({ initialData, warehouseId, onSuccess, onCancel }: P
                 {errors.name && <span className="text-xs text-danger mt-1">{errors.name.message}</span>}
               </div>
               <div className="form-group">
-                <label className="label">SKU (Kode Barang) *</label>
-                <input {...register('sku')} className={`input ${errors.sku ? 'input-error' : ''}`} placeholder="Cth: FCN-500" />
+                <label className="label">SKU (Kode Internal)</label>
+                <input {...register('sku')} className={`input ${errors.sku ? 'input-error' : ''}`} placeholder="Otomatis (Misal: PRD-0001)" disabled={!!initialData} />
                 {errors.sku && <span className="text-xs text-danger mt-1">{errors.sku.message}</span>}
+                <span className="text-[10px] text-dark-400 mt-1 italic">Kosongkan agar dibuat otomatis.</span>
               </div>
               <div className="form-group">
                 <label className="label">Barcode</label>

@@ -33,10 +33,14 @@ export default async function SettingsPage() {
     .single()
 
   // Fetch all users for user management
-  const { data: users } = await supabase
+  const { data: users, error: usersError } = await supabase
     .from('profiles')
     .select('id, full_name, role, status, branch_id, id_role, branch:branches(name)')
     .order('created_at', { ascending: true })
+
+  if (usersError) {
+    console.error('Error fetching users in SettingsPage:', usersError)
+  }
 
   // Fetch branches
   const { data: branches } = await supabase

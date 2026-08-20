@@ -25,7 +25,10 @@ export default async function CustomersPage() {
   }
 
   // Fetch initial customers
-  const customers: any[] = []
+  const { data: initialCustomers } = await supabase
+    .from('customers')
+    .select('*')
+    .order('created_at', { ascending: false })
 
-  return <CustomersClient initialCustomers={customers || []} userRole={profile!.role} />
+  return <CustomersClient initialCustomers={initialCustomers || []} userRole={profile!.role} />
 }

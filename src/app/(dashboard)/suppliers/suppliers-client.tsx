@@ -30,7 +30,8 @@ export default function SuppliersClient({ initialSuppliers, userRole }: Supplier
       const searchLower = search.toLowerCase()
       return s.name.toLowerCase().includes(searchLower) || 
              (s.phone && s.phone.toLowerCase().includes(searchLower)) ||
-             (s.contact_person && s.contact_person.toLowerCase().includes(searchLower))
+             (s.contact_person && s.contact_person.toLowerCase().includes(searchLower)) ||
+             (s.code && s.code.toLowerCase().includes(searchLower))
     })
   }, [suppliers, search])
 
@@ -90,7 +91,7 @@ export default function SuppliersClient({ initialSuppliers, userRole }: Supplier
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-400" />
             <input 
               type="text" 
-              placeholder="Cari nama pemasok atau no. telp..." 
+              placeholder="Cari kode, nama, atau no. telp..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="input pl-9"
@@ -104,6 +105,7 @@ export default function SuppliersClient({ initialSuppliers, userRole }: Supplier
             <thead className="sticky top-0 bg-dark-50 shadow-sm z-10">
               <tr>
                 <th className="w-12 text-center">No</th>
+                <th>Kode</th>
                 <th>Nama Pemasok</th>
                 <th>Kontak Person</th>
                 <th>No. Telp</th>
@@ -116,7 +118,7 @@ export default function SuppliersClient({ initialSuppliers, userRole }: Supplier
             <tbody>
               {filteredSuppliers.length === 0 ? (
                 <tr>
-                  <td colSpan={['super_admin', 'admin_gudang'].includes(userRole) ? 6 : 5} className="text-center py-12 text-dark-400">
+                  <td colSpan={['super_admin', 'admin_gudang'].includes(userRole) ? 7 : 6} className="text-center py-12 text-dark-400">
                     <Truck className="w-12 h-12 mx-auto text-dark-200 mb-3" />
                     <p className="text-base font-medium text-dark-600">Tidak ada pemasok ditemukan</p>
                     <p className="text-sm">Silakan tambahkan pemasok baru atau ubah kata kunci pencarian.</p>
@@ -125,9 +127,10 @@ export default function SuppliersClient({ initialSuppliers, userRole }: Supplier
               ) : (
                 filteredSuppliers.map((supplier, index) => (
                   <tr key={supplier.id}>
-                    <td className="text-center text-dark-400 text-sm">{index + 1}</td>
+                    <td className="text-center text-dark-500 font-medium">{index + 1}</td>
+                    <td className="font-mono text-xs text-dark-500">{supplier.code || '-'}</td>
                     <td>
-                      <div className="font-semibold text-dark-900">{supplier.name}</div>
+                      <div className="font-bold text-dark-900">{supplier.name}</div>
                       {supplier.address && (
                         <div className="text-xs text-dark-400 mt-0.5 max-w-[250px] truncate" title={supplier.address}>
                           {supplier.address}
