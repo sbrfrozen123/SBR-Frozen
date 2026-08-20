@@ -133,7 +133,11 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
     try {
       const result = await createTeamUser(formData)
       if (!result.success) {
-        toast.error(result.error || 'Gagal membuat pengguna')
+        let errorMsg = result.error || 'Gagal membuat pengguna'
+        if (errorMsg.includes('already been registered') || errorMsg.includes('already exists')) {
+          errorMsg = 'Email tersebut sudah terdaftar! Gunakan alamat email lain.'
+        }
+        toast.error(errorMsg)
         return
       }
 
@@ -143,7 +147,7 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
       // Idealnya kita memanggil server action revalidatePath, atau sekadar reload data.
       window.location.reload()
     } catch (error: any) {
-      toast.error('Terjadi kesalahan')
+      toast.error('Terjadi kesalahan sistem saat membuat akun.')
     } finally {
       setIsSubmitting(false)
     }
@@ -430,11 +434,11 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
       {isModalOpen && (
         <div className="modal-overlay z-[100]">
           <div className="bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col w-full max-w-lg max-h-[90vh] animate-scale-up border border-dark-200">
-            <div className="px-4 py-4 border-b border-dark-200 flex justify-between items-center bg-dark-900 text-white flex-shrink-0">
+            <div className="px-4 py-4 border-b border-primary-700 flex justify-between items-center bg-primary-600 text-white flex-shrink-0">
               <h3 className="font-bold text-lg">Tambah Karyawan Baru</h3>
               <button 
                 onClick={() => setIsModalOpen(false)}
-                className="text-white/70 hover:text-white transition-colors bg-white/10 hover:bg-white/20 rounded-md p-1 px-2"
+                className="text-white/80 hover:text-white transition-colors bg-white/10 hover:bg-white/20 rounded-md p-1 px-2"
               >
                 X
               </button>
@@ -568,11 +572,11 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
       {isEditModalOpen && (
         <div className="modal-overlay z-[100]">
           <div className="bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col w-full max-w-lg max-h-[90vh] animate-scale-up border border-dark-200">
-            <div className="px-4 py-4 border-b border-dark-200 flex justify-between items-center bg-dark-900 text-white flex-shrink-0">
+            <div className="px-4 py-4 border-b border-primary-700 flex justify-between items-center bg-primary-600 text-white flex-shrink-0">
               <h3 className="font-bold text-lg">Edit Karyawan</h3>
               <button 
                 onClick={() => setIsEditModalOpen(false)}
-                className="text-white/70 hover:text-white transition-colors bg-white/10 hover:bg-white/20 rounded-md p-1 px-2"
+                className="text-white/80 hover:text-white transition-colors bg-white/10 hover:bg-white/20 rounded-md p-1 px-2"
               >
                 X
               </button>
