@@ -64,6 +64,7 @@ export default function PurchasesRincianClient({
         items.push({
           id: item.id,
           invoice_number: purchase.invoice_number,
+            date: purchase.purchase_date || purchase.created_at,
           supplier_name: purchase.suppliers?.name || '-',
           product_name: item.products?.name || 'Produk Dihapus',
           qty: item.qty,
@@ -79,9 +80,10 @@ export default function PurchasesRincianClient({
   }, [purchasesData])
 
   const exportToCSV = () => {
-    const headers = ['No Faktur', 'Pemasok', 'Nama Barang', 'Kuantitas', 'UoM', 'Gudang', 'Harga Beli', 'Total Harga', 'Status Bayar']
+    const headers = ['No Faktur', 'Tanggal', 'Pemasok', 'Nama Barang', 'Kuantitas', 'UoM', 'Gudang', 'Harga Beli', 'Total Harga', 'Status Bayar']
     const csvData = detailedItems.map(item => [
       item.invoice_number,
+        new Date(item.date).toLocaleDateString("id-ID"),
       item.supplier_name,
       item.product_name,
       item.qty,
@@ -174,6 +176,7 @@ export default function PurchasesRincianClient({
               <thead>
                 <tr className="border-t-2 border-b-2 border-dark-900 text-dark-900">
                   <th className="py-3 px-2 font-bold whitespace-nowrap">No Faktur</th>
+                  <th className="py-3 px-2 font-bold whitespace-nowrap">Tanggal</th>
                   <th className="py-3 px-2 font-bold">Pemasok</th>
                   <th className="py-3 px-2 font-bold">Nama Barang</th>
                   <th className="py-3 px-2 font-bold text-right whitespace-nowrap">Kuantitas</th>
@@ -188,6 +191,7 @@ export default function PurchasesRincianClient({
                 {detailedItems.map((item, idx) => (
                   <tr key={`${item.id}-${idx}`} className="hover:bg-slate-50 print:hover:bg-transparent transition-colors">
                     <td className="py-3 px-2 align-top">{item.invoice_number}</td>
+                      <td className="py-3 px-2 align-top whitespace-nowrap">{item.date ? new Date(item.date).toLocaleDateString("id-ID") : "-"}</td>
                     <td className="py-3 px-2 align-top">{item.supplier_name}</td>
                     <td className="py-3 px-2 align-top">{item.product_name}</td>
                     <td className="py-3 px-2 align-top text-right">{item.qty}</td>
@@ -205,7 +209,7 @@ export default function PurchasesRincianClient({
               </tbody>
               <tfoot>
                 <tr className="border-t-2 border-b-2 border-dark-900 font-bold text-dark-900">
-                  <td colSpan={7} className="py-3 px-2 text-right">TOTAL KESELURUHAN</td>
+                  <td colSpan={8} className="py-3 px-2 text-right">TOTAL KESELURUHAN</td>
                   <td className="py-3 px-2 text-right">{formatRupiah(detailedItems.reduce((sum, item) => sum + item.subtotal, 0)).replace('Rp', '')}</td>
                   <td></td>
                 </tr>

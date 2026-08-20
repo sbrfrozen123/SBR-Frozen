@@ -55,7 +55,7 @@ export default async function CashflowPage() {
       .eq('branch_id', userBranchId),
     supabase
       .from('purchases')
-      .select('id, total_amount, payment_method, payment_status, payment_account, created_at')
+        .select('id, total_amount, amount_paid, payment_method, payment_status, payment_account, created_at')
       .eq('branch_id', userBranchId),
     supabase
       .from('debt_payments')
