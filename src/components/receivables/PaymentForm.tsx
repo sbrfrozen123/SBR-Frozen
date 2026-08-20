@@ -45,6 +45,7 @@ export function PaymentForm({ transaction, userId, onSuccess, onCancel }: Paymen
           transaction_id: transaction.id,
           customer_id: transaction.customer_id,
           user_id: userId,
+          branch_id: transaction.branch_id,
           amount: paymentAmount,
           payment_method: paymentMethod,
           notes
