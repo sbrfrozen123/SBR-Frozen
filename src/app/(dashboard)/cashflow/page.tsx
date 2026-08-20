@@ -46,17 +46,21 @@ export default async function CashflowPage() {
     supabase
       .from('transactions')
       .select('id, amount_paid, payment_method, payment_account, created_at, invoice_number')
+      .eq('branch_id', userBranchId)
       .neq('status', 'voided')
       .neq('order_status', 'cancelled'),
     supabase
       .from('expenses')
-      .select('id, amount, payment_method, payment_account, created_at, description'),
+      .select('id, amount, payment_method, payment_account, created_at, description')
+      .eq('branch_id', userBranchId),
     supabase
       .from('purchases')
-      .select('id, payment_method, payment_account, created_at, items:purchase_items(subtotal)'),
+      .select('id, total_amount, payment_method, payment_status, payment_account, created_at')
+      .eq('branch_id', userBranchId),
     supabase
       .from('debt_payments')
       .select('id, amount, payment_method, payment_account, created_at')
+      .eq('branch_id', userBranchId)
   ])
 
     // Calculate Balances dynamically from ALL transactions
@@ -109,27 +113,29 @@ export default async function CashflowPage() {
   ;(posTxns || []).forEach(tx => {
     if (tx.amount_paid > 0) {
       if (tx.payment_method === 'tunai') cashBalance += tx.amount_paid
-      else if (tx.payment_method === 'transfer_bank' || tx.payment_method === 'transfer') addBank(tx.amount_paid, tx.payment_account)
+      else if (['transfer_bank', 'transfer', 'qris'].includes(tx.payment_method)) addBank(tx.amount_paid, tx.payment_account)
     }
   })
 
   // 3. Expenses
   ;(expenseTxns || []).forEach(ex => {
     if (ex.payment_method === 'tunai') cashBalance -= ex.amount
-    else if (ex.payment_method === 'transfer_bank' || ex.payment_method === 'transfer') subBank(ex.amount, ex.payment_account)
+    else if (['transfer_bank', 'transfer', 'qris'].includes(ex.payment_method)) subBank(ex.amount, ex.payment_account)
   })
 
   // 4. Purchases
   ;(purchaseTxns || []).forEach(pu => {
-    const totalPurchase = pu.items?.reduce((sum: number, item: any) => sum + item.subtotal, 0) || 0
-    if (pu.payment_method === 'tunai') cashBalance -= totalPurchase
-    else if (pu.payment_method === 'transfer_bank' || pu.payment_method === 'transfer') subBank(totalPurchase, pu.payment_account)
+    // Hanya kurangi kas jika lunas, kalau tempo belum ada pengeluaran kas
+    if (pu.payment_status === 'lunas' || pu.payment_method !== 'tempo') {
+      if (pu.payment_method === 'tunai') cashBalance -= pu.total_amount
+      else if (['transfer_bank', 'transfer', 'qris'].includes(pu.payment_method)) subBank(pu.total_amount, pu.payment_account)
+    }
   })
 
   // 5. Debt Payments (Piutang dibayar)
   ;(debtTxns || []).forEach(dp => {
     if (dp.payment_method === 'tunai') cashBalance += dp.amount
-    else if (dp.payment_method === 'transfer_bank' || dp.payment_method === 'transfer') addBank(dp.amount, dp.payment_account)
+    else if (['transfer_bank', 'transfer', 'qris'].includes(dp.payment_method)) addBank(dp.amount, dp.payment_account)
   })
 
   const bankBalance = Object.values(bankBalances).reduce((a,b) => a+b, 0) + undefinedBankBalance
