@@ -256,7 +256,7 @@ export default function EditPurchaseClient({ purchase, products, suppliers, ware
         // Log stock adjustment
         await supabase.from('stock_adjustments').insert([{
           product_id: item.product.id,
-          branch_id: branchId,
+          branch_id: purchase.branch_id,
           user_id: userId,
           type: 'tambah',
           qty_before: bQty,

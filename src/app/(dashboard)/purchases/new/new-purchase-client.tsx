@@ -170,7 +170,12 @@ export default function NewPurchaseClient({ products, suppliers, warehouses, use
 
   const handleSave = async () => {
     if (!supplierId) return toast.error('Pilih pemasok terlebih dahulu')
-    if (!warehouseId) return toast.error('Pilih gudang tujuan terlebih dahulu')
+      if (!warehouseId) return toast.error('Pilih gudang tujuan terlebih dahulu')
+      
+      const selectedWarehouse = warehouses.find((w: any) => w.id === warehouseId)
+      const finalBranchId = branchId || (selectedWarehouse?.branch_id)
+      
+      if (!finalBranchId) return toast.error('Gudang yang dipilih tidak terkait dengan cabang mana pun. Silakan hubungi admin.')
     if (!invoiceNumber.trim()) return toast.error('Nomor Invoice wajib diisi')
     if (validItems.length === 0) return toast.error('Belum ada produk valid yang dimasukkan')
 
@@ -184,7 +189,7 @@ export default function NewPurchaseClient({ products, suppliers, warehouses, use
           supplier_id: supplierId,
           warehouse_id: warehouseId || null,
           user_id: userId,
-          branch_id: branchId,
+          branch_id: finalBranchId,
           total_amount: totalAmount,
           payment_status: paymentStatus,
           payment_method: paymentMethod,
@@ -245,7 +250,7 @@ export default function NewPurchaseClient({ products, suppliers, warehouses, use
         // Log to stock adjustments
         await supabase.from('stock_adjustments').insert([{
           product_id: item.product.id,
-          branch_id: branchId,
+          branch_id: finalBranchId,
           warehouse_id: warehouseId || null,
           user_id: userId,
           type: 'tambah',
