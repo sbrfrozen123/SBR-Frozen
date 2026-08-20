@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Wallet, Landmark, ArrowRightLeft, Plus, Minus, Search } from 'lucide-react'
+import { Wallet, Landmark, ArrowRightLeft, Plus, Minus, Search, CreditCard } from 'lucide-react'
 import { formatRupiah } from '@/lib/utils/currency'
 import { formatDateShort } from '@/lib/utils/dates'
 import { createClient } from '@/lib/supabase/client'
