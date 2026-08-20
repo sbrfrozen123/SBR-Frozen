@@ -114,12 +114,30 @@ export default function NewPurchaseClient({ products, suppliers, warehouses, use
   const [warehouseId, setWarehouseId] = useState(defaultWarehouseId || '')
   const [paymentStatus, setPaymentStatus] = useState<'lunas' | 'tempo'>('lunas')
   const [paymentMethod, setPaymentMethod] = useState<'tunai' | 'transfer' | 'qris' | 'tempo'>('tunai')
+  const [paymentAccount, setPaymentAccount] = useState<string>('')
+  const [banks, setBanks] = useState<string[]>([])
   const [notes, setNotes] = useState('')
   
   // Items State
   const [items, setItems] = useState<CartItem[]>([])
   
   const [loading, setLoading] = useState(false)
+
+  // Fetch bank accounts from branch settings
+  useEffect(() => {
+    if (branchId) {
+      supabase.from('branches').select('bank_name_1, bank_name_2').eq('id', branchId).single()
+        .then(({ data }) => {
+          if (data) {
+            const b: string[] = []
+            if (data.bank_name_1) b.push(data.bank_name_1)
+            if (data.bank_name_2) b.push(data.bank_name_2)
+            setBanks(b)
+            if (b.length > 0) setPaymentAccount(b[0])
+          }
+        })
+    }
+  }, [branchId])
 
   const removeRow = (id: string) => {
     setItems(items.filter(item => item.id !== id))
@@ -194,6 +212,7 @@ export default function NewPurchaseClient({ products, suppliers, warehouses, use
           amount_paid: paymentStatus === 'lunas' ? totalAmount : 0,
           payment_status: paymentStatus,
           payment_method: paymentMethod,
+          payment_account: (paymentMethod === 'transfer' || paymentMethod === 'qris') ? paymentAccount : null,
           purchase_date: purchaseDate,
           notes: notes,
         }])
@@ -394,6 +413,18 @@ export default function NewPurchaseClient({ products, suppliers, warehouses, use
                   <option value="tunai">Tunai (Laci Kasir)</option>
                   <option value="transfer">Transfer (Bank)</option>
                   <option value="qris">QRIS (Bank)</option>
+                </select>
+              </div>
+            )}
+            {paymentStatus === 'lunas' && (paymentMethod === 'transfer' || paymentMethod === 'qris') && banks.length > 0 && (
+              <div className="form-group">
+                <label className="label">Rekening Bank Pembayaran</label>
+                <select 
+                  value={paymentAccount}
+                  onChange={(e) => setPaymentAccount(e.target.value)}
+                  className="input bg-white font-medium text-blue-700"
+                >
+                  {banks.map(b => <option key={b} value={b}>{b}</option>)}
                 </select>
               </div>
             )}

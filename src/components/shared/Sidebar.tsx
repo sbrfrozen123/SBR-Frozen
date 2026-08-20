@@ -78,9 +78,8 @@ export const modules: ModuleGroup[] = [
     color: 'text-purple-500',
     roles: ['super_admin', 'admin_gudang'],
     items: [
-      { href: '/purchases', icon: ShoppingBag, label: 'Faktur Pembelian', roles: ['super_admin', 'admin_gudang'] },
+      { href: '/purchases', icon: ShoppingBag, label: 'Pembelian', roles: ['super_admin', 'admin_gudang'] },
       { href: '/suppliers', icon: Truck, label: 'Data Pemasok', roles: ['super_admin', 'admin_gudang'] },
-      { href: '/purchases/new', icon: Receipt, label: 'Buat PO Baru', roles: ['super_admin', 'admin_gudang'] }
     ]
   },
   {
