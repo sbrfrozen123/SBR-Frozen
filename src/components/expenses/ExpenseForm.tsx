@@ -55,16 +55,19 @@ export function ExpenseForm({ initialData, userId, branchId, onSuccess, onCancel
   const paymentMethod = watch('payment_method')
 
   useEffect(() => {
-    supabase.from('branches').select('bank_name_1, bank_name_2').eq('id', branchId).single()
-      .then(({data}) => {
-        if(data) {
-          const b = []
-          if (data.bank_name_1) b.push(data.bank_name_1)
-          if (data.bank_name_2) b.push(data.bank_name_2)
-          setBanks(b)
-          if(b.length > 0 && !initialData?.payment_account) setValue('payment_account', b[0])
-        }
-      })
+    const query = branchId
+      ? supabase.from('branches').select('bank_name_1, bank_name_2').eq('id', branchId).single()
+      : supabase.from('branches').select('bank_name_1, bank_name_2').limit(1).single()
+    
+    query.then(({data}) => {
+      if(data) {
+        const b: string[] = []
+        if (data.bank_name_1) b.push(data.bank_name_1)
+        if (data.bank_name_2) b.push(data.bank_name_2)
+        setBanks(b)
+        if(b.length > 0 && !initialData?.payment_account) setValue('payment_account', b[0])
+      }
+    })
   }, [branchId, supabase, setValue, initialData])
 
   const uploadReceipt = async (file: File): Promise<string> => {

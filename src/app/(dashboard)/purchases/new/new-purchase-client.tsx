@@ -112,8 +112,8 @@ export default function NewPurchaseClient({ products, suppliers, warehouses, use
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split('T')[0])
   const [supplierId, setSupplierId] = useState('')
   const [warehouseId, setWarehouseId] = useState(defaultWarehouseId || '')
-  const [paymentStatus, setPaymentStatus] = useState<'lunas' | 'tempo'>('lunas')
-  const [paymentMethod, setPaymentMethod] = useState<'tunai' | 'transfer' | 'qris' | 'tempo'>('tunai')
+  const [paymentStatus, setPaymentStatus] = useState<'lunas' | 'tempo'>('tempo')
+  const [paymentMethod, setPaymentMethod] = useState<'tunai' | 'transfer' | 'qris' | 'tempo'>('tempo')
   const [paymentAccount, setPaymentAccount] = useState<string>('')
   const [banks, setBanks] = useState<string[]>([])
   const [notes, setNotes] = useState('')
@@ -388,46 +388,13 @@ export default function NewPurchaseClient({ products, suppliers, warehouses, use
             
             <div className="form-group">
               <label className="label">Status Pembayaran</label>
-              <select 
-                value={paymentStatus}
-                onChange={(e) => {
-                  setPaymentStatus(e.target.value as any)
-                  if (e.target.value === 'tempo') setPaymentMethod('tempo')
-                  else setPaymentMethod('tunai')
-                }}
-                className="input bg-white"
-              >
-                <option value="lunas">Lunas (Langsung Dibayar)</option>
-                <option value="tempo">Belum Lunas (Tempo/Kredit)</option>
-              </select>
+              <div className="input bg-amber-50 border-amber-300 text-amber-800 font-semibold flex items-center gap-2">
+                <span>⏳</span>
+                <span>Belum Lunas (Hutang) — Bayar via menu Hutang Barang</span>
+              </div>
             </div>
             
-            {paymentStatus === 'lunas' && (
-              <div className="form-group">
-                <label className="label">Metode Pembayaran</label>
-                <select 
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value as any)}
-                  className="input bg-white"
-                >
-                  <option value="tunai">Tunai (Laci Kasir)</option>
-                  <option value="transfer">Transfer (Bank)</option>
-                  <option value="qris">QRIS (Bank)</option>
-                </select>
-              </div>
-            )}
-            {paymentStatus === 'lunas' && (paymentMethod === 'transfer' || paymentMethod === 'qris') && banks.length > 0 && (
-              <div className="form-group">
-                <label className="label">Rekening Bank Pembayaran</label>
-                <select 
-                  value={paymentAccount}
-                  onChange={(e) => setPaymentAccount(e.target.value)}
-                  className="input bg-white font-medium text-blue-700"
-                >
-                  {banks.map(b => <option key={b} value={b}>{b}</option>)}
-                </select>
-              </div>
-            )}
+
           </div>
         </div>
 

@@ -21,7 +21,12 @@ interface CashflowClientProps {
 }
 
 export default function CashflowClient({ userId, branchId, initialCash, initialBank, bankBalances, undefinedBankBalance, branchData, history }: CashflowClientProps) {
-  const [paymentAccount, setPaymentAccount] = useState<string>('')
+  // Build bank options from branchData
+  const bankOptions: string[] = []
+  if (branchData?.bank_name_1) bankOptions.push(branchData.bank_name_1)
+  if (branchData?.bank_name_2) bankOptions.push(branchData.bank_name_2)
+  
+  const [paymentAccount, setPaymentAccount] = useState<string>(bankOptions[0] || '')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [type, setType] = useState<'saldo_awal' | 'setor_kas' | 'tarik_kas' | 'mutasi_ke_bank' | 'mutasi_ke_kas' | 'pendapatan_lain'>('saldo_awal')
@@ -218,10 +223,35 @@ export default function CashflowClient({ userId, branchId, initialCash, initialB
                   {(type === 'setor_kas' || type === 'tarik_kas' || type === 'saldo_awal' || type === 'pendapatan_lain') && (
                     <div className="form-group">
                       <label className="label">Target Akun</label>
-                      <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as any)} className="input bg-white">
-                        <option value="tunai">Kas Tunai (Laci)</option>
-                        <option value="transfer">Bank / ATM</option>
-                      </select>
+                      {bankOptions.length > 0 ? (
+                        <select 
+                          value={paymentMethod === 'tunai' ? 'tunai' : paymentAccount}
+                          onChange={(e) => {
+                            if (e.target.value === 'tunai') {
+                              setPaymentMethod('tunai')
+                              setPaymentAccount('')
+                            } else {
+                              setPaymentMethod('transfer')
+                              setPaymentAccount(e.target.value)
+                            }
+                          }}
+                          className="input bg-white"
+                        >
+                          <option value="tunai">Kas Tunai (Laci Kasir)</option>
+                          {bankOptions.map(b => (
+                            <option key={b} value={b}>{b}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <select 
+                          value={paymentMethod} 
+                          onChange={(e) => setPaymentMethod(e.target.value as any)} 
+                          className="input bg-white"
+                        >
+                          <option value="tunai">Kas Tunai (Laci Kasir)</option>
+                          <option value="transfer">Bank / ATM</option>
+                        </select>
+                      )}
                     </div>
                   )}
 
