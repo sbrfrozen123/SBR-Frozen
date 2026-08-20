@@ -50,8 +50,8 @@ function GlobalProductSearch({ onSelect, products }: { onSelect: (val: string) =
                     setSearch('');
                   }}
                 >
-                  <div className="font-semibold">{p.sku}</div>
-                  <div className="text-dark-500 text-xs truncate">{p.name}</div>
+                  <div className="font-semibold truncate w-full">{p.name}</div>
+                  <div className="text-dark-500 text-xs font-mono mt-0.5">{p.sku}</div>
                 </button>
               ))
             )}
@@ -345,8 +345,9 @@ export default function TransfersClient({ userId, userRole, userName, branchId, 
                     const p = products.find(prod => prod.id === it.product_id)
                     return (
                     <div key={idx} className="flex items-center gap-3 bg-white p-2 px-3 rounded-xl border border-dark-200 shadow-sm animate-fade-in">
-                      <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-dark-900 truncate">{p?.sku} - {p?.name}</div>
+                      <div className="flex-1 min-w-0 flex flex-col justify-center">
+                        <div className="font-semibold text-dark-900 truncate">{p?.name}</div>
+                        <div className="text-xs text-dark-500 font-mono mt-0.5">{p?.sku}</div>
                       </div>
                       <input type="number" required min={1} value={it.qty || ''} onChange={e => {
                         const newI = [...items]; newI[idx].qty = Number(e.target.value); setItems(newI)
