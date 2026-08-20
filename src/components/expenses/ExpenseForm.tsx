@@ -107,17 +107,18 @@ export function ExpenseForm({ initialData, userId, branchId, onSuccess, onCancel
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-2xl w-full max-w-xl flex flex-col max-h-[90vh] animate-scale-up border border-dark-200 overflow-hidden">
-      <div className="flex items-center justify-between p-4 border-b border-dark-200 bg-dark-900 text-white flex-shrink-0">
-        <h2 className="text-lg font-bold">
-          {initialData ? 'Edit Pengeluaran' : 'Catat Pengeluaran Baru'}
-        </h2>
-        <button onClick={onCancel} className="text-white/70 hover:text-white transition-colors bg-white/10 hover:bg-white/20 rounded-md p-1 px-2">
-          X
-        </button>
-      </div>
+    <div className="modal-overlay z-50">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-xl flex flex-col max-h-[90vh] animate-scale-up border border-dark-200 overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-4 border-b border-dark-200 bg-dark-900 text-white flex-shrink-0">
+          <h2 className="text-lg font-bold">
+            {initialData ? 'Edit Pengeluaran' : 'Catat Pengeluaran Baru'}
+          </h2>
+          <button onClick={onCancel} className="text-white/70 hover:text-white transition-colors bg-white/10 hover:bg-white/20 rounded-md p-1 px-2">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-      <div className="flex-1 overflow-y-auto p-6 bg-slate-50">
+        <div className="flex-1 overflow-y-auto p-6 bg-slate-50">
         <form id="expense-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="bg-white p-5 rounded-2xl border border-dark-100 shadow-sm space-y-5">
             <h3 className="text-sm font-bold text-dark-900 uppercase tracking-wide mb-2">Rincian Pengeluaran</h3>
@@ -202,15 +203,16 @@ export function ExpenseForm({ initialData, userId, branchId, onSuccess, onCancel
         </form>
       </div>
 
-      <div className="p-4 px-6 border-t border-dark-200 bg-white flex justify-end gap-3 flex-shrink-0 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
-        <button type="button" onClick={onCancel} className="btn-md btn-outline bg-white">
+      <div className="px-6 py-4 border-t border-dark-200 bg-white flex justify-end gap-3 flex-shrink-0 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
+        <button type="button" onClick={onCancel} className="btn-md btn-outline bg-white text-dark-700 hover:bg-dark-50">
           Batal
         </button>
-        <button type="submit" form="expense-form" disabled={loading} className="btn-md btn-primary">
+        <button type="submit" form="expense-form" disabled={loading} className="btn-md btn-primary bg-primary-600 hover:bg-primary-700 text-white border-transparent">
           {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
           {initialData ? 'Simpan Perubahan' : 'Catat Pengeluaran'}
         </button>
       </div>
     </div>
+  </div>
   )
 }

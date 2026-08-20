@@ -284,9 +284,9 @@ export default function TransfersClient({ userId, userRole, userName, branchId, 
               </div>
             </form>
 
-            <div className="p-4 px-6 border-t border-dark-200 bg-white flex justify-end gap-3 flex-shrink-0 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
-              <button type="button" onClick={() => setIsFormOpen(false)} className="btn-md btn-outline bg-white">Batal</button>
-              <button type="submit" form="transfer-form" disabled={loading} className="btn-md btn-primary">
+            <div className="px-6 py-4 border-t border-dark-200 bg-white flex justify-end gap-3 flex-shrink-0 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
+              <button type="button" onClick={() => setIsFormOpen(false)} className="btn-md btn-outline bg-white text-dark-700 hover:bg-dark-50">Batal</button>
+              <button type="submit" form="transfer-form" disabled={loading} className="btn-md btn-primary bg-primary-600 hover:bg-primary-700 text-white border-transparent">
                 {loading ? 'Memproses...' : 'Kirim Barang'}
               </button>
             </div>

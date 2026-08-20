@@ -135,17 +135,18 @@ export function ProductForm({ initialData, warehouseId, onSuccess, onCancel }: P
   }
 
   return (
-    <div className="bg-white rounded-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
-      <div className="flex items-center justify-between p-6 border-b border-dark-100 flex-shrink-0">
-        <h2 className="text-xl font-bold text-dark-900">
-          {initialData ? 'Edit Produk' : 'Tambah Produk Baru'}
-        </h2>
-        <button onClick={onCancel} className="text-dark-400 hover:text-dark-600 transition-colors">
-          <X className="w-5 h-5" />
-        </button>
-      </div>
+    <div className="modal-overlay z-50">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh] animate-scale-up border border-dark-200">
+        <div className="flex items-center justify-between px-4 py-4 border-b border-dark-200 bg-dark-900 text-white flex-shrink-0">
+          <h2 className="text-lg font-bold">
+            {initialData ? 'Edit Produk' : 'Tambah Produk Baru'}
+          </h2>
+          <button onClick={onCancel} className="text-white/70 hover:text-white transition-colors bg-white/10 hover:bg-white/20 rounded-md p-1 px-2">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-      <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-6 bg-slate-50">
         <form id="product-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Section: Informasi Dasar */}
           <div>
@@ -245,15 +246,16 @@ export function ProductForm({ initialData, warehouseId, onSuccess, onCancel }: P
         </form>
       </div>
 
-      <div className="p-6 border-t border-dark-100 bg-dark-50 flex justify-end gap-3 flex-shrink-0">
-        <button type="button" onClick={onCancel} className="btn-md btn-outline bg-white">
+      <div className="px-6 py-4 border-t border-dark-200 bg-white flex justify-end gap-3 flex-shrink-0 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
+        <button type="button" onClick={onCancel} className="btn-md btn-outline bg-white text-dark-700 hover:bg-dark-50">
           Batal
         </button>
-        <button type="submit" form="product-form" disabled={loading} className="btn-md btn-primary">
+        <button type="submit" form="product-form" disabled={loading} className="btn-md btn-primary bg-primary-600 hover:bg-primary-700 text-white border-transparent">
           {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
           {initialData ? 'Simpan Perubahan' : 'Tambahkan Produk'}
         </button>
       </div>
     </div>
+  </div>
   )
 }
