@@ -78,17 +78,17 @@ export function CategoryForm({ initialData, onSuccess, onCancel }: CategoryFormP
   }
 
   return (
-    <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden flex flex-col">
-      <div className="flex items-center justify-between p-6 border-b border-dark-100 flex-shrink-0">
-        <h2 className="text-xl font-bold text-dark-900">
+    <div className="bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col w-full max-w-lg max-h-[90vh] animate-scale-up border border-dark-200">
+      <div className="flex items-center justify-between p-4 bg-dark-900 text-white flex-shrink-0">
+        <h2 className="text-lg font-bold">
           {initialData ? 'Edit Kategori' : 'Tambah Kategori Baru'}
         </h2>
-        <button onClick={onCancel} className="text-dark-400 hover:text-dark-600 transition-colors">
+        <button onClick={onCancel} className="text-white/70 hover:text-white transition-colors bg-white/10 hover:bg-white/20 rounded-md p-1">
           <X className="w-5 h-5" />
         </button>
       </div>
 
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-6 overflow-y-auto bg-slate-50">
         <form id="category-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="form-group">
             <label className="label">Nama Kategori *</label>
@@ -103,7 +103,7 @@ export function CategoryForm({ initialData, onSuccess, onCancel }: CategoryFormP
         </form>
       </div>
 
-      <div className="p-6 border-t border-dark-100 bg-dark-50 flex justify-end gap-3 flex-shrink-0">
+      <div className="p-4 px-6 border-t border-dark-200 bg-white flex justify-end gap-3 flex-shrink-0 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
         <button type="button" onClick={onCancel} className="btn-md btn-outline bg-white">
           Batal
         </button>

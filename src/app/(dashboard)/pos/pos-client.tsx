@@ -685,38 +685,48 @@ export default function POSClient({ products, customers, settings, userRole, use
           ) : (
             <div className="space-y-3">
               {cart.map(item => (
-                <div key={item.product.id} className="flex gap-3 p-3 rounded-xl border border-dark-100 bg-white hover:border-primary-200 transition-colors group items-center">
+                <div key={item.product.id} className="flex gap-3 p-3 rounded-xl border border-dark-100 bg-white hover:border-primary-200 transition-colors group items-start">
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-semibold text-dark-900 line-clamp-1">{item.product.name}</h4>
-                    <p className="text-primary-600 font-bold text-money text-sm mt-0.5">{formatRupiah(item.unit_price)}</p>
+                    <div className="flex justify-between items-start">
+                      <h4 className="text-sm font-semibold text-dark-900 line-clamp-2 pr-2">{item.product.name}</h4>
+                      <button
+                        onClick={() => removeFromCart(item.product.id)}
+                        className="text-dark-300 hover:text-danger opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                        title="Hapus"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    
+                    <p className="text-primary-600 font-bold text-money text-sm mt-1">{formatRupiah(item.unit_price)}</p>
+                    
+                    {/* Diskon di bawah harga */}
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="text-[10px] text-dark-400 font-medium uppercase tracking-wider">Diskon (Rp)</span>
+                      {userRole === 'super_admin' || userRole === 'kasir' ? (
+                        <input
+                          type="text"
+                          value={item.discount_amount as any === '' ? '' : item.discount_amount?.toLocaleString('id-ID')}
+                          onChange={(e) => handleDiscountChange(item.product.id, e.target.value)}
+                          onBlur={() => handleDiscountBlur(item.product.id)}
+                          className="w-24 text-danger-600 font-bold text-money text-sm bg-white border border-dark-200 rounded px-2 py-1 focus:border-danger-400 focus:outline-none transition-colors h-7"
+                          placeholder="0"
+                        />
+                      ) : (
+                        <span className="text-danger-600 font-bold text-money text-sm h-7 flex items-center bg-dark-50 rounded px-2 w-24 border border-transparent">
+                          {item.discount_amount ? item.discount_amount.toLocaleString('id-ID') : '-'}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Diskon di Tengah */}
-                  <div className="flex flex-col items-center justify-center flex-shrink-0 px-2 border-l border-dark-100">
-                    <span className="text-[10px] text-dark-400 font-medium mb-1">Diskon (Rp)</span>
-                    {userRole === 'super_admin' || userRole === 'kasir' ? (
-                      <input
-                        type="text"
-                        value={item.discount_amount as any === '' ? '' : item.discount_amount?.toLocaleString('id-ID')}
-                        onChange={(e) => handleDiscountChange(item.product.id, e.target.value)}
-                        onBlur={() => handleDiscountBlur(item.product.id)}
-                        className="w-20 text-danger-600 font-bold text-money text-sm bg-white border border-dark-200 rounded px-1 py-1 focus:border-danger-400 focus:outline-none transition-colors text-center h-8"
-                        placeholder="0"
-                      />
-                    ) : (
-                      <span className="text-danger-600 font-bold text-money text-sm h-8 flex items-center justify-center bg-dark-50 rounded px-2 w-20 border border-transparent">
-                        {item.discount_amount ? item.discount_amount.toLocaleString('id-ID') : '-'}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                    <div className="flex items-center gap-1 bg-dark-50 rounded-lg p-0.5">
+                  <div className="flex flex-col justify-end h-full pt-1 pb-1">
+                    <div className="flex items-center gap-1 bg-dark-50 rounded-lg p-0.5 border border-dark-100">
                       <button
                         onClick={() => updateQty(item.product.id, -1)}
-                        className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-white hover:shadow-sm text-dark-600 transition-all"
+                        className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white hover:shadow-sm text-dark-600 transition-all"
                       >
-                        <Minus className="w-3.5 h-3.5" />
+                        <Minus className="w-4 h-4" />
                       </button>
                       {userRole === 'super_admin' || userRole === 'kasir' ? (
                         <input
@@ -724,24 +734,18 @@ export default function POSClient({ products, customers, settings, userRole, use
                           value={item.qty}
                           onChange={(e) => handleQtyChange(item.product.id, e.target.value)}
                           onBlur={() => handleQtyBlur(item.product.id)}
-                          className="w-12 text-center text-sm font-semibold bg-white border border-dark-200 focus:outline-none focus:border-primary-400 rounded-md h-7 hide-arrow px-1"
+                          className="w-12 text-center text-sm font-semibold bg-white border-y border-dark-100 focus:outline-none focus:border-primary-400 h-8 hide-arrow px-1"
                         />
                       ) : (
-                        <span className="w-8 text-center text-sm font-semibold">{item.qty}</span>
+                        <span className="w-12 text-center text-sm font-semibold">{item.qty}</span>
                       )}
                       <button
                         onClick={() => updateQty(item.product.id, 1)}
-                        className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-white hover:shadow-sm text-dark-600 transition-all"
+                        className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white hover:shadow-sm text-dark-600 transition-all"
                       >
-                        <Plus className="w-3.5 h-3.5" />
+                        <Plus className="w-4 h-4" />
                       </button>
                     </div>
-                    <button
-                      onClick={() => removeFromCart(item.product.id)}
-                      className="text-[10px] text-danger/70 hover:text-danger opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 mt-1 pr-1"
-                    >
-                      <Trash2 className="w-3 h-3" /> Hapus
-                    </button>
                   </div>
                 </div>
               ))}

@@ -215,13 +215,13 @@ export default function TransfersClient({ userId, userRole, userName, branchId, 
 
       {isFormOpen && (
         <div className="modal-overlay z-[100]">
-          <div className="bg-white rounded-2xl w-full max-w-3xl flex flex-col max-h-[90vh] shadow-2xl">
-            <div className="p-6 border-b border-dark-100 flex-shrink-0 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-dark-900">Buat Transfer Baru</h2>
-              <button onClick={() => setIsFormOpen(false)} className="text-dark-400 hover:text-dark-600">x</button>
+          <div className="bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col w-full max-w-3xl max-h-[90vh] animate-scale-up border border-dark-200">
+            <div className="px-4 py-4 border-b border-dark-200 flex justify-between items-center bg-dark-900 text-white flex-shrink-0">
+              <h2 className="text-lg font-bold">Buat Transfer Baru</h2>
+              <button onClick={() => setIsFormOpen(false)} className="text-white/70 hover:text-white transition-colors bg-white/10 hover:bg-white/20 rounded-md p-1 px-2">X</button>
             </div>
             
-            <form id="transfer-form" onSubmit={handleCreate} className="flex-1 overflow-y-auto p-6 space-y-5">
+            <form id="transfer-form" onSubmit={handleCreate} className="flex-1 overflow-y-auto p-6 space-y-5 bg-slate-50">
               <div className="grid grid-cols-2 gap-4">
                 <div className="form-group">
                   <label className="label">Dari Gudang (Asal) *</label>
@@ -273,7 +273,7 @@ export default function TransfersClient({ userId, userRole, userName, branchId, 
               </div>
             </form>
 
-            <div className="p-6 border-t border-dark-100 bg-white rounded-b-2xl flex justify-end gap-3 flex-shrink-0">
+            <div className="p-4 px-6 border-t border-dark-200 bg-white flex justify-end gap-3 flex-shrink-0 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
               <button type="button" onClick={() => setIsFormOpen(false)} className="btn-md btn-outline bg-white">Batal</button>
               <button type="submit" form="transfer-form" disabled={loading} className="btn-md btn-primary">
                 {loading ? 'Memproses...' : 'Kirim Barang'}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Search, Edit, Trash2, MapPin, Building, Activity } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, MapPin, Building, Activity, X, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'react-hot-toast'
 import { useWarehouses } from '@/hooks/use-warehouses'
@@ -196,12 +196,16 @@ export default function WarehousesClient({ initialWarehouses, branches }: Wareho
       {/* Modal Form */}
       {isFormOpen && (
         <div className="modal-overlay">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="px-6 py-4 border-b border-dark-100 flex justify-between items-center bg-dark-50/50">
-              <h2 className="text-lg font-bold text-dark-900">{editingWarehouse ? 'Edit Gudang' : 'Tambah Gudang Baru'}</h2>
+          <div className="bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col w-full max-w-lg max-h-[90vh] animate-scale-up border border-dark-200">
+            <div className="px-4 py-4 border-b border-dark-200 flex justify-between items-center bg-dark-900 text-white flex-shrink-0">
+              <h2 className="text-lg font-bold">{editingWarehouse ? 'Edit Gudang' : 'Tambah Gudang Baru'}</h2>
+              <button onClick={() => setIsFormOpen(false)} className="text-white/70 hover:text-white transition-colors bg-white/10 hover:bg-white/20 rounded-md p-1">
+                <X className="w-5 h-5" />
+              </button>
             </div>
             
-            <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4">
+            <div className="p-6 overflow-y-auto bg-slate-50 flex-1">
+              <form id="warehouse-form" onSubmit={handleSubmit} className="space-y-4">
               <div className="form-group">
                 <label className="label">Nama Gudang *</label>
                 <input 
@@ -248,15 +252,17 @@ export default function WarehousesClient({ initialWarehouses, branches }: Wareho
                 </div>
               </label>
 
-              <div className="flex gap-3 pt-4 border-t border-dark-100">
-                <button type="button" onClick={() => setIsFormOpen(false)} className="btn-secondary flex-1">
-                  Batal
-                </button>
-                <button type="submit" disabled={loading} className="btn-primary flex-1">
-                  {loading ? 'Menyimpan...' : 'Simpan Gudang'}
-                </button>
-              </div>
-            </form>
+              </form>
+            </div>
+            <div className="p-4 px-6 border-t border-dark-200 bg-white flex justify-end gap-3 flex-shrink-0 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
+              <button type="button" onClick={() => setIsFormOpen(false)} className="btn-md btn-outline bg-white">
+                Batal
+              </button>
+              <button type="submit" form="warehouse-form" disabled={loading} className="btn-md btn-primary">
+                {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                {editingWarehouse ? 'Simpan Perubahan' : 'Simpan Gudang'}
+              </button>
+            </div>
           </div>
         </div>
       )}
