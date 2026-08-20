@@ -36,7 +36,8 @@ export default async function CashflowPage() {
     { data: posTxns },
     { data: expenseTxns },
     { data: purchaseTxns },
-    { data: debtTxns }
+    { data: debtPaymentsTxns },
+    { data: supplierPaymentsTxns }
   ] = await Promise.all([
     supabase
       .from('cash_transactions')
@@ -59,6 +60,10 @@ export default async function CashflowPage() {
       .eq('branch_id', userBranchId),
     supabase
       .from('debt_payments')
+      .select('id, amount, payment_method, payment_account, created_at')
+      .eq('branch_id', userBranchId),
+    supabase
+      .from('supplier_payments')
       .select('id, amount, payment_method, payment_account, created_at')
       .eq('branch_id', userBranchId)
   ])
@@ -147,12 +152,6 @@ export default async function CashflowPage() {
   ;(supplierPaymentsTxns || []).forEach(sp => {
     if (sp.payment_method === 'tunai') cashBalance -= sp.amount
     else if (['transfer_bank', 'transfer', 'qris'].includes(sp.payment_method)) subBank(sp.amount, sp.payment_account)
-  })
-
-   // Piutang dibayar
-  ;(debtTxns || []).forEach(dp => {
-    if (dp.payment_method === 'tunai') cashBalance += dp.amount
-    else if (['transfer_bank', 'transfer', 'qris'].includes(dp.payment_method)) addBank(dp.amount, dp.payment_account)
   })
 
   const bankBalance = Object.values(bankBalances).reduce((a,b) => a+b, 0) + undefinedBankBalance
