@@ -8,21 +8,20 @@ import { toast } from 'react-hot-toast'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { cn } from '@/lib/utils/cn'
 
-function SearchableProductSelect({ value, onChange, products }: { value: string, onChange: (val: string) => void, products: any[] }) {
+function GlobalProductSearch({ onSelect, products }: { onSelect: (val: string) => void, products: any[] }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   
-  const selectedProduct = products.find(p => p.id === value);
   const filtered = products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()) || p.sku.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="relative flex-1 min-w-[200px]">
+    <div className="relative">
       <div 
-        className={cn("input bg-white cursor-pointer flex items-center justify-between", !selectedProduct && "text-dark-400")}
-        onClick={() => setOpen(!open)}
+        className={cn("input bg-white cursor-pointer flex items-center justify-between", "text-dark-400")}
+        onClick={() => setOpen(true)}
       >
-        <span className="truncate">{selectedProduct ? `${selectedProduct.sku} - ${selectedProduct.name}` : '-- Pilih Produk --'}</span>
-        <ChevronDown className={cn("w-4 h-4 transition-transform text-dark-400 flex-shrink-0", open ? "rotate-180" : "")} />
+        <span>-- Cari dan Tambah Produk... --</span>
+        <Search className="w-4 h-4 transition-transform text-dark-400 flex-shrink-0" />
       </div>
       {open && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-dark-200 rounded-xl shadow-xl z-50 max-h-64 flex flex-col overflow-hidden">
@@ -31,7 +30,7 @@ function SearchableProductSelect({ value, onChange, products }: { value: string,
               type="text" 
               autoFocus 
               className="input w-full text-sm h-9 bg-white" 
-              placeholder="Cari SKU atau Nama..." 
+              placeholder="Ketik nama atau barcode produk..." 
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
@@ -46,7 +45,7 @@ function SearchableProductSelect({ value, onChange, products }: { value: string,
                   type="button"
                   className="w-full text-left px-3 py-2 text-sm hover:bg-primary-50 rounded-lg hover:text-primary-700 transition-colors flex flex-col"
                   onClick={() => {
-                    onChange(p.id);
+                    onSelect(p.id);
                     setOpen(false);
                     setSearch('');
                   }}
@@ -325,33 +324,40 @@ export default function TransfersClient({ userId, userRole, userName, branchId, 
               </div>
 
               <div className="form-group">
-                <label className="label flex justify-between items-center">
-                  <span>Pilih Barang *</span>
-                  <button type="button" onClick={() => setItems([...items, {product_id: '', qty: 1}])} className="text-xs text-primary-600 hover:underline">
-                    + Tambah Baris
-                  </button>
-                </label>
-                <div className="space-y-2 border border-dark-200 rounded-xl p-4 bg-dark-50">
-                  {items.length === 0 && <div className="text-sm text-center text-dark-400 py-4">Belum ada barang dipilih. Klik + Tambah Baris</div>}
-                  {items.map((it, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <SearchableProductSelect
-                        value={it.product_id}
-                        products={products}
-                        onChange={(val) => {
-                          const newI = [...items]; newI[idx].product_id = val; setItems(newI)
-                        }}
-                      />
+                <label className="label">Pilih Barang *</label>
+                <GlobalProductSearch 
+                  products={products}
+                  onSelect={(productId) => {
+                    const existing = items.findIndex(i => i.product_id === productId)
+                    if (existing >= 0) {
+                      const newI = [...items]; 
+                      newI[existing].qty += 1; 
+                      setItems(newI)
+                    } else {
+                      setItems([{ product_id: productId, qty: 1 }, ...items])
+                    }
+                  }}
+                />
+                
+                <div className="mt-4 space-y-2">
+                  {items.length === 0 && <div className="text-sm text-center text-dark-400 py-6 border-2 border-dashed border-dark-200 rounded-xl bg-white">Belum ada barang dipilih.</div>}
+                  {items.map((it, idx) => {
+                    const p = products.find(prod => prod.id === it.product_id)
+                    return (
+                    <div key={idx} className="flex items-center gap-3 bg-white p-2 px-3 rounded-xl border border-dark-200 shadow-sm animate-fade-in">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-dark-900 truncate">{p?.sku} - {p?.name}</div>
+                      </div>
                       <input type="number" required min={1} value={it.qty || ''} onChange={e => {
                         const newI = [...items]; newI[idx].qty = Number(e.target.value); setItems(newI)
-                      }} className="input w-24 text-center bg-white" placeholder="Qty" />
+                      }} className="input w-24 text-center bg-white h-9" placeholder="Qty" />
                       <button type="button" onClick={() => {
                         setItems(items.filter((_, i) => i !== idx))
-                      }} className="w-10 h-10 flex-shrink-0 bg-white border border-dark-200 text-danger hover:bg-danger-50 hover:border-danger-200 rounded-xl flex items-center justify-center transition-colors">
+                      }} className="w-9 h-9 flex-shrink-0 bg-white border border-dark-200 text-danger hover:bg-danger-50 hover:border-danger-200 rounded-lg flex items-center justify-center transition-colors">
                         <X className="w-4 h-4" />
                       </button>
                     </div>
-                  ))}
+                  )})}
                 </div>
               </div>
 
