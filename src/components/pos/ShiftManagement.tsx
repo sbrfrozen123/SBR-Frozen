@@ -22,6 +22,7 @@ export function ShiftManagement({ userId, branchId, activeShift, onShiftChange }
   
   // For closing
   const [endingCashActual, setEndingCashActual] = useState<number | ''>('')
+  const [notes, setNotes] = useState('')
   const [systemCash, setSystemCash] = useState<number | null>(null)
   const [isCalculating, setIsCalculating] = useState(false)
   const [closedShiftId, setClosedShiftId] = useState<string | null>(null)
@@ -102,6 +103,7 @@ export function ShiftManagement({ userId, branchId, activeShift, onShiftChange }
           end_time: new Date().toISOString(),
           ending_cash_system: systemCash,
           ending_cash_actual: Number(endingCashActual),
+            notes: notes.trim() || null,
         })
         .eq('id', activeShift.id)
         .select()
@@ -168,6 +170,7 @@ export function ShiftManagement({ userId, branchId, activeShift, onShiftChange }
                         setIsModalOpen(false)
                         setClosedShiftId(null)
                         setEndingCashActual('')
+                        setNotes('')
                       }} 
                       className="flex-1 btn-md btn-outline bg-white"
                     >
@@ -243,7 +246,19 @@ export function ShiftManagement({ userId, branchId, activeShift, onShiftChange }
                     )}
                   </div>
 
-                  <div className="flex gap-3 pt-2 border-t border-dark-100">
+                  
+                      {/* Notes Input */}
+                      <div className="form-group mt-4">
+                        <label className="label">Keterangan / Catatan (Opsional)</label>
+                        <textarea 
+                          value={notes}
+                          onChange={(e) => setNotes(e.target.value)}
+                          className="input resize-none h-20"
+                          placeholder="Tulis catatan penutupan shift..."
+                        />
+                      </div>
+
+                    <div className="flex gap-3 pt-2 border-t border-dark-100">
                     <button onClick={() => setIsModalOpen(false)} className="flex-1 btn-lg btn-outline bg-white h-14 text-base font-bold">Batal</button>
                     <button onClick={handleCloseShift} disabled={loading || isCalculating || endingCashActual === ''} className="flex-[1.5] btn-lg btn-primary bg-dark-900 hover:bg-black text-white border-none h-14 text-base font-bold shadow-glow-dark">
                       {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Akhiri Shift'}

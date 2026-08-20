@@ -61,7 +61,7 @@ export default function RincianClient({
   }
 
   const exportToCSV = () => {
-    const headers = ['Nomor SO', 'Pelanggan', 'Nama Barang', 'Kuantitas', 'UoM', 'Salesman', 'Warehouse', 'Harga Jual', 'Penjualan', 'Payment Amount']
+    const headers = ['Nomor SO', 'Pelanggan', 'Nama Barang', 'Kuantitas', 'UoM', 'Salesman', 'Nama Kasir', 'Warehouse', 'Metode Pembayaran', 'Harga Jual', 'Penjualan', 'Payment Amount', 'Catatan']
     const csvData = detailedItems.map(item => [
       item.invoice_number,
       item.customer_name,
@@ -184,10 +184,13 @@ export default function RincianClient({
                   <th className="py-3 px-2 font-bold text-right whitespace-nowrap">Kuantitas</th>
                   <th className="py-3 px-2 font-bold whitespace-nowrap">UoM</th>
                   <th className="py-3 px-2 font-bold">Salesman</th>
+                  <th className="py-3 px-2 font-bold">Nama Kasir</th>
                   <th className="py-3 px-2 font-bold">Warehouse</th>
+                  <th className="py-3 px-2 font-bold">Metode Pembayaran</th>
                   <th className="py-3 px-2 font-bold text-right whitespace-nowrap">Harga Jual</th>
                   <th className="py-3 px-2 font-bold text-right whitespace-nowrap">Penjualan</th>
                   <th className="py-3 px-2 font-bold text-right whitespace-nowrap">Payment<br/>Amount</th>
+                  <th className="py-3 px-2 font-bold w-48">Catatan</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-dark-200 text-dark-700">
@@ -208,7 +211,7 @@ export default function RincianClient({
               </tbody>
               <tfoot>
                 <tr className="border-t-2 border-b-2 border-dark-900 font-bold text-dark-900">
-                  <td colSpan={8} className="py-3 px-2 text-right">TOTAL</td>
+                  <td colSpan={11} className="py-3 px-2 text-right">TOTAL</td>
                   <td className="py-3 px-2 text-right">{formatRupiah(detailedItems.reduce((sum, item) => sum + item.subtotal, 0)).replace('Rp', '')}</td>
                   <td className="py-3 px-2 text-right">{formatRupiah(detailedItems.reduce((sum, item) => sum + item.payment_amount, 0)).replace('Rp', '')}</td>
                 </tr>
