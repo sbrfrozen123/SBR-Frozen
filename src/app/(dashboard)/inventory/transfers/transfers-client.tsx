@@ -80,6 +80,9 @@ export default function TransfersClient({ userId, userRole, userName, branchId, 
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   
+  const [receivingTransfer, setReceivingTransfer] = useState<any>(null)
+  const [receiveItems, setReceiveItems] = useState<any[]>([])
+  
   const supabase = createClient()
 
   // Form State
@@ -150,35 +153,49 @@ export default function TransfersClient({ userId, userRole, userName, branchId, 
     }
   }
 
-  const handleReceive = async (trfId: string, fromId: string, toId: string, refNo: string, trfItems: any[]) => {
-    if (!window.confirm('Terima barang ini ke gudang tujuan?')) return
+  const openReceiveModal = (trf: any) => {
+    setReceivingTransfer(trf)
+    setReceiveItems(trf.items.map((item: any) => ({
+      ...item,
+      qty_received: item.qty_sent
+    })))
+  }
+
+  const submitReceive = async () => {
+    const trf = receivingTransfer
+    if (!trf) return
+    if (!window.confirm('Pastikan kuantitas yang diterima sudah benar. Lanjutkan?')) return
+
     try {
       toast.loading('Memproses penerimaan...', { id: 'recv' })
       
       const { error } = await supabase.from('stock_transfers')
         .update({ status: 'completed', received_by: userId, receive_date: new Date().toISOString() })
-        .eq('id', trfId)
+        .eq('id', trf.id)
       if (error) throw error
 
       // Update qty_received
-      for (const item of trfItems) {
+      for (const item of receiveItems) {
         await supabase.from('stock_transfer_items')
-          .update({ qty_received: item.qty_sent })
+          .update({ qty_received: item.qty_received })
           .eq('id', item.id)
       }
 
-      // Add to destination warehouse
-      const adjustments = trfItems.map(item => ({
+      // Add to destination warehouse (only add qty_received)
+      const adjustments = receiveItems.filter(i => i.qty_received > 0).map(item => ({
         product_id: item.product_id,
-        warehouse_id: toId,
+        warehouse_id: trf.to_warehouse_id,
         user_id: userId,
         adjustment_type: 'penambahan',
-        qty_changed: item.qty_sent,
-        reason: `Terima Transfer dari ${warehouses.find(w=>w.id===fromId)?.name} (${refNo})`
+        qty_changed: item.qty_received,
+        reason: `Terima Transfer dari ${trf.from_wh?.name} (${trf.reference_number})`
       }))
-      await supabase.from('stock_adjustments').insert(adjustments)
+      if (adjustments.length > 0) {
+        await supabase.from('stock_adjustments').insert(adjustments)
+      }
 
       toast.success('Barang berhasil diterima', { id: 'recv' })
+      setReceivingTransfer(null)
       refreshData()
     } catch (err: any) {
       toast.error(err.message || 'Gagal memproses penerimaan', { id: 'recv' })
@@ -265,7 +282,7 @@ export default function TransfersClient({ userId, userRole, userName, branchId, 
                   <td className="text-center border-r-0">
                     {t.status === 'in_transit' ? (
                       <button 
-                        onClick={() => handleReceive(t.id, t.from_warehouse_id, t.to_warehouse_id, t.reference_number, t.items)}
+                        onClick={() => openReceiveModal(t)}
                         className="btn-sm bg-success text-white hover:bg-success-600 rounded-lg whitespace-nowrap"
                       >
                         <CheckSquare className="w-4 h-4 mr-1" /> Terima
@@ -348,6 +365,60 @@ export default function TransfersClient({ userId, userRole, userName, branchId, 
               <button type="button" onClick={() => setIsFormOpen(false)} className="btn-md btn-outline bg-white text-dark-700 hover:bg-dark-50">Batal</button>
               <button type="submit" form="transfer-form" disabled={loading} className="btn-md btn-primary bg-primary-600 hover:bg-primary-700 text-white border-transparent">
                 {loading ? 'Memproses...' : 'Kirim Barang'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {receivingTransfer && (
+        <div className="modal-overlay z-[100]">
+          <div className="bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col w-full max-w-2xl max-h-[90vh] animate-scale-up border border-dark-200">
+            <div className="px-4 py-4 border-b border-success-700 flex justify-between items-center bg-success-600 text-white flex-shrink-0">
+              <h2 className="text-lg font-bold">Terima Stok: {receivingTransfer.reference_number}</h2>
+              <button onClick={() => setReceivingTransfer(null)} className="text-white/80 hover:text-white transition-colors bg-white/10 hover:bg-white/20 rounded-md p-1 px-2">X</button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50">
+              <div className="bg-warning-50 border border-warning-200 text-warning-800 p-3 rounded-lg text-sm font-medium">
+                Sesuaikan Kuantitas (Qty) barang jika barang yang diterima secara fisik berbeda dari yang dikirim.
+              </div>
+              <div className="space-y-3">
+                {receiveItems.map((item, idx) => (
+                  <div key={item.id} className="flex items-center gap-4 bg-white border border-dark-200 p-3 rounded-xl shadow-sm">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-dark-900 truncate">{item.products?.sku} - {item.products?.name}</div>
+                      <div className="text-sm text-dark-500 mt-1">Dikirim: <span className="font-bold text-dark-700">{item.qty_sent}</span></div>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <label className="text-xs font-semibold text-dark-600">Qty Diterima</label>
+                      <input 
+                        type="number" 
+                        min={0} 
+                        value={item.qty_received === '' ? '' : item.qty_received} 
+                        onChange={(e) => {
+                          const newItems = [...receiveItems]
+                          newItems[idx].qty_received = e.target.value === '' ? '' : Number(e.target.value)
+                          setReceiveItems(newItems)
+                        }} 
+                        className="input w-24 text-center bg-white border-primary-300 focus:border-primary-500 focus:ring-primary-500 font-bold" 
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-dark-100 bg-white flex justify-end gap-3 flex-shrink-0">
+              <button type="button" onClick={() => setReceivingTransfer(null)} className="btn btn-outline btn-md">
+                Batal
+              </button>
+              <button 
+                type="button" 
+                onClick={submitReceive}
+                className="btn btn-primary btn-md bg-success hover:bg-success-600 border-success shadow-sm shadow-success/20"
+              >
+                Konfirmasi Terima
               </button>
             </div>
           </div>
