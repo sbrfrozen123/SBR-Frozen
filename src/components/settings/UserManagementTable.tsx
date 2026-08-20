@@ -15,6 +15,7 @@ interface Profile {
   branch_id: string | null
   branch?: { name: string } | null
   id_role?: string | null
+  custom_permissions?: string[]
 }
 
 interface UserManagementTableProps {
@@ -36,7 +37,8 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
     fullName: '',
     role: 'kasir' as 'super_admin' | 'admin_gudang' | 'kasir' | 'sales',
     branch_id: initialBranches[0]?.id || '',
-    id_role: ''
+    id_role: '',
+    custom_permissions: [] as string[]
   })
   
   // Edit State
@@ -48,7 +50,8 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
     branch_id: '',
     status: 'active' as 'active' | 'inactive',
     password: '',
-    id_role: ''
+    id_role: '',
+    custom_permissions: [] as string[]
   })
 
   const openEditModal = (user: Profile) => {
@@ -59,7 +62,8 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
       branch_id: user.branch_id || '',
       status: user.status,
       password: '',
-      id_role: user.id_role || ''
+      id_role: user.id_role || '',
+      custom_permissions: user.custom_permissions || []
     })
     setIsEditModalOpen(true)
   }
@@ -157,7 +161,8 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
         role: editFormData.role,
         branch_id: editFormData.role === 'super_admin' ? null : (editFormData.branch_id || null),
         status: editFormData.status,
-        id_role: editFormData.id_role || null
+        id_role: editFormData.id_role || null,
+        custom_permissions: editFormData.custom_permissions
       }
       
       const { error } = await supabase
@@ -206,9 +211,9 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
         </button>
       </div>
       
-      <div className="flex-1 overflow-auto bg-white flex flex-col xl:flex-row">
+      <div className="flex-1 overflow-auto bg-white flex flex-col">
         {/* DATA TABLE */}
-        <div className="flex-1 overflow-auto border-r border-dark-100">
+        <div className="flex-1 overflow-auto border-b border-dark-100">
           <table className="data-table w-full">
             <thead className="sticky top-0 bg-dark-50 shadow-sm z-10">
               <tr>
@@ -320,7 +325,7 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
         </div>
 
         {/* ROLE PERMISSIONS PANEL */}
-        <div className="w-full xl:w-96 bg-slate-50 p-5 flex-shrink-0 flex flex-col gap-4 border-t xl:border-t-0 border-dark-100 overflow-auto">
+        <div className="w-full bg-slate-50 p-5 flex-shrink-0 flex flex-col gap-4">
           <div className="flex items-center gap-2 mb-1">
             <ShieldCheck className="w-5 h-5 text-primary-600" />
             <h3 className="font-bold text-dark-900">Matriks Hak Akses</h3>
@@ -423,21 +428,21 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
 
       {/* MODAL TAMBAH KARYAWAN */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-dark-900/50 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-slide-up">
-            <div className="flex items-center justify-between p-5 border-b border-dark-100">
-              <h3 className="font-bold text-lg text-dark-900">Tambah Karyawan Baru</h3>
+        <div className="modal-overlay z-[100]">
+          <div className="bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col w-full max-w-lg max-h-[90vh] animate-scale-up border border-dark-200">
+            <div className="px-4 py-4 border-b border-dark-200 flex justify-between items-center bg-dark-900 text-white flex-shrink-0">
+              <h3 className="font-bold text-lg">Tambah Karyawan Baru</h3>
               <button 
                 onClick={() => setIsModalOpen(false)}
-                className="btn text-dark-400 hover:text-dark-600 transition-colors"
+                className="text-white/70 hover:text-white transition-colors bg-white/10 hover:bg-white/20 rounded-md p-1 px-2"
               >
-                <X className="w-5 h-5" />
+                X
               </button>
             </div>
             
-            <form onSubmit={handleCreateUser} className="p-5 space-y-4">
+            <form id="add-user-form" onSubmit={handleCreateUser} className="p-6 space-y-4 flex-1 overflow-y-auto bg-slate-50">
               <div className="form-group">
-                <label className="label">Nama Lengkap</label>
+                <label className="label">Nama Lengkap *</label>
                 <input 
                   type="text" 
                   required
@@ -506,42 +511,74 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
                 </div>
               )}
 
-              <div className="pt-4 border-t border-dark-100 flex justify-end gap-3">
-                <button 
-                  type="button" 
-                  onClick={() => setIsModalOpen(false)}
-                  className="btn btn-outline btn-md"
-                >
-                  Batal
-                </button>
-                <button 
-                  type="submit" 
-                  disabled={isSubmitting}
-                  className="btn btn-primary btn-md min-w-[120px]"
-                >
-                  {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Buat Akun'}
-                </button>
-              </div>
+              {formData.role !== 'super_admin' && (
+                <div className="form-group bg-white p-4 rounded-xl border border-dark-200 shadow-sm">
+                  <label className="label font-bold text-dark-900 mb-3 border-b border-dark-100 pb-2">Akses Menu Tambahan (Merangkap)</label>
+                  <div className="grid grid-cols-2 gap-3 mt-3">
+                    {[
+                      { id: '/purchases', label: 'Pembelian' },
+                      { id: '/inventory', label: 'Persediaan & Stok' },
+                      { id: '/inventory/transfers', label: 'Transfer Stok' },
+                      { id: '/expenses', label: 'Pengeluaran' },
+                      { id: '/reports', label: 'Laporan' },
+                    ].map(menu => (
+                      <label key={menu.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-dark-50 p-1.5 rounded-lg transition-colors">
+                        <input 
+                          type="checkbox" 
+                          className="w-4 h-4 text-primary-600 border-dark-300 rounded"
+                          checked={formData.custom_permissions.includes(menu.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData({...formData, custom_permissions: [...formData.custom_permissions, menu.id]})
+                            } else {
+                              setFormData({...formData, custom_permissions: formData.custom_permissions.filter(p => p !== menu.id)})
+                            }
+                          }}
+                        />
+                        <span className="text-dark-700">{menu.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
             </form>
+            <div className="p-4 px-6 border-t border-dark-200 bg-white flex justify-end gap-3 flex-shrink-0 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
+              <button 
+                type="button" 
+                onClick={() => setIsModalOpen(false)}
+                className="btn btn-outline btn-md bg-white"
+              >
+                Batal
+              </button>
+              <button 
+                type="submit" 
+                form="add-user-form"
+                disabled={isSubmitting}
+                className="btn btn-primary btn-md min-w-[120px]"
+              >
+                {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Buat Akun'}
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* MODAL EDIT KARYAWAN */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-dark-900/50 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-slide-up">
-            <div className="flex items-center justify-between p-5 border-b border-dark-100">
-              <h3 className="font-bold text-lg text-dark-900">Edit Karyawan</h3>
+        <div className="modal-overlay z-[100]">
+          <div className="bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col w-full max-w-lg max-h-[90vh] animate-scale-up border border-dark-200">
+            <div className="px-4 py-4 border-b border-dark-200 flex justify-between items-center bg-dark-900 text-white flex-shrink-0">
+              <h3 className="font-bold text-lg">Edit Karyawan</h3>
               <button 
                 onClick={() => setIsEditModalOpen(false)}
-                className="btn text-dark-400 hover:text-dark-600 transition-colors"
+                className="text-white/70 hover:text-white transition-colors bg-white/10 hover:bg-white/20 rounded-md p-1 px-2"
               >
-                <X className="w-5 h-5" />
+                X
               </button>
             </div>
             
-            <form onSubmit={handleUpdateUser} className="p-5 space-y-4">
+            <form id="edit-user-form" onSubmit={handleUpdateUser} className="p-6 space-y-4 flex-1 overflow-y-auto bg-slate-50">
               <div className="form-group">
                 <label className="label">Nama Lengkap *</label>
                 <input type="text" value={editFormData.fullName} onChange={(e) => setEditFormData({...editFormData, fullName: e.target.value})} className="input" required />
@@ -607,23 +644,55 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
                 </div>
               )}
 
-              <div className="pt-4 border-t border-dark-100 flex justify-end gap-3">
-                <button 
-                  type="button" 
-                  onClick={() => setIsEditModalOpen(false)}
-                  className="btn btn-outline btn-md"
-                >
-                  Batal
-                </button>
-                <button 
-                  type="submit" 
-                  disabled={isSubmitting}
-                  className="btn btn-primary btn-md min-w-[120px]"
-                >
-                  {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Simpan'}
-                </button>
-              </div>
+              {editFormData.role !== 'super_admin' && (
+                <div className="form-group bg-white p-4 rounded-xl border border-dark-200 shadow-sm">
+                  <label className="label font-bold text-dark-900 mb-3 border-b border-dark-100 pb-2">Akses Menu Tambahan (Merangkap)</label>
+                  <div className="grid grid-cols-2 gap-3 mt-3">
+                    {[
+                      { id: '/purchases', label: 'Pembelian' },
+                      { id: '/inventory', label: 'Persediaan & Stok' },
+                      { id: '/inventory/transfers', label: 'Transfer Stok' },
+                      { id: '/expenses', label: 'Pengeluaran' },
+                      { id: '/reports', label: 'Laporan' },
+                    ].map(menu => (
+                      <label key={menu.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-dark-50 p-1.5 rounded-lg transition-colors">
+                        <input 
+                          type="checkbox" 
+                          className="w-4 h-4 text-primary-600 border-dark-300 rounded"
+                          checked={editFormData.custom_permissions.includes(menu.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setEditFormData({...editFormData, custom_permissions: [...editFormData.custom_permissions, menu.id]})
+                            } else {
+                              setEditFormData({...editFormData, custom_permissions: editFormData.custom_permissions.filter(p => p !== menu.id)})
+                            }
+                          }}
+                        />
+                        <span className="text-dark-700">{menu.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
             </form>
+            <div className="p-4 px-6 border-t border-dark-200 bg-white flex justify-end gap-3 flex-shrink-0 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
+              <button 
+                type="button" 
+                onClick={() => setIsEditModalOpen(false)}
+                className="btn btn-outline btn-md bg-white"
+              >
+                Batal
+              </button>
+              <button 
+                type="submit" 
+                form="edit-user-form"
+                disabled={isSubmitting}
+                className="btn btn-primary btn-md min-w-[120px]"
+              >
+                {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Simpan'}
+              </button>
+            </div>
           </div>
         </div>
       )}

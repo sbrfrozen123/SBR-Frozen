@@ -193,21 +193,22 @@ export function BranchManagementTable({ initialBranches }: BranchManagementTable
     </div>
 
     {isModalOpen && (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-        <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-slide-up">
-          <div className="flex items-center justify-between p-6 border-b border-dark-100">
-            <h2 className="text-xl font-bold text-dark-900">
+      <div className="modal-overlay z-[100]">
+        <div className="bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col w-full max-w-lg max-h-[90vh] animate-scale-up border border-dark-200">
+          <div className="px-4 py-4 border-b border-dark-200 flex justify-between items-center bg-dark-900 text-white flex-shrink-0">
+            <h2 className="text-lg font-bold">
               {editingBranch ? 'Edit Cabang' : 'Tambah Cabang Baru'}
             </h2>
             <button 
               onClick={handleCloseModal}
-              className="text-dark-400 hover:text-dark-600 hover:bg-dark-50 p-2 rounded-full transition-colors"
+              className="text-white/70 hover:text-white transition-colors bg-white/10 hover:bg-white/20 rounded-md p-1 px-2"
             >
-              <X className="w-5 h-5" />
+              X
             </button>
           </div>
           
-            <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          <div className="flex-1 overflow-y-auto bg-slate-50 p-6">
+            <form id="branch-form" onSubmit={handleSubmit} className="space-y-5">
               <div className="form-group">
                 <label className="label">Nama Cabang *</label>
                 <input 
@@ -264,24 +265,26 @@ export function BranchManagementTable({ initialBranches }: BranchManagementTable
                 </label>
               </div>
 
-              <div className="pt-4 border-t border-dark-100 flex justify-end gap-3">
-                <button 
-                  type="button" 
-                  onClick={handleCloseModal}
-                  className="btn btn-outline btn-md"
-                  disabled={loading}
-                >
-                  Batal
-                </button>
-                <button 
-                  type="submit" 
-                  className="btn btn-primary btn-md min-w-[120px]"
-                  disabled={loading}
-                >
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Simpan'}
-                </button>
-              </div>
             </form>
+          </div>
+
+          <div className="p-4 px-6 border-t border-dark-200 bg-white flex justify-end gap-3 flex-shrink-0 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
+            <button 
+              type="button" 
+              onClick={handleCloseModal}
+              className="btn btn-outline btn-md bg-white"
+              disabled={loading}
+            >
+              Batal
+            </button>
+            <button 
+              type="submit" 
+              form="branch-form"
+              className="btn btn-primary btn-md min-w-[120px]"
+              disabled={loading}
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Simpan'}
+            </button>
           </div>
         </div>
       )}

@@ -45,7 +45,7 @@ export default async function DashboardLayout({
   // Get user profile
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, role, status')
+    .select('full_name, role, status, custom_permissions')
     .eq('id', user.id)
     .single()
 
@@ -67,7 +67,7 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen bg-slate-50 print:bg-white print:min-h-0 print:block">
       <div className="print:hidden">
-        <Sidebar userRole={profile.role} userName={profile.full_name} />
+        <Sidebar userRole={profile.role} userName={profile.full_name} customPermissions={profile.custom_permissions || []} />
       </div>
 
       {/* Main content area */}

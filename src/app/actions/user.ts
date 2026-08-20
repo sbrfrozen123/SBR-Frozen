@@ -9,6 +9,7 @@ export async function createTeamUser(data: {
   role: 'super_admin' | 'admin_gudang' | 'kasir' | 'sales'
   branch_id?: string
   id_role?: string
+  custom_permissions?: string[]
 }) {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -50,6 +51,7 @@ export async function createTeamUser(data: {
       if (data.role !== 'kasir') updates.role = data.role
       if (data.role !== 'super_admin' && data.branch_id) updates.branch_id = data.branch_id
       if (data.id_role) updates.id_role = data.id_role
+      if (data.custom_permissions) updates.custom_permissions = data.custom_permissions
 
       if (Object.keys(updates).length > 0) {
         const { error: profileError } = await adminAuthClient

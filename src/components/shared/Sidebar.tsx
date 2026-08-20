@@ -76,7 +76,7 @@ export const modules: ModuleGroup[] = [
     items: [
       { href: '/inventory', icon: Package, label: 'Barang & Stok', color: 'text-emerald-500', roles: ['super_admin', 'admin_gudang', 'sales'] },
       { href: '/warehouses', icon: Landmark, label: 'Gudang', color: 'text-indigo-500', roles: ['super_admin', 'admin_gudang'] },
-      { href: '/stock-transfers', icon: Truck, label: 'Transfer Stok', color: 'text-blue-500', roles: ['super_admin', 'admin_gudang'] },
+      { href: '/inventory/transfers', icon: Truck, label: 'Transfer Stok', color: 'text-blue-500', roles: ['super_admin', 'admin_gudang'] },
       { href: '/categories', icon: Tags, label: 'Kategori Barang', color: 'text-fuchsia-500', roles: ['super_admin', 'admin_gudang'] },
       { href: '/units', icon: Scale, label: 'Satuan Barang', color: 'text-sky-500', roles: ['super_admin', 'admin_gudang'] },
     ]
@@ -113,9 +113,10 @@ export const modules: ModuleGroup[] = [
 interface SidebarProps {
   userRole: UserRole
   userName: string
+  customPermissions?: string[]
 }
 
-export function Sidebar({ userRole, userName }: SidebarProps) {
+export function Sidebar({ userRole, userName, customPermissions = [] }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -123,7 +124,23 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
   const supabase = createClient()
   const sidebarRef = useRef<HTMLDivElement>(null)
 
-  const allowedModules = modules.filter(m => m.roles.includes(userRole))
+  const allowedModules = modules.map(m => {
+    // A module is allowed if the user role is in m.roles
+    // OR if any of the items inside the module have an href that is in customPermissions
+    const roleHasAccess = m.roles.includes(userRole)
+    const itemsAllowedByPerm = m.items?.filter(item => customPermissions.includes(item.href)) || []
+    const permHasAccess = itemsAllowedByPerm.length > 0 || (m.href && customPermissions.includes(m.href))
+    
+    if (!roleHasAccess && !permHasAccess) return null
+    
+    // If we only have access via permissions, filter out the items we don't have access to
+    // If we have full role access, keep all items that this role allows
+    const filteredItems = roleHasAccess 
+      ? m.items?.filter(i => i.roles.includes(userRole) || customPermissions.includes(i.href))
+      : itemsAllowedByPerm
+
+    return { ...m, items: filteredItems }
+  }).filter(Boolean) as ModuleGroup[]
 
   // Close flyout when pressing Escape
   useEffect(() => {
