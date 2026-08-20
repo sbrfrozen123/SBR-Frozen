@@ -194,30 +194,6 @@ export default function TransfersClient({ userId, userRole, userName, branchId, 
              reason: `Terima Transfer dari ${trf.from_wh?.name} (${trf.reference_number})`
            })
         }
-
-        // Handle Discrepancy (Selisih)
-        const diff = item.qty_received - item.qty_sent
-        if (diff > 0) {
-           // Received MORE than sent (Deduct the extra from the source warehouse to balance it)
-           adjustments.push({
-             product_id: item.product_id,
-             warehouse_id: trf.from_warehouse_id,
-             user_id: userId,
-             adjustment_type: 'pengurangan',
-             qty_changed: diff,
-             reason: `Koreksi Transfer (Kelebihan Terima) ke ${trf.to_wh?.name} (${trf.reference_number})`
-           })
-        } else if (diff < 0) {
-           // Received LESS than sent (Return the missing items to the source warehouse)
-           adjustments.push({
-             product_id: item.product_id,
-             warehouse_id: trf.from_warehouse_id,
-             user_id: userId,
-             adjustment_type: 'penambahan',
-             qty_changed: Math.abs(diff),
-             reason: `Koreksi Transfer (Kekurangan Terima/Retur) dari ${trf.to_wh?.name} (${trf.reference_number})`
-           })
-        }
       }
 
       if (adjustments.length > 0) {
