@@ -14,10 +14,14 @@ interface CashflowClientProps {
   branchId: string
   initialCash: number
   initialBank: number
+  bankBalances: Record<string, number>
+  undefinedBankBalance: number
+  branchData: any
   history: any[]
 }
 
-export default function CashflowClient({ userId, branchId, initialCash, initialBank, history }: CashflowClientProps) {
+export default function CashflowClient({ userId, branchId, initialCash, initialBank, bankBalances, undefinedBankBalance, branchData, history }: CashflowClientProps) {
+  const [paymentAccount, setPaymentAccount] = useState<string>('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [type, setType] = useState<'saldo_awal' | 'setor_kas' | 'tarik_kas' | 'mutasi_ke_bank' | 'mutasi_ke_kas' | 'pendapatan_lain'>('saldo_awal')
@@ -40,6 +44,7 @@ export default function CashflowClient({ userId, branchId, initialCash, initialB
         type,
         amount,
         payment_method: type === 'mutasi_ke_bank' || type === 'mutasi_ke_kas' ? 'tunai' : paymentMethod,
+          payment_account: paymentAccount,
         description
       }])
 

@@ -203,7 +203,8 @@ export default function TransactionHistoryClient({ transactions: initialTransact
       const status = txn.status === 'voided' ? 'Dibatalkan' : (txn.order_status === 'pending' ? 'Diajukan' : txn.order_status === 'processing' ? 'Menunggu Proses' : (txn.payment_status === 'lunas' ? 'Lunas' : 'Belum Lunas'));
       const total = txn.total_amount;
       
-      const row = `"${txn.invoice_number}","${date}","${customer}","${sales}","${desc}","${status}","${total}"`;
+      const payMethod = txn.payment_method === 'transfer' || txn.payment_method === 'transfer_bank' ? `Transfer ${txn.payment_account ? `- ${txn.payment_account}` : ''}` : txn.payment_method;
+        const row = `"${txn.invoice_number}","${date}","${customer}","${sales}","${desc}","${payMethod}","${status}","${total}"`;
       csvContent += row + "\r\n";
     });
 
@@ -328,7 +329,8 @@ export default function TransactionHistoryClient({ transactions: initialTransact
                 <th className="py-3 px-4 font-semibold border-r border-dark-700">Gudang</th>
                 <th className="py-3 px-4 font-semibold border-r border-dark-700">Keterangan</th>
                 <th className="py-3 px-4 font-semibold border-r border-dark-700">Status Pesanan</th>
-                <th className="py-3 px-4 font-semibold border-r border-dark-700">Status Pembayaran</th>
+                <th className="py-3 px-4 font-semibold border-r border-dark-700">Metode Bayar</th>
+                  <th className="py-3 px-4 font-semibold border-r border-dark-700">Status Pembayaran</th>
                 <th className="py-3 px-4 font-semibold text-right">Total</th>
               </tr>
             </thead>
@@ -372,8 +374,15 @@ export default function TransactionHistoryClient({ transactions: initialTransact
                     <td className="py-3 px-4 border-r border-dark-100 truncate max-w-[200px] text-dark-600" title={txn.payment_method}>
                       {txn.transaction_items?.[0]?.product_name ? `${txn.transaction_items[0].product_name} ${txn.transaction_items.length > 1 ? `(+${txn.transaction_items.length-1} lainnya)` : ''}` : txn.payment_method}
                     </td>
-                    <td className="py-3 px-4 border-r border-dark-100 font-medium">
-                      {txn.status === 'voided' 
+                    
+                      <td className="py-3 px-4 border-r border-dark-100 text-dark-600">
+                        {txn.payment_method === 'transfer' || txn.payment_method === 'transfer_bank' 
+                          ? `Transfer ${txn.payment_account ? `- ${txn.payment_account}` : ''}`
+                          : txn.payment_method === 'tunai' ? 'Tunai (Cash)' 
+                          : txn.payment_method === 'tempo' ? 'Tempo (Piutang)' : txn.payment_method?.toUpperCase() || '-'}
+                      </td>
+                      <td className="py-3 px-4 border-r border-dark-100 font-medium">
+                        {txn.status === 'voided' 
                         ? <span className="text-danger">Dibatalkan</span>
                         : txn.order_status === 'pending'
                           ? <span className="text-primary-600">Diajukan</span>

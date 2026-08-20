@@ -34,6 +34,10 @@ export interface Profile {
 
 export interface Branch {
   id: string
+  bank_name_1?: string | null
+  bank_account_1?: string | null
+  bank_name_2?: string | null
+  bank_account_2?: string | null
   name: string
   address: string | null
   phone: string | null
@@ -156,6 +160,7 @@ export interface Transaction {
   total_amount: number
   payment_method: PaymentMethod
   payment_status: PaymentStatus
+    payment_account?: string | null
   due_date: string | null
   amount_paid: number
   notes: string | null
@@ -351,6 +356,7 @@ export interface CashTransaction {
   type: CashTransactionType
   amount: number
   payment_method: PaymentMethod
+    payment_account?: string | null
   description: string | null
   transaction_date: string
   created_at: string

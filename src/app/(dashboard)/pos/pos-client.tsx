@@ -48,6 +48,7 @@ export default function POSClient({ products, customers, settings, userRole, use
   // Checkout & Receipt States
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState<'tunai' | 'transfer' | 'qris' | 'tempo'>('tunai')
+  const [paymentAccount, setPaymentAccount] = useState<string>('')
   const [amountPaid, setAmountPaid] = useState<number | ''>('')
   const [loading, setLoading] = useState(false)
   const [completedTxn, setCompletedTxn] = useState<any>(null)
@@ -268,7 +269,11 @@ export default function POSClient({ products, customers, settings, userRole, use
       }
     }
 
-    const paid = amountPaid === '' ? 0 : Number(amountPaid)
+    if (paymentMethod === 'transfer' && !paymentAccount) {
+        toast.error('Silakan pilih rekening bank tujuan!');
+        return;
+      }
+      const paid = amountPaid === '' ? 0 : Number(amountPaid)
     if (paymentMethod !== 'tempo' && paid < total && !isSaveAsOrder) {
       toast.error('Nominal pembayaran kurang dari total tagihan!')
       return
@@ -308,6 +313,7 @@ export default function POSClient({ products, customers, settings, userRole, use
             total_amount: total,
             payment_method: isSaveAsOrder ? 'tempo' : paymentMethod,
             payment_status: isSaveAsOrder ? 'piutang' : (paymentMethod === 'tempo' ? 'piutang' : 'lunas'),
+              payment_account: paymentMethod === 'transfer' ? paymentAccount : null,
             amount_paid: isSaveAsOrder ? 0 : (paymentMethod === 'tempo' ? paid : total),
             due_date: isSaveAsOrder ? null : (paymentMethod === 'tempo' ? new Date(Date.now() + dueDays * 24 * 60 * 60 * 1000).toISOString() : null),
             order_status: orderStatus,
@@ -332,6 +338,7 @@ export default function POSClient({ products, customers, settings, userRole, use
             total_amount: total,
             payment_method: isSaveAsOrder ? 'tempo' : paymentMethod,
             payment_status: isSaveAsOrder ? 'piutang' : (paymentMethod === 'tempo' ? 'piutang' : 'lunas'),
+              payment_account: paymentMethod === 'transfer' ? paymentAccount : null,
             amount_paid: isSaveAsOrder ? 0 : (paymentMethod === 'tempo' ? paid : total),
             due_date: isSaveAsOrder ? null : (paymentMethod === 'tempo' ? new Date(Date.now() + dueDays * 24 * 60 * 60 * 1000).toISOString() : null),
             branch_id: branchId,
@@ -397,7 +404,8 @@ export default function POSClient({ products, customers, settings, userRole, use
         taxAmount,
         total,
         paymentMethod,
-        amountPaid: paymentMethod === 'tempo' ? paid : paid,
+          paymentAccount,
+          amountPaid: paymentMethod === 'tempo' ? paid : paid,
         change: paymentMethod === 'tunai' ? paid - total : 0,
         debt: paymentMethod === 'tempo' ? total - paid : 0
       })
@@ -415,6 +423,7 @@ export default function POSClient({ products, customers, settings, userRole, use
     setIsCheckoutOpen(false)
     setAmountPaid('')
     setPaymentMethod('tunai')
+      setPaymentAccount('')
     setCompletedTxn(null)
     // Refresh to get latest stocks (simple solution)
     window.location.reload()
@@ -442,7 +451,7 @@ export default function POSClient({ products, customers, settings, userRole, use
 
     text += `--------------------------------\n`
     text += `Total: *${formatRupiah(total)}*\n`
-    text += `Metode: ${paymentMethod.toUpperCase()}\n\n`
+    text += `Metode: ${paymentMethod.toUpperCase()}${paymentMethod === 'transfer' && completedTxn.paymentAccount ? ` - ${completedTxn.paymentAccount}` : ''}\n\n`
     text += `${settings?.receipt_footer_text || 'Terima kasih!'}\n`
 
     const phone = customer?.phone ? customer.phone.replace(/[^0-9]/g, '') : ''
@@ -849,7 +858,7 @@ export default function POSClient({ products, customers, settings, userRole, use
                         <span>{formatRupiah(completedTxn.total)}</span>
                       </div>
                       <div className="flex justify-between text-dark-500">
-                        <span>BAYAR ({completedTxn.paymentMethod.toUpperCase()})</span>
+                        <span>BAYAR ({completedTxn.paymentMethod.toUpperCase()}{completedTxn.paymentMethod === 'transfer' && completedTxn.paymentAccount ? ` - ${completedTxn.paymentAccount}` : ''})</span>
                         <span>{formatRupiah(completedTxn.amountPaid)}</span>
                       </div>
                       {completedTxn.paymentMethod === 'tunai' && (
@@ -939,6 +948,22 @@ export default function POSClient({ products, customers, settings, userRole, use
                       )
                     })}
                   </div>
+
+                  
+                    {paymentMethod === 'transfer' && (
+                      <div className="mb-6 animate-fade-in">
+                        <label className="label">Pilih Rekening Tujuan *</label>
+                        <select 
+                          className="input"
+                          value={paymentAccount}
+                          onChange={(e) => setPaymentAccount(e.target.value)}
+                        >
+                          <option value="">-- Pilih Bank --</option>
+                          {branch?.bank_name_1 && <option value={branch.bank_name_1}>{branch.bank_name_1} - {branch.bank_account_1}</option>}
+                          {branch?.bank_name_2 && <option value={branch.bank_name_2}>{branch.bank_name_2} - {branch.bank_account_2}</option>}
+                        </select>
+                      </div>
+                    )}
 
                   {(paymentMethod === 'tunai' || paymentMethod === 'tempo') && (
                     <div className="mb-6 animate-fade-in">

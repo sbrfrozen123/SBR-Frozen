@@ -23,6 +23,10 @@ export function BranchManagementTable({ initialBranches }: BranchManagementTable
     address: '',
     phone: '',
     instagram: '',
+    bank_name_1: '',
+    bank_account_1: '',
+    bank_name_2: '',
+    bank_account_2: '',
     is_active: true
   })
 
@@ -30,19 +34,14 @@ export function BranchManagementTable({ initialBranches }: BranchManagementTable
     if (branch) {
       setEditingBranch(branch)
       setFormData({
-        name: branch.name,
-        address: branch.address || '',
-        phone: branch.phone || '',
-        instagram: branch.instagram || '',
-        is_active: branch.is_active
-      })
-    } else {
-      setEditingBranch(null)
-      setFormData({
         name: '',
         address: '',
         phone: '',
         instagram: '',
+        bank_name_1: '',
+        bank_account_1: '',
+        bank_name_2: '',
+        bank_account_2: '',
         is_active: true
       })
     }
@@ -251,6 +250,53 @@ export function BranchManagementTable({ initialBranches }: BranchManagementTable
                   className="input min-h-[80px] resize-none"
                   placeholder="Jl. Sudirman No..."
                 />
+              </div>
+
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="form-group">
+                  <label className="label">Nama Bank 1</label>
+                  <input 
+                    type="text" 
+                    value={formData.bank_name_1}
+                    onChange={(e) => setFormData(prev => ({...prev, bank_name_1: e.target.value}))}
+                    className="input"
+                    placeholder="BCA / Mandiri"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="label">Nomor Rekening 1</label>
+                  <input 
+                    type="text" 
+                    value={formData.bank_account_1}
+                    onChange={(e) => setFormData(prev => ({...prev, bank_account_1: e.target.value}))}
+                    className="input"
+                    placeholder="012345678"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="form-group">
+                  <label className="label">Nama Bank 2</label>
+                  <input 
+                    type="text" 
+                    value={formData.bank_name_2}
+                    onChange={(e) => setFormData(prev => ({...prev, bank_name_2: e.target.value}))}
+                    className="input"
+                    placeholder="BRI / BNI"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="label">Nomor Rekening 2</label>
+                  <input 
+                    type="text" 
+                    value={formData.bank_account_2}
+                    onChange={(e) => setFormData(prev => ({...prev, bank_account_2: e.target.value}))}
+                    className="input"
+                    placeholder="012345678"
+                  />
+                </div>
               </div>
 
               <div className="form-group">
