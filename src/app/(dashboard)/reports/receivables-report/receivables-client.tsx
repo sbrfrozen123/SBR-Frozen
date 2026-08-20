@@ -13,10 +13,12 @@ export default function ReceivablesClient({ customers }: ReceivablesClientProps)
   const router = useRouter()
   const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
   const totalReceivables = customers.reduce((acc, c) => acc + c.current_debt, 0)
+  const grandTotalTransaction = customers.reduce((acc, c) => acc + (c.total_transaction || 0), 0)
+  const grandTotalPaid = customers.reduce((acc, c) => acc + (c.total_paid || 0), 0)
 
   const exportToCSV = () => {
     const rows = [
-      ['No', 'Nama Pelanggan', 'Kontak', 'Batas Piutang', 'Termin', 'Piutang Berjalan']
+      ['No', 'Nama Pelanggan', 'Kontak', 'Batas Piutang', 'Termin', 'Total Transaksi', 'Jumlah Dibayar', 'Piutang Berjalan']
     ]
 
     customers.forEach((c, index) => {
@@ -26,6 +28,8 @@ export default function ReceivablesClient({ customers }: ReceivablesClientProps)
         `"${c.phone || '-'}"`,
         c.credit_limit.toString(),
         c.payment_terms || 'COD',
+        (c.total_transaction || 0).toString(),
+        (c.total_paid || 0).toString(),
         c.current_debt.toString()
       ])
     })
@@ -106,13 +110,15 @@ export default function ReceivablesClient({ customers }: ReceivablesClientProps)
                     <th className="py-3 px-4 font-bold text-dark-900">Nama Pelanggan</th>
                     <th className="py-3 px-4 font-bold text-dark-900 text-center">Batas Piutang</th>
                     <th className="py-3 px-4 font-bold text-dark-900 text-center">Termin</th>
+                    <th className="py-3 px-4 font-bold text-dark-900 text-right">Total Transaksi</th>
+                    <th className="py-3 px-4 font-bold text-dark-900 text-right">Jumlah Dibayar</th>
                     <th className="py-3 px-4 font-bold text-dark-900 text-right">Piutang Berjalan</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-dark-100">
                   {customers.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-8 text-center text-dark-500 italic">Tidak ada piutang pelanggan saat ini.</td>
+                      <td colSpan={7} className="py-8 text-center text-dark-500 italic">Tidak ada piutang pelanggan saat ini.</td>
                     </tr>
                   ) : (
                     customers.map((c, index) => (
@@ -134,6 +140,12 @@ export default function ReceivablesClient({ customers }: ReceivablesClientProps)
                             {c.payment_terms || 'COD'}
                           </span>
                         </td>
+                        <td className="py-3 px-4 text-right font-medium text-dark-700">
+                          {formatRupiah(c.total_transaction || 0)}
+                        </td>
+                        <td className="py-3 px-4 text-right font-medium text-emerald-600">
+                          {formatRupiah(c.total_paid || 0)}
+                        </td>
                         <td className="py-3 px-4 text-right">
                           <span className="font-bold text-dark-900 text-money">{formatRupiah(c.current_debt)}</span>
                         </td>
@@ -146,7 +158,13 @@ export default function ReceivablesClient({ customers }: ReceivablesClientProps)
                     <td colSpan={4} className="py-4 px-4 text-right font-black text-dark-900 uppercase">
                       Total Piutang Berjalan
                     </td>
-                    <td className="py-4 px-4 text-right font-black text-xl text-dark-900">
+                    <td className="py-4 px-4 text-right font-black text-dark-900">
+                      {formatRupiah(grandTotalTransaction)}
+                    </td>
+                    <td className="py-4 px-4 text-right font-black text-emerald-700">
+                      {formatRupiah(grandTotalPaid)}
+                    </td>
+                    <td className="py-4 px-4 text-right font-black text-xl text-dark-900 border-l-2 border-dark-200">
                       {formatRupiah(totalReceivables)}
                     </td>
                   </tr>
