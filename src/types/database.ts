@@ -311,8 +311,10 @@ export interface Purchase {
   supplier_id: string | null
   user_id: string
   total_amount: number
+  amount_paid: number
   payment_status: PaymentStatus
   payment_method: PaymentMethod
+  payment_account?: string | null
   purchase_date: string
   notes: string | null
   branch_id: string
@@ -323,6 +325,7 @@ export interface Purchase {
   user?: Profile | null
   branch?: Branch | null
   items?: PurchaseItem[]
+  payments?: SupplierPayment[]
 }
 
 export interface PurchaseItem {
@@ -537,4 +540,35 @@ export interface PurchaseForm {
     subtotal: number
   }>
   total_amount: number
+}
+
+
+export interface SupplierPayment {
+  id: string
+  purchase_id: string
+  supplier_id: string
+  user_id: string
+  amount: number
+  payment_method: PaymentMethod
+  payment_account?: string | null
+  notes: string | null
+  branch_id: string
+  payment_date: string
+  created_at: string
+  updated_at: string
+  // Joined
+  purchase?: Purchase | null
+  supplier?: Supplier | null
+  user?: Profile | null
+  branch?: Branch | null
+}
+
+export interface SupplierPaymentForm {
+  purchase_id: string
+  supplier_id: string
+  amount: number
+  payment_method: PaymentMethod
+  payment_account?: string | null
+  notes?: string
+  payment_date: string
 }

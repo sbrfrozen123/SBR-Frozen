@@ -125,14 +125,31 @@ export default async function CashflowPage() {
 
   // 4. Purchases
   ;(purchaseTxns || []).forEach(pu => {
-    // Hanya kurangi kas jika lunas, kalau tempo belum ada pengeluaran kas
-    if (pu.payment_status === 'lunas' || pu.payment_method !== 'tempo') {
-      if (pu.payment_method === 'tunai') cashBalance -= pu.total_amount
-      else if (['transfer_bank', 'transfer', 'qris'].includes(pu.payment_method)) subBank(pu.total_amount, pu.payment_account)
+    if (pu.amount_paid > 0) {
+      if (pu.payment_method === 'tunai') cashBalance -= pu.amount_paid
+      else if (['transfer_bank', 'transfer', 'qris'].includes(pu.payment_method)) subBank(pu.amount_paid, pu.payment_account)
     }
   })
 
-  // 5. Debt Payments (Piutang dibayar)
+  // 5. Debt Payments
+  ;(debtPaymentsTxns || []).forEach(dp => {
+    if (dp.payment_method === 'tunai') cashBalance += dp.amount
+    else if (['transfer_bank', 'transfer', 'qris'].includes(dp.payment_method)) addBank(dp.amount, dp.payment_account)
+  })
+
+  // 6. Supplier Payments
+  ;(supplierPaymentsTxns || []).forEach(sp => {
+    if (sp.payment_method === 'tunai') cashBalance -= sp.amount
+    else if (['transfer_bank', 'transfer', 'qris'].includes(sp.payment_method)) subBank(sp.amount, sp.payment_account)
+  })
+
+  // 6. Supplier Payments (Cicilan Vendor)
+  ;(supplierPaymentsTxns || []).forEach(sp => {
+    if (sp.payment_method === 'tunai') cashBalance -= sp.amount
+    else if (['transfer_bank', 'transfer', 'qris'].includes(sp.payment_method)) subBank(sp.amount, sp.payment_account)
+  })
+
+   // Piutang dibayar
   ;(debtTxns || []).forEach(dp => {
     if (dp.payment_method === 'tunai') cashBalance += dp.amount
     else if (['transfer_bank', 'transfer', 'qris'].includes(dp.payment_method)) addBank(dp.amount, dp.payment_account)

@@ -178,6 +178,7 @@ export default function EditPurchaseClient({ purchase, products, suppliers, ware
           invoice_number: invoiceNumber,
           supplier_id: supplierId,
           total_amount: totalAmount,
+          amount_paid: paymentStatus === 'lunas' ? totalAmount : 0,
           payment_status: paymentStatus,
           payment_method: paymentMethod,
           purchase_date: purchaseDate,

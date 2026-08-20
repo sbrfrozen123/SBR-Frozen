@@ -51,6 +51,18 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
           description: 'Rincian piutang pelanggan dan batas piutang.',
           icon: Receipt,
           href: '/reports/receivables-report',
+        },
+        {
+          title: 'Laporan Hutang',
+          description: 'Rincian hutang ke vendor dan riwayat cicilan.',
+          icon: Receipt,
+          href: '/reports/financial/hutang',
+        },
+        {
+          title: 'Laporan Arus Kas',
+          description: 'Catatan detail uang masuk dan keluar (Cash Flow) per cabang.',
+          icon: TrendingUp,
+          href: '/reports/financial/cashflow',
         }
       ]
     },

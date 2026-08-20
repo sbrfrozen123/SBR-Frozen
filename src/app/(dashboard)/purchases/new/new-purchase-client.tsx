@@ -191,6 +191,7 @@ export default function NewPurchaseClient({ products, suppliers, warehouses, use
           user_id: userId,
           branch_id: finalBranchId,
           total_amount: totalAmount,
+          amount_paid: paymentStatus === 'lunas' ? totalAmount : 0,
           payment_status: paymentStatus,
           payment_method: paymentMethod,
           purchase_date: purchaseDate,

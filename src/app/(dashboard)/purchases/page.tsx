@@ -30,7 +30,8 @@ export default async function PurchasesPage() {
     .select(`
       *,
       supplier:supplier_id(name),
-      user:user_id(full_name)
+      user:user_id(full_name),
+      payments:supplier_payments(*)
     `)
     .order('created_at', { ascending: false })
 

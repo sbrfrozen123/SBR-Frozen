@@ -70,8 +70,16 @@ export default async function DashboardLayout({
         <Sidebar userRole={profile.role} userName={profile.full_name} customPermissions={profile.custom_permissions || []} />
       </div>
 
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media (min-width: 1024px) {
+          .dynamic-sidebar-padding {
+            padding-left: var(--sidebar-width, 72px);
+          }
+        }
+      `}} />
+
       {/* Main content area */}
-      <main className="lg:pl-[72px] transition-all duration-300 min-h-screen flex flex-col print:pl-0 print:min-h-0 print:block">
+      <main className="dynamic-sidebar-padding transition-all duration-300 min-h-screen flex flex-col print:pl-0 print:min-h-0 print:block">
         {/* Global Header */}
         <div className="print:hidden">
           <GlobalHeader 

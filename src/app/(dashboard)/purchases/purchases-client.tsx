@@ -1,22 +1,27 @@
 'use client'
 
 import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { Search, Plus, ShoppingBag, Pencil, CheckCircle, Loader2, DollarSign } from 'lucide-react'
 import Link from 'next/link'
-import { Plus, Search, ShoppingBag, CheckCircle, Loader2, Pencil } from 'lucide-react'
+import { toast } from 'react-hot-toast'
 import { formatRupiah } from '@/lib/utils/currency'
 import { cn } from '@/lib/utils/cn'
-import { createClient } from '@/lib/supabase/client'
-import { toast } from 'react-hot-toast'
 import type { UserRole } from '@/types/database'
+import SupplierPaymentModal from '@/components/purchases/SupplierPaymentModal'
 
 interface PurchaseData {
   id: string
   invoice_number: string
   purchase_date: string
   total_amount: number
+  amount_paid: number
   payment_status: string
+  supplier_id: string
+  branch_id: string
   supplier?: { name: string }
   user?: { full_name: string }
+  payments?: any[]
 }
 
 interface PurchasesClientProps {
@@ -28,30 +33,17 @@ export default function PurchasesClient({ initialPurchases, userRole }: Purchase
   const [search, setSearch] = useState('')
   const [purchases, setPurchases] = useState(initialPurchases)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
+  
+  // Modal state
+  const [selectedPurchase, setSelectedPurchase] = useState<PurchaseData | null>(null)
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+  
   const supabase = createClient()
 
-  const handleMarkAsPaid = async (id: string, invoice: string) => {
-    if (!window.confirm(`Apakah Anda yakin ingin mengubah status invoice ${invoice} menjadi LUNAS?`)) return
-    
-    setUpdatingId(id)
-    try {
-      const { error } = await supabase
-        .from('purchases')
-        .update({ payment_status: 'lunas' })
-        .eq('id', id)
-        
-      if (error) throw error
-      
-      setPurchases(prev => prev.map(p => 
-        p.id === id ? { ...p, payment_status: 'lunas' } : p
-      ))
-      toast.success('Status pembayaran berhasil diperbarui!')
-    } catch (error: any) {
-      console.error(error)
-      toast.error('Gagal memperbarui status pembayaran')
-    } finally {
-      setUpdatingId(null)
-    }
+  const handlePaymentSuccess = (updatedPurchase: any) => {
+    setPurchases(prev => prev.map(p => 
+      p.id === updatedPurchase.id ? { ...p, ...updatedPurchase } : p
+    ))
   }
 
   const filteredPurchases = purchases.filter(p => {
@@ -94,14 +86,15 @@ export default function PurchasesClient({ initialPurchases, userRole }: Purchase
         {/* Table */}
         <div className="flex-1 overflow-auto bg-white">
           <table className="data-table w-full">
-            <thead className="sticky top-0 bg-dark-50 shadow-sm z-10">
+                        <thead className="sticky top-0 bg-dark-50 shadow-sm z-10">
               <tr>
                 <th className="w-12 text-center">No</th>
                 <th>Tanggal</th>
                 <th>No. Invoice</th>
                 <th>Pemasok</th>
-                <th>Dibuat Oleh</th>
                 <th className="text-right">Total Transaksi</th>
+                <th className="text-right">Sudah Dibayar</th>
+                <th className="text-right">Sisa Hutang</th>
                 <th className="text-center">Status</th>
                 <th className="text-center w-28">Aksi</th>
               </tr>
@@ -127,11 +120,15 @@ export default function PurchasesClient({ initialPurchases, userRole }: Purchase
                     <td className="font-semibold text-dark-900">
                       {purchase.supplier?.name || '-'}
                     </td>
-                    <td className="text-dark-600 text-sm">
-                      {purchase.user?.full_name || '-'}
-                    </td>
+                    
                     <td className="text-right font-semibold text-money">
                       {formatRupiah(purchase.total_amount)}
+                    </td>
+                    <td className="text-right font-medium text-success-600">
+                      {formatRupiah(purchase.amount_paid || 0)}
+                    </td>
+                    <td className="text-right font-bold text-danger-600">
+                      {formatRupiah(Math.max(0, purchase.total_amount - (purchase.amount_paid || 0)))}
                     </td>
                     <td className="text-center">
                       <span className={cn(
@@ -161,16 +158,14 @@ export default function PurchasesClient({ initialPurchases, userRole }: Purchase
                         )}
                         {purchase.payment_status === 'tempo' && ['super_admin', 'admin_gudang'].includes(userRole) && (
                           <button 
-                            onClick={() => handleMarkAsPaid(purchase.id, purchase.invoice_number)}
-                            disabled={updatingId === purchase.id}
+                            onClick={() => {
+                              setSelectedPurchase(purchase)
+                              setIsPaymentModalOpen(true)
+                            }}
                             className="w-8 h-8 rounded-lg flex items-center justify-center text-success-600 hover:bg-success-50 transition-colors"
-                            title="Tandai Lunas"
+                            title="Bayar Cicilan Vendor"
                           >
-                            {updatingId === purchase.id ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <CheckCircle className="w-4 h-4" />
-                            )}
+                            <DollarSign className="w-4 h-4" />
                           </button>
                         )}
                       </div>
@@ -187,7 +182,18 @@ export default function PurchasesClient({ initialPurchases, userRole }: Purchase
           <div>Menampilkan <span className="font-semibold text-dark-900">{filteredPurchases.length}</span> transaksi</div>
           <div>Total: <span className="font-semibold text-dark-900 text-money">{formatRupiah(filteredPurchases.reduce((acc, curr) => acc + curr.total_amount, 0))}</span></div>
         </div>
-      </div>
+            </div>
+
+      {isPaymentModalOpen && selectedPurchase && (
+        <SupplierPaymentModal
+          purchase={selectedPurchase}
+          onClose={() => {
+            setIsPaymentModalOpen(false)
+            setSelectedPurchase(null)
+          }}
+          onSuccess={handlePaymentSuccess}
+        />
+      )}
     </div>
   )
 }
