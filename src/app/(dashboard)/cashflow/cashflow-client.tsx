@@ -104,7 +104,37 @@ export default function CashflowClient({ userId, branchId, initialCash, initialB
           </div>
         </div>
 
-        {/* History */}
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 mt-6">
+          {Object.entries(bankBalances).map(([bankName, bal]) => (
+            <div key={bankName} className="bg-white rounded-2xl p-6 border border-dark-100 shadow-sm flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center">
+                  <CreditCard className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-sm text-dark-500 font-medium">Saldo Bank ({bankName})</p>
+                  <p className="text-xl font-bold text-dark-900 mt-1">{formatRupiah(bal)}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+          {undefinedBankBalance > 0 && (
+            <div className="bg-white rounded-2xl p-6 border border-dark-100 shadow-sm flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-slate-50 text-slate-600 flex items-center justify-center">
+                  <CreditCard className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-sm text-dark-500 font-medium">Saldo Bank (Lainnya)</p>
+                  <p className="text-xl font-bold text-dark-900 mt-1">{formatRupiah(undefinedBankBalance)}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+          {/* History */}
         <div className="bg-white rounded-2xl shadow-sm border border-dark-100 overflow-hidden flex flex-col">
           <div className="p-4 border-b border-dark-100 flex justify-between items-center bg-slate-50">
             <h2 className="font-semibold text-dark-900 flex items-center gap-2">

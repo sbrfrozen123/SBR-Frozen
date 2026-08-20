@@ -32,18 +32,18 @@ export function BranchManagementTable({ initialBranches }: BranchManagementTable
 
   const handleOpenModal = (branch?: Branch) => {
     if (branch) {
-      setEditingBranch(branch)
-      setFormData({
-        name: '',
-        address: '',
-        phone: '',
-        instagram: '',
-        bank_name_1: '',
-        bank_account_1: '',
-        bank_name_2: '',
-        bank_account_2: '',
-        is_active: true
-      })
+        setEditingBranch(branch)
+        setFormData({
+          name: branch.name || '',
+          address: branch.address || '',
+          phone: branch.phone || '',
+          instagram: branch.instagram || '',
+          bank_name_1: branch.bank_name_1 || '',
+          bank_account_1: branch.bank_account_1 || '',
+          bank_name_2: branch.bank_name_2 || '',
+          bank_account_2: branch.bank_account_2 || '',
+          is_active: branch.is_active
+        })
     }
     setIsModalOpen(true)
   }

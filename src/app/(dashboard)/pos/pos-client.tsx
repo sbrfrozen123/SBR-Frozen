@@ -951,10 +951,10 @@ export default function POSClient({ products, customers, settings, userRole, use
 
                   
                     {paymentMethod === 'transfer' && (
-                      <div className="mb-6 animate-fade-in">
-                        <label className="label">Pilih Rekening Tujuan *</label>
+                      <div className="mb-6 animate-fade-in p-4 bg-blue-50/50 border border-blue-100 rounded-xl">
+                        <label className="label text-blue-800">Pilih Rekening Tujuan Transfer *</label>
                         <select 
-                          className="input"
+                          className="input border-blue-200 focus:border-blue-500 focus:ring-blue-500 bg-white shadow-sm"
                           value={paymentAccount}
                           onChange={(e) => setPaymentAccount(e.target.value)}
                         >
