@@ -276,9 +276,7 @@ export default function POSClient({ products, customers, settings, userRole, use
 
     setLoading(true)
     try {
-      const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, '')
-      const randomCode = Math.floor(1000 + Math.random() * 9000)
-      const invoiceNumber = `INV-${dateStr}-${randomCode}`
+      const invoiceNumber = ''
       const orderStatus = (userRole === 'sales' || isSaveAsOrder) ? 'pending' : 'completed'
 
       const getDueDays = (terms: string) => {
@@ -340,12 +338,13 @@ export default function POSClient({ products, customers, settings, userRole, use
             warehouse_id: defaultWarehouseId || null,
             order_status: orderStatus
           }])
-          .select('id, created_at')
+          .select('id, created_at, invoice_number')
           .single()
 
         if (txnError) throw txnError
         txnId = txn.id
         txnCreatedAt = txn.created_at
+        finalInvoiceNumber = txn.invoice_number
       }
 
       const txnItems = cart.map(item => ({
@@ -618,10 +617,10 @@ export default function POSClient({ products, customers, settings, userRole, use
                   </div>
                   <div className="text-left">
                     <p className="text-sm font-semibold text-dark-900">
-                      {selectedCustomer ? selectedCustomer.name : 'Pelanggan Umum'}
+                      {selectedCustomer ? selectedCustomer.name : 'Pilih Pelanggan'}
                     </p>
                     <p className="text-xs text-dark-400 capitalize">
-                      {selectedCustomer ? `${selectedCustomer.category} — ${selectedCustomer.payment_terms || 'COD'} (Limit: ${formatRupiah(selectedCustomer.credit_limit || 0)})` : 'Walk-in Customer'}
+                      {selectedCustomer ? `${selectedCustomer.category} — ${selectedCustomer.payment_terms || 'COD'} (Limit: ${formatRupiah(selectedCustomer.credit_limit || 0)})` : 'Wajib dipilih'}
                     </p>
                   </div>
                 </div>
@@ -646,16 +645,7 @@ export default function POSClient({ products, customers, settings, userRole, use
                   </div>
                 </div>
                 <div className="overflow-y-auto flex-1 p-1">
-                  <DropdownMenu.Item
-                    onClick={() => {
-                      setSelectedCustomer(null)
-                      setCustomerSearch('')
-                    }}
-                    className="flex flex-col px-3 py-2 rounded-lg cursor-pointer outline-none hover:bg-dark-50 mb-1"
-                  >
-                    <span className="text-sm font-semibold text-dark-900">Pelanggan Umum</span>
-                    <span className="text-xs text-dark-400">Harga Jual Default</span>
-                  </DropdownMenu.Item>
+                  
                   {customers.filter(c => c.name?.toLowerCase().includes(customerSearch.toLowerCase())).map(c => (
                     <DropdownMenu.Item
                       key={c.id}
@@ -689,13 +679,7 @@ export default function POSClient({ products, customers, settings, userRole, use
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start">
                       <h4 className="text-sm font-semibold text-dark-900 line-clamp-2 pr-2">{item.product.name}</h4>
-                      <button
-                        onClick={() => removeFromCart(item.product.id)}
-                        className="text-dark-300 hover:text-danger opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-                        title="Hapus"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      
                     </div>
                     
                     <p className="text-primary-600 font-bold text-money text-sm mt-1">{formatRupiah(item.unit_price)}</p>
@@ -746,6 +730,9 @@ export default function POSClient({ products, customers, settings, userRole, use
                         <Plus className="w-4 h-4" />
                       </button>
                     </div>
+                      <button onClick={() => removeFromCart(item.product.id)} className="mt-2 text-danger/70 hover:text-danger hover:bg-danger-light/50 w-full rounded-md py-1 flex justify-center items-center transition-colors" title="Hapus">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                   </div>
                 </div>
               ))}

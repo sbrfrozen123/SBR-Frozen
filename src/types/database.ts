@@ -40,6 +40,8 @@ export interface Branch {
   instagram: string | null
   logo_url: string | null
   is_active: boolean
+    customer_code?: string
+    created_at?: string
   created_at: string
   updated_at: string
 }
@@ -50,6 +52,8 @@ export interface Warehouse {
   name: string
   address: string | null
   is_active: boolean
+    customer_code?: string
+    created_at?: string
   code?: string
   created_at: string
   updated_at: string
@@ -93,6 +97,8 @@ export interface Product {
   min_stock_alert: number
   image_url: string | null
   is_active: boolean
+    customer_code?: string
+    created_at?: string
   created_at: string
   updated_at: string
   // Joined
@@ -135,6 +141,8 @@ export interface Customer {
   payment_terms: string
   current_debt: number
   is_active: boolean
+    customer_code?: string
+    created_at?: string
   code?: string
   notes: string | null
   created_at: string
@@ -288,6 +296,8 @@ export interface Supplier {
   address: string | null
   payment_terms: string
   is_active: boolean
+    customer_code?: string
+    created_at?: string
   code?: string
   created_at: string
   updated_at: string
@@ -441,6 +451,8 @@ export interface ProductForm {
   min_stock_alert: number
   image_url?: string
   is_active: boolean
+    customer_code?: string
+    created_at?: string
 }
 
 export interface CustomerForm {
@@ -506,6 +518,8 @@ export interface SupplierForm {
   payment_terms: string
   code?: string
   is_active: boolean
+    customer_code?: string
+    created_at?: string
 }
 
 export interface PurchaseForm {

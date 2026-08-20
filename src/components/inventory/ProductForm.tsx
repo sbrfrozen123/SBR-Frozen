@@ -64,7 +64,7 @@ export function ProductForm({ initialData, warehouseId, onSuccess, onCancel }: P
       min_stock_alert: initialData.min_stock_alert,
       is_active: initialData.is_active,
     } : {
-      sku: 'PRD' + Math.floor(100000 + Math.random() * 900000).toString(),
+      sku: '',
       barcode: '',
       category: 'Umum',
       unit: 'Pcs',
@@ -157,12 +157,7 @@ export function ProductForm({ initialData, warehouseId, onSuccess, onCancel }: P
                 <input {...register('name')} className={`input ${errors.name ? 'input-error' : ''}`} placeholder="Cth: Fiesta Chicken Nugget 500g" />
                 {errors.name && <span className="text-xs text-danger mt-1">{errors.name.message}</span>}
               </div>
-              <div className="form-group">
-                <label className="label">SKU (Kode Internal)</label>
-                <input {...register('sku')} className={`input ${errors.sku ? 'input-error' : ''}`} placeholder="Otomatis (Misal: PRD-0001)" disabled={!!initialData} />
-                {errors.sku && <span className="text-xs text-danger mt-1">{errors.sku.message}</span>}
-                <span className="text-[10px] text-dark-400 mt-1 italic">Kosongkan agar dibuat otomatis.</span>
-              </div>
+              
               <div className="form-group">
                 <label className="label">Barcode</label>
                 <input {...register('barcode')} className={`input ${errors.barcode ? 'input-error' : ''}`} placeholder="Scan atau ketik barcode..." />

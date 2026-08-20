@@ -10,7 +10,7 @@ import { Loader2, X } from 'lucide-react'
 import type { Customer, CustomerForm as CustomerFormType } from '@/types/database'
 
 const customerSchema = z.object({
-  code: z.string().optional(),
+  customer_code: z.string().optional(),
   name: z.string().min(1, 'Nama pelanggan wajib diisi'),
   phone: z.string().optional(),
   address: z.string().optional(),
@@ -34,7 +34,7 @@ export function CustomerForm({ initialData, onSuccess, onCancel }: CustomerFormP
   const { register, handleSubmit, formState: { errors } } = useForm<z.infer<typeof customerSchema>>({
     resolver: zodResolver(customerSchema),
     defaultValues: initialData ? {
-      code: initialData.code || '',
+      customer_code: initialData.customer_code || '',
       name: initialData.name,
       phone: initialData.phone || '',
       address: initialData.address || '',
@@ -101,12 +101,8 @@ export function CustomerForm({ initialData, onSuccess, onCancel }: CustomerFormP
               Informasi Umum
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="form-group">
-                <label className="label">Kode Pelanggan</label>
-                <input {...register('code')} className="input" placeholder="Otomatis (Misal: CUST-0001)" disabled={!!initialData} />
-                <span className="text-[10px] text-dark-400 mt-1 italic">Kosongkan agar dibuat otomatis.</span>
-              </div>
-              <div className="form-group md:col-span-1">
+              
+              <div className="form-group md:col-span-2">
                 <label className="label">Nama Lengkap / Instansi *</label>
                 <input {...register('name')} className={`input ${errors.name ? 'input-error' : ''}`} placeholder="Cth: Budi Santoso atau Restoran Sedap" />
                 {errors.name && <span className="text-xs text-danger mt-1">{errors.name.message}</span>}

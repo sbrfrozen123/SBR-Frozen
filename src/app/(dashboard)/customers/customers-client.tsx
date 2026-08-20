@@ -177,11 +177,13 @@ export default function CustomersClient({ initialCustomers, userRole }: Customer
               <tr>
                 <th className="w-12 text-center">No</th>
                 <th>Kode</th>
+                <th>ID Pelanggan</th>
                 <th>Nama Pelanggan</th>
                 <th>Kategori</th>
                 <th>Kontak</th>
                 <th className="text-right">Batas Piutang</th>
                 <th className="text-right">Piutang Berjalan</th>
+                <th>Tgl Daftar</th>
                 <th className="text-center">Status</th>
                 <th className="w-12 print:hidden"></th>
               </tr>
