@@ -170,6 +170,7 @@ export default function TransfersClient({ userId, userRole, userName, branchId, 
                 <th className="w-12 text-center border-l-0">No</th>
                 <th>Tanggal</th>
                 <th>Referensi</th>
+                <th>Barang</th>
                 <th>Dari Gudang</th>
                 <th>Ke Gudang</th>
                 <th>Status</th>
@@ -180,13 +181,23 @@ export default function TransfersClient({ userId, userRole, userName, branchId, 
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-12 text-dark-400">Belum ada data transfer stok.</td>
+                  <td colSpan={9} className="text-center py-12 text-dark-400">Belum ada data transfer stok.</td>
                 </tr>
               ) : filtered.map((t, index) => (
                 <tr key={t.id}>
                   <td className="text-center text-dark-400 border-l-0">{index + 1}</td>
                   <td>{formatDateShort(t.transfer_date)}</td>
                   <td><span className="font-mono text-dark-900 bg-slate-50 px-2 py-1 rounded">{t.reference_number}</span></td>
+                  <td>
+                    <div className="flex flex-col gap-1 max-w-[200px]">
+                      {t.items?.map((item: any, i: number) => (
+                        <div key={i} className="text-xs flex justify-between gap-2 border-b border-dark-50 pb-1 last:border-0 last:pb-0">
+                          <span className="truncate" title={item.products?.name}>{item.products?.name}</span>
+                          <span className="font-semibold">{item.qty_sent}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </td>
                   <td className="font-semibold text-danger-700">{t.from_wh?.name}</td>
                   <td className="font-semibold text-success-700">{t.to_wh?.name}</td>
                   <td>
