@@ -78,13 +78,13 @@ export function CustomerForm({ initialData, onSuccess, onCancel }: CustomerFormP
   return (
     <div className="modal-overlay z-[100]">
       <div className="bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col w-full max-w-2xl max-h-[90vh] animate-scale-up border border-dark-200">
-        <div className="px-4 py-4 border-b border-dark-200 flex justify-between items-center bg-dark-900 text-white flex-shrink-0">
+        <div className="px-4 py-4 border-b border-primary-700 flex justify-between items-center bg-primary-600 text-white flex-shrink-0">
           <h2 className="text-lg font-bold">
             {initialData ? 'Edit Pelanggan' : 'Tambah Pelanggan Baru'}
           </h2>
           <button 
             onClick={onCancel} 
-            className="text-white/70 hover:text-white transition-colors bg-white/10 hover:bg-white/20 rounded-md p-1 px-2"
+            className="text-white/80 hover:text-white transition-colors bg-white/10 hover:bg-white/20 rounded-md p-1 px-2"
           >
             X
           </button>
