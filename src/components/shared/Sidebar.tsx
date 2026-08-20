@@ -64,11 +64,11 @@ export const modules: ModuleGroup[] = [
     roles: ['super_admin', 'admin_gudang'],
     items: [
       { href: '/inventory', icon: Package, label: 'Data Barang', roles: ['super_admin', 'admin_gudang'] },
-      { href: '/inventory/categories', icon: Tags, label: 'Kategori', roles: ['super_admin', 'admin_gudang'] },
+      { href: '/categories', icon: Tags, label: 'Kategori', roles: ['super_admin', 'admin_gudang'] },
       { href: '/units', icon: Package, label: 'Satuan (UoM)', roles: ['super_admin', 'admin_gudang'] },
       { href: '/warehouses', icon: Package, label: 'Gudang', roles: ['super_admin'] },
-      { href: '/inventory/adjustments', icon: Scale, label: 'Penyesuaian Stok', roles: ['super_admin', 'admin_gudang'] },
-      { href: '/inventory/transfers', icon: Truck, label: 'Transfer Antar Cabang', roles: ['super_admin', 'admin_gudang'] }
+      { href: '/reports/inventory/adjustments', icon: Scale, label: 'Penyesuaian Stok', roles: ['super_admin', 'admin_gudang'] },
+      { href: '/reports/inventory/transfers', icon: Truck, label: 'Transfer Antar Cabang', roles: ['super_admin', 'admin_gudang'] }
     ]
   },
   {
@@ -91,7 +91,7 @@ export const modules: ModuleGroup[] = [
     roles: ['super_admin', 'kasir'],
     items: [
       { href: '/transactions', icon: FileText, label: 'Pesanan Penjualan', roles: ['super_admin', 'kasir'] },
-      { href: '/customers', icon: Users, label: 'Data Pelanggan', roles: ['super_admin', 'kasir'] }
+      { href: '/customers', icon: Users, label: 'Pelanggan', roles: ['super_admin', 'kasir'] }
     ]
   },
   {
@@ -104,7 +104,7 @@ export const modules: ModuleGroup[] = [
       { href: '/cashflow', icon: FileText, label: 'Buku Kas', roles: ['super_admin'] },
       { href: '/expenses', icon: Receipt, label: 'Pengeluaran', roles: ['super_admin'] },
       { href: '/receivables', icon: Users, label: 'Piutang Pelanggan', roles: ['super_admin'] },
-      { href: '/reports/financial/hutang', icon: FileText, label: 'Laporan Hutang', roles: ['super_admin'] }
+      { href: '/reports/financial/hutang', icon: FileText, label: 'Hutang', roles: ['super_admin'] }
     ]
   },
   {

@@ -1,285 +1,204 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { ArrowLeft, Printer, Download, RefreshCw, Settings2, X, Calendar, MapPin, Truck, ChevronLeft } from 'lucide-react'
-import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useMemo, useEffect } from 'react'
+import { 
+  Search, Filter, Receipt, Wallet, Calendar, Download, RefreshCw 
+} from 'lucide-react'
 import { formatRupiah } from '@/lib/utils/currency'
-import { cn } from '@/lib/utils/cn'
+import { createClient } from '@/lib/supabase/client'
+import { toast } from 'react-hot-toast'
 
 interface HutangClientProps {
-  purchasesData: any[]
   branches: any[]
   suppliers: any[]
-  initialFrom: string
-  initialTo: string
-  initialBranch: string
-  initialSupplier: string
+  userId: string
 }
 
-export default function HutangClient({
-  purchasesData,
-  branches,
-  suppliers,
-  initialFrom,
-  initialTo,
-  initialBranch,
-  initialSupplier
-}: HutangClientProps) {
-  const router = useRouter()
+export default function HutangClient({ branches, suppliers, userId }: HutangClientProps) {
+  const [purchases, setPurchases] = useState<any[]>([])
+  const [search, setSearch] = useState('')
+  const [supplierFilter, setSupplierFilter] = useState<string>('Semua')
   
-  const [showModal, setShowModal] = useState(!initialFrom || !initialTo)
-  const [fromDate, setFromDate] = useState(initialFrom)
-  const [toDate, setToDate] = useState(initialTo)
-  const [branch, setBranch] = useState(initialBranch)
-  const [supplier, setSupplier] = useState(initialSupplier)
+  const today = new Date()
+  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0]
+  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0]
   
-  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [fromDate, setFromDate] = useState(firstDay)
+  const [toDate, setToDate] = useState(lastDay)
+  
+  const supabase = createClient()
 
-  const formattedFrom = initialFrom ? new Date(initialFrom).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : ''
-  const formattedTo = initialTo ? new Date(initialTo).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : ''
+  const fetchHutang = async () => {
+    const { data, error } = await supabase
+      .from('purchases')
+      .select(`
+        *,
+        supplier:supplier_id(name, code),
+        branch:branch_id(name)
+      `)
+      .neq('payment_status', 'lunas')
+      .gte('purchase_date', fromDate)
+      .lte('purchase_date', toDate)
+      .order('purchase_date', { ascending: false })
 
-  const displayBranch = initialBranch === 'all' || !initialBranch 
-    ? '[Semua Cabang]' 
-    : branches.find(b => b.id === initialBranch)?.name || '[Semua Cabang]'
-
-  const applyFilter = () => {
-    setShowModal(false)
-    let url = `/reports/financial/hutang?from=${fromDate}&to=${toDate}`
-    if (branch) url += `&branch=${branch}`
-    if (supplier) url += `&supplier=${supplier}`
-    router.push(url)
+    if (error) {
+      toast.error('Gagal mengambil data hutang')
+    } else {
+      setPurchases(data || [])
+    }
   }
 
-  const handleRefresh = () => {
-    setIsRefreshing(true)
-    router.refresh()
-    setTimeout(() => setIsRefreshing(false), 500)
-  }
+  useEffect(() => {
+    fetchHutang()
+  }, [fromDate, toDate])
 
-  const exportToCSV = () => {
-    const headers = ['Tanggal', 'No. Invoice', 'Pemasok', 'Cabang', 'Total Transaksi', 'Sudah Dibayar', 'Sisa Hutang']
-    const csvData = purchasesData.map(p => [
-      p.purchase_date,
-      p.invoice_number,
-      p.supplier?.name || '-',
-      p.branch?.name || '-',
-      p.total_amount,
-      p.amount_paid || 0,
-      p.total_amount - (p.amount_paid || 0)
-    ])
-    
-    const csvContent = [
-      headers.join(','),
-      ...csvData.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n')
+  const filteredPurchases = useMemo(() => {
+    return purchases.filter(p => {
+      const searchLower = search.toLowerCase()
+      const matchesSearch = p.invoice_number?.toLowerCase().includes(searchLower) || false
+      const matchesSupplier = supplierFilter === 'Semua' || p.supplier_id === supplierFilter
+      return matchesSearch && matchesSupplier
+    })
+  }, [purchases, search, supplierFilter])
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
-    link.setAttribute('download', `Laporan_Hutang_${initialFrom}_${initialTo}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
-
-  const totalHutang = useMemo(() => purchasesData.reduce((sum, p) => sum + (p.total_amount - (p.amount_paid || 0)), 0), [purchasesData])
+  const totalHutang = filteredPurchases.reduce((sum, p) => sum + p.total_amount, 0)
+  const totalPembayaran = filteredPurchases.reduce((sum, p) => sum + (p.amount_paid || 0), 0)
+  const sisaHutang = filteredPurchases.reduce((sum, p) => sum + Math.max(0, p.total_amount - (p.amount_paid || 0)), 0)
 
   return (
-    <div className="bg-slate-200 min-h-screen flex flex-col items-center py-8 relative font-sans print:bg-white print:py-0 print:block">
-      <style dangerouslySetInnerHTML={{__html: `
-        @media print {
-          body { background: white !important; }
-          .print-hidden { display: none !important; }
-          @page { size: portrait; margin: 10mm; }
-        }
-      `}} />
-
-      <div className="print-hidden sticky top-4 z-40 bg-white shadow-lg border border-dark-200 rounded-full px-6 py-3 flex items-center gap-6 mb-8 transition-all">
-        <Link href="/reports" className="text-dark-500 hover:text-dark-900 transition-colors flex items-center gap-1 border-r border-dark-200 pr-4">
-          <ChevronLeft className="w-5 h-5" /> Kembali
-        </Link>
-        <div className="flex items-center gap-4">
-          <button onClick={() => setShowModal(true)} className="flex flex-col items-center text-dark-500 hover:text-primary-600 transition-colors group">
-            <Settings2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
-            <span className="text-[10px] font-bold mt-1">Parameter</span>
-          </button>
-          <button onClick={handleRefresh} className="flex flex-col items-center text-dark-500 hover:text-primary-600 transition-colors group">
-            <RefreshCw className={cn("w-5 h-5 group-hover:scale-110 transition-transform", isRefreshing && "animate-spin")} />
-            <span className="text-[10px] font-bold mt-1">Refresh</span>
-          </button>
-          <button onClick={exportToCSV} className="flex flex-col items-center text-dark-500 hover:text-primary-600 transition-colors group">
-            <Download className="w-5 h-5 group-hover:scale-110 transition-transform" />
-            <span className="text-[10px] font-bold mt-1">Export</span>
-          </button>
-          <button onClick={() => window.print()} className="flex flex-col items-center text-dark-500 hover:text-primary-600 transition-colors group">
-            <Printer className="w-5 h-5 group-hover:scale-110 transition-transform" />
-            <span className="text-[10px] font-bold mt-1">Print</span>
-          </button>
+    <div className="p-6 space-y-6 animate-fade-in h-full flex flex-col">
+      <div className="page-header flex-shrink-0">
+        <div>
+          <h1 className="page-title">Data Transaksi Hutang</h1>
+          <p className="page-subtitle">Kelola dan pantau tagihan pembelian yang belum lunas.</p>
         </div>
       </div>
 
-      <div className="bg-white shadow-xl max-w-[1000px] w-full mx-4 min-h-[800px] p-12 print:shadow-none print:m-0 print:max-w-none print:p-0">
-        <div className="text-center mb-10">
-          <h2 className="text-sm font-bold text-dark-900 uppercase tracking-widest">SBR FROZEN</h2>
-          <h1 className="text-2xl font-bold text-[#800000] mt-1">Laporan Hutang Vendor</h1>
-          <p className="text-sm text-dark-700 mt-1">
-            Dari {formattedFrom || '-'} s/d {formattedTo || '-'}
-          </p>
-        </div>
-
-        <div className="flex justify-end mb-4">
-          <p className="text-xs italic text-dark-600">Cabang : {displayBranch}</p>
-        </div>
-
-        <div className="w-full">
-          {(!initialFrom || !initialTo) ? (
-            <div className="text-center py-20 text-dark-400 border-t border-b border-dark-200">
-              Silakan atur Parameter Laporan terlebih dahulu untuk menampilkan data.
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-shrink-0">
+        <div className="card p-5 bg-gradient-to-br from-white to-danger-50 border-danger-100 shadow-sm relative overflow-hidden group">
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-danger-100 rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
+          <div className="relative z-10 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-danger-700 mb-1">Total Hutang</p>
+              <h3 className="text-2xl font-bold text-danger-900 text-money">{formatRupiah(totalHutang)}</h3>
             </div>
-          ) : purchasesData.length === 0 ? (
-            <div className="text-center py-20 text-dark-400 border-t border-b border-dark-200">
-              Tidak ada data hutang pada rentang tanggal dan parameter ini.
-            </div>
-          ) : (
-            <table className="w-full text-xs text-left">
-              <thead>
-                <tr className="border-t-2 border-b-2 border-dark-900 text-dark-900">
-                  <th className="py-3 px-2 font-bold whitespace-nowrap">Tanggal</th>
-                  <th className="py-3 px-2 font-bold">No. Invoice</th>
-                  <th className="py-3 px-2 font-bold">Pemasok</th>
-                  <th className="py-3 px-2 font-bold text-right">Total Transaksi</th>
-                  <th className="py-3 px-2 font-bold text-right">Sudah Dibayar</th>
-                  <th className="py-3 px-2 font-bold text-right">Sisa Hutang</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-dark-200 text-dark-700">
-                {purchasesData.map((p, idx) => {
-                  const sisaHutang = Math.max(0, p.total_amount - (p.amount_paid || 0))
-                  return (
-                    <tr key={p.id} className="hover:bg-slate-50 print:hover:bg-transparent transition-colors">
-                      <td className="py-3 px-2">{new Date(p.purchase_date).toLocaleDateString('id-ID')}</td>
-                      <td className="py-3 px-2 font-mono text-primary-600">{p.invoice_number}</td>
-                      <td className="py-3 px-2 font-semibold">{p.supplier?.name || '-'}</td>
-                      <td className="py-3 px-2 text-right">{formatRupiah(p.total_amount).replace('Rp', '')}</td>
-                      <td className="py-3 px-2 text-right text-success-600">{formatRupiah(p.amount_paid || 0).replace('Rp', '')}</td>
-                      <td className="py-3 px-2 text-right font-bold text-danger-600">{formatRupiah(sisaHutang).replace('Rp', '')}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-              <tfoot>
-                <tr className="border-t-2 border-b-2 border-dark-900 font-bold text-dark-900">
-                  <td colSpan={3} className="py-3 px-2 text-right">TOTAL</td>
-                  <td className="py-3 px-2 text-right">{formatRupiah(purchasesData.reduce((sum, p) => sum + p.total_amount, 0)).replace('Rp', '')}</td>
-                  <td className="py-3 px-2 text-right">{formatRupiah(purchasesData.reduce((sum, p) => sum + (p.amount_paid || 0), 0)).replace('Rp', '')}</td>
-                  <td className="py-3 px-2 text-right text-danger-600">{formatRupiah(totalHutang).replace('Rp', '')}</td>
-                </tr>
-              </tfoot>
-            </table>
-          )}
-        </div>
-      </div>
-
-      {showModal && (
-        <div className="fixed inset-0 bg-dark-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 print-hidden animate-fade-in">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-slide-up">
-            <div className="bg-[#1a365d] text-white px-6 py-4 flex items-center justify-between">
-              <h3 className="font-bold">Parameter Laporan</h3>
-              <button onClick={() => setShowModal(false)} className="text-white/70 hover:text-white transition-colors">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            <div className="flex border-b border-dark-200 px-6 pt-2">
-              <div className="px-4 py-2 text-primary-600 font-semibold border-b-2 border-danger-500">Umum</div>
-            </div>
-
-            <div className="p-6 space-y-6">
-              <div>
-                <h4 className="text-lg text-dark-700 mb-4 border-b border-dark-200 pb-2">Tanggal Faktur</h4>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4">
-                    <label className="w-16 text-sm text-dark-700">Dari</label>
-                    <div className="flex-1 relative">
-                      <input 
-                        type="date" 
-                        value={fromDate}
-                        onChange={(e) => setFromDate(e.target.value)}
-                        className="w-full border-dark-200 rounded-lg text-sm pl-3 pr-10 py-2 focus:ring-primary-500 focus:border-primary-500 bg-blue-50 text-blue-700 font-medium"
-                      />
-                      <Calendar className="w-4 h-4 text-dark-400 absolute right-3 top-2.5 pointer-events-none" />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <label className="w-16 text-sm text-dark-700">s/d</label>
-                    <div className="flex-1 relative">
-                      <input 
-                        type="date" 
-                        value={toDate}
-                        onChange={(e) => setToDate(e.target.value)}
-                        className="w-full border-dark-200 rounded-lg text-sm pl-3 pr-10 py-2 focus:ring-primary-500 focus:border-primary-500"
-                      />
-                      <Calendar className="w-4 h-4 text-dark-400 absolute right-3 top-2.5 pointer-events-none" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-lg text-dark-700 mb-4 border-b border-dark-200 pb-2">Parameter Tambahan</h4>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4">
-                    <label className="w-16 text-sm text-dark-700">Cabang</label>
-                    <div className="flex-1 relative">
-                      <select 
-                        value={branch}
-                        onChange={(e) => setBranch(e.target.value)}
-                        className="w-full border-dark-200 rounded-lg text-sm pl-3 pr-10 py-2 focus:ring-primary-500 focus:border-primary-500 appearance-none bg-blue-50/50"
-                      >
-                        <option value="all">[Semua Cabang]</option>
-                        {branches.map(b => (
-                          <option key={b.id} value={b.id}>{b.name}</option>
-                        ))}
-                      </select>
-                      <MapPin className="w-4 h-4 text-dark-400 absolute right-3 top-2.5 pointer-events-none" />
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-4">
-                    <label className="w-16 text-sm text-dark-700">Pemasok</label>
-                    <div className="flex-1 relative">
-                      <select 
-                        value={supplier}
-                        onChange={(e) => setSupplier(e.target.value)}
-                        className="w-full border-dark-200 rounded-lg text-sm pl-3 pr-10 py-2 focus:ring-primary-500 focus:border-primary-500 appearance-none bg-blue-50/50"
-                      >
-                        <option value="all">[Semua Pemasok]</option>
-                        {suppliers.map(s => (
-                          <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
-                        ))}
-                      </select>
-                      <Truck className="w-4 h-4 text-dark-400 absolute right-3 top-2.5 pointer-events-none" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-
-            <div className="px-6 py-4 border-t border-dark-200 flex justify-end">
-              <button 
-                onClick={applyFilter}
-                disabled={!fromDate || !toDate}
-                className="bg-[#1a365d] hover:bg-[#12284c] text-white px-6 py-2 rounded text-sm font-bold transition-colors disabled:opacity-50"
-              >
-                Tampilkan
-              </button>
+            <div className="w-12 h-12 bg-danger-200 rounded-2xl flex items-center justify-center flex-shrink-0">
+              <Receipt className="w-6 h-6 text-danger-700" />
             </div>
           </div>
         </div>
-      )}
 
+        <div className="card p-5 bg-gradient-to-br from-white to-success-50 border-success-100 shadow-sm relative overflow-hidden group">
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-success-100 rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
+          <div className="relative z-10 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-success-700 mb-1">Total Pembayaran</p>
+              <h3 className="text-2xl font-bold text-success-900 text-money">{formatRupiah(totalPembayaran)}</h3>
+            </div>
+            <div className="w-12 h-12 bg-success-200 rounded-2xl flex items-center justify-center flex-shrink-0">
+              <Wallet className="w-6 h-6 text-success-700" />
+            </div>
+          </div>
+        </div>
+
+        <div className="card p-5 bg-gradient-to-br from-white to-warning-50 border-warning-100 shadow-sm relative overflow-hidden group">
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-warning-100 rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
+          <div className="relative z-10 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-warning-700 mb-1">Sisa Hutang Berjalan</p>
+              <h3 className="text-2xl font-bold text-warning-900 text-money">{formatRupiah(sisaHutang)}</h3>
+            </div>
+            <div className="w-12 h-12 bg-warning-200 rounded-2xl flex items-center justify-center flex-shrink-0">
+              <Calendar className="w-6 h-6 text-warning-700" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="card flex-1 flex flex-col min-h-0 overflow-hidden">
+        <div className="p-4 border-b border-dark-100 flex flex-col sm:flex-row gap-4 items-center justify-between bg-slate-50/50 flex-shrink-0">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="relative flex-1 sm:w-64">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-dark-400" />
+              <input
+                type="text"
+                placeholder="Cari No. Faktur..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="input pl-9 h-10 w-full bg-white"
+              />
+            </div>
+            
+            <div className="relative flex-1 sm:w-auto min-w-[150px]">
+              <Filter className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-dark-400" />
+              <select
+                value={supplierFilter}
+                onChange={(e) => setSupplierFilter(e.target.value)}
+                className="input pl-9 h-10 w-full bg-white appearance-none"
+              >
+                <option value="Semua">Semua Pemasok</option>
+                {suppliers.map(sup => (
+                  <option key={sup.id} value={sup.id}>{sup.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} className="input h-10" />
+            <span className="text-dark-400">-</span>
+            <input type="date" value={toDate} onChange={e => setToDate(e.target.value)} className="input h-10" />
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-auto no-scrollbar">
+          <table className="table">
+            <thead className="sticky top-0 bg-white z-10 shadow-sm">
+              <tr>
+                <th className="text-left py-3 px-4">Tanggal Beli</th>
+                <th className="text-left py-3 px-4">No. Faktur</th>
+                <th className="text-left py-3 px-4">Pemasok</th>
+                <th className="text-left py-3 px-4">Tempo Pembayaran</th>
+                <th className="text-left py-3 px-4">Metode</th>
+                <th className="text-right py-3 px-4">Total Transaksi</th>
+                <th className="text-right py-3 px-4">Total Pembayaran</th>
+                <th className="text-right py-3 px-4">Sisa Hutang</th>
+                <th className="text-center py-3 px-4">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-dark-100">
+              {filteredPurchases.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="py-8 text-center text-dark-400">
+                    Tidak ada transaksi hutang yang ditemukan
+                  </td>
+                </tr>
+              ) : (
+                filteredPurchases.map((p) => {
+                  const sisa = Math.max(0, p.total_amount - (p.amount_paid || 0))
+                  return (
+                    <tr key={p.id} className="hover:bg-slate-50 transition-colors group">
+                      <td className="py-3 px-4 whitespace-nowrap">{new Date(p.purchase_date).toLocaleDateString('id-ID')}</td>
+                      <td className="py-3 px-4 font-mono font-medium text-primary-600">{p.invoice_number}</td>
+                      <td className="py-3 px-4">{p.supplier?.name || '-'}</td>
+                      <td className="py-3 px-4 whitespace-nowrap">{p.due_date ? new Date(p.due_date).toLocaleDateString('id-ID') : '-'}</td>
+                      <td className="py-3 px-4 uppercase text-xs font-semibold">{p.payment_method}</td>
+                      <td className="py-3 px-4 text-right font-medium">{formatRupiah(p.total_amount)}</td>
+                      <td className="py-3 px-4 text-right text-success-600 font-medium">{formatRupiah(p.amount_paid || 0)}</td>
+                      <td className="py-3 px-4 text-right text-danger-600 font-bold">{formatRupiah(sisa)}</td>
+                      <td className="py-3 px-4 text-center">
+                        <span className={`badge ${p.payment_status === 'tempo' ? 'badge-danger' : 'badge-warning'}`}>
+                          {p.payment_status.toUpperCase()}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   )
 }
