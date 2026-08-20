@@ -10,6 +10,10 @@ import { createClient } from '@/lib/supabase/client'
 import { toast } from 'react-hot-toast'
 import type { Product, UserRole } from '@/types/database'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
+import jsPDF from 'jspdf'
+import 'jspdf-autotable'
+import * as XLSX from 'xlsx'
+import { FileText, FileSpreadsheet } from 'lucide-react'
 import { createPortal } from 'react-dom'
 
 interface InventoryClientProps {
@@ -108,28 +112,77 @@ export default function InventoryClient({ initialProducts, userRole, branchId, d
     setIsFormOpen(true)
   }
 
-  const handleExportCSV = () => {
-    const headers = ['SKU', 'Nama Barang', 'Kategori', 'HPP', 'Harga Jual', 'Satuan']
-    
-    // Convert all products to CSV format
-    const rows = products.map(p => [
-      p.sku,
-      `"${p.name.replace(/"/g, '""')}"`,
-      p.category,
-      p.hpp,
-      p.price_retail,
-      p.unit
-    ])
-    
-    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
-    link.setAttribute('download', `SBR_Stok_${new Date().toISOString().slice(0,10)}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+  
+  const getExportData = () => {
+    return products.map(p => {
+      let gudang = 'Semua Gudang'
+      if (warehouseFilter !== 'all') {
+        const wh = warehouses.find(w => w.id === warehouseFilter)
+        gudang = wh ? wh.name : 'Gudang'
+      } else {
+        if ((p as any).stock_breakdown && (p as any).stock_breakdown.length > 0) {
+          gudang = (p as any).stock_breakdown.map((s:any) => s.warehouses?.name).filter(Boolean).join(', ')
+        }
+      }
+      
+      return {
+        'ID Barang': p.sku,
+        'Nama Barang': p.name,
+        'Kategori': p.category,
+        'Satuan': p.unit,
+        'HPP': p.hpp,
+        'Harga Jual': p.price_retail,
+        'Nama Gudang': gudang,
+        'Sisa Stok': p.stock_quantity,
+        'Nilai Stok': p.hpp * p.stock_quantity
+      }
+    })
   }
+
+  const handleExportExcel = () => {
+    const data = getExportData()
+    const worksheet = XLSX.utils.json_to_sheet(data)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Data Persediaan")
+    XLSX.writeFile(workbook, `Laporan_Persediaan_${new Date().toISOString().split('T')[0]}.xlsx`)
+  }
+
+  const handleExportPDF = () => {
+    const doc = new jsPDF('landscape')
+    const data = getExportData()
+    
+    // Header
+    doc.setFontSize(16)
+    doc.text('SBR FROZEN', 14, 15)
+    doc.setFontSize(12)
+    doc.text('Laporan Data Persediaan Barang', 14, 22)
+    doc.setFontSize(10)
+    doc.text(`Tanggal Dicetak: ${new Date().toLocaleDateString('id-ID')}`, 14, 28)
+
+    const tableData = data.map(row => [
+      row['ID Barang'],
+      row['Nama Barang'],
+      row['Kategori'],
+      row['Satuan'],
+      formatRupiah(row['HPP']),
+      formatRupiah(row['Harga Jual']),
+      row['Nama Gudang'],
+      row['Sisa Stok'],
+      formatRupiah(row['Nilai Stok'])
+    ])
+
+    ;(doc as any).autoTable({
+      startY: 35,
+      head: [['ID Barang', 'Nama Barang', 'Kategori', 'Satuan', 'HPP', 'Harga Jual', 'Gudang', 'Stok', 'Nilai Stok']],
+      body: tableData,
+      theme: 'grid',
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [41, 128, 185] }
+    })
+
+    doc.save(`Laporan_Persediaan_${new Date().toISOString().split('T')[0]}.pdf`)
+  }
+
 
   const handleImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -199,10 +252,32 @@ export default function InventoryClient({ initialProducts, userRole, branchId, d
             <Upload className="w-4 h-4" />
             {isImporting ? 'Memproses...' : 'Import'}
           </button>
-          <button onClick={handleExportCSV} className="btn-md bg-white border border-dark-200 text-dark-700 hover:bg-dark-50 whitespace-nowrap">
-            <Download className="w-4 h-4" />
-            Export
-          </button>
+          
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger asChild>
+                <button className="btn-md bg-white border border-dark-200 text-dark-700 hover:bg-dark-50 whitespace-nowrap outline-none">
+                  <Download className="w-4 h-4" />
+                  Export
+                </button>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content className="min-w-[160px] bg-white rounded-xl shadow-lg border border-dark-100 p-1 z-50 animate-fade-in" align="end">
+                  <DropdownMenu.Item 
+                    onClick={handleExportPDF}
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-dark-700 hover:bg-primary-50 hover:text-primary-700 rounded-lg cursor-pointer outline-none transition-colors"
+                  >
+                    <FileText className="w-4 h-4" /> Export PDF
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item 
+                    onClick={handleExportExcel}
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-dark-700 hover:bg-success-50 hover:text-success-700 rounded-lg cursor-pointer outline-none transition-colors"
+                  >
+                    <FileSpreadsheet className="w-4 h-4" /> Export Excel
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+
           <div className="w-px h-6 bg-dark-200 hidden sm:block mx-1" />
           <button onClick={() => setIsAdjustmentModalOpen(true)} className="btn-md bg-white border border-dark-200 text-dark-700 hover:bg-dark-50 whitespace-nowrap">
             <ClipboardCheck className="w-4 h-4" />
