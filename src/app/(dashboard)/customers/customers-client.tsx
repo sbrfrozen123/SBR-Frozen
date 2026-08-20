@@ -245,8 +245,11 @@ export default function CustomersClient({ initialCustomers, userRole }: Customer
                         <span className="text-xs text-dark-400">-</span>
                       )}
                     </td>
-                    <td className="text-center">
-                      <span className={cn('badge', customer.is_active ? 'badge-success' : 'badge-danger')}>
+                    <td className="text-sm text-dark-500 whitespace-nowrap">
+                        {customer.created_at ? new Date(customer.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : "-"}
+                      </td>
+                      <td className="text-center">
+                        <span className={cn('badge', customer.is_active ? 'badge-success' : 'badge-danger')}>
                         {customer.is_active ? 'Aktif' : 'Non-aktif'}
                       </span>
                     </td>
