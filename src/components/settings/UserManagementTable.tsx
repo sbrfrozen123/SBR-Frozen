@@ -23,6 +23,18 @@ interface UserManagementTableProps {
   initialBranches: any[]
 }
 
+const parsePermissions = (perms: any): string[] => {
+  if (!perms) return []
+  if (Array.isArray(perms)) return perms
+  if (typeof perms === 'string') {
+    if (perms.startsWith('{') && perms.endsWith('}')) {
+      return perms.slice(1, -1).split(',').filter(Boolean)
+    }
+    return [perms]
+  }
+  return []
+}
+
 export function UserManagementTable({ initialUsers, initialBranches }: UserManagementTableProps) {
   const [users, setUsers] = useState<Profile[]>(initialUsers)
   const [loadingId, setLoadingId] = useState<string | null>(null)
@@ -63,7 +75,7 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
       status: user.status,
       password: '',
       id_role: user.id_role || '',
-      custom_permissions: user.custom_permissions || []
+      custom_permissions: parsePermissions(user.custom_permissions)
     })
     setIsEditModalOpen(true)
   }
@@ -525,23 +537,25 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
                       { id: '/inventory/transfers', label: 'Transfer Stok' },
                       { id: '/expenses', label: 'Pengeluaran' },
                       { id: '/reports', label: 'Laporan' },
-                    ].map(menu => (
+                    ].map(menu => {
+                      const perms = parsePermissions(formData.custom_permissions);
+                      return (
                       <label key={menu.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-dark-50 p-1.5 rounded-lg transition-colors">
                         <input 
                           type="checkbox" 
                           className="w-4 h-4 text-primary-600 border-dark-300 rounded"
-                          checked={formData.custom_permissions.includes(menu.id)}
+                          checked={perms.includes(menu.id)}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setFormData({...formData, custom_permissions: [...formData.custom_permissions, menu.id]})
+                              setFormData({...formData, custom_permissions: [...perms, menu.id]})
                             } else {
-                              setFormData({...formData, custom_permissions: formData.custom_permissions.filter(p => p !== menu.id)})
+                              setFormData({...formData, custom_permissions: perms.filter(p => p !== menu.id)})
                             }
                           }}
                         />
                         <span className="text-dark-700">{menu.label}</span>
                       </label>
-                    ))}
+                    )})}
                   </div>
                 </div>
               )}
@@ -658,23 +672,25 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
                       { id: '/inventory/transfers', label: 'Transfer Stok' },
                       { id: '/expenses', label: 'Pengeluaran' },
                       { id: '/reports', label: 'Laporan' },
-                    ].map(menu => (
+                    ].map(menu => {
+                      const perms = parsePermissions(editFormData.custom_permissions);
+                      return (
                       <label key={menu.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-dark-50 p-1.5 rounded-lg transition-colors">
                         <input 
                           type="checkbox" 
                           className="w-4 h-4 text-primary-600 border-dark-300 rounded"
-                          checked={editFormData.custom_permissions.includes(menu.id)}
+                          checked={perms.includes(menu.id)}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setEditFormData({...editFormData, custom_permissions: [...editFormData.custom_permissions, menu.id]})
+                              setEditFormData({...editFormData, custom_permissions: [...perms, menu.id]})
                             } else {
-                              setEditFormData({...editFormData, custom_permissions: editFormData.custom_permissions.filter(p => p !== menu.id)})
+                              setEditFormData({...editFormData, custom_permissions: perms.filter(p => p !== menu.id)})
                             }
                           }}
                         />
                         <span className="text-dark-700">{menu.label}</span>
                       </label>
-                    ))}
+                    )})}
                   </div>
                 </div>
               )}
