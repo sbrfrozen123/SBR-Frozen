@@ -287,6 +287,7 @@ export function BranchManagementTable({ initialBranches }: BranchManagementTable
             </button>
           </div>
         </div>
+      </div>
       )}
     </>
   )

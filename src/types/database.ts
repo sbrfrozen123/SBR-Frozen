@@ -26,6 +26,8 @@ export interface Profile {
   created_at: string
   updated_at: string
   branch_id: string | null
+  id_role: string | null
+  custom_permissions: string[] | null
   // Joined
   branch?: Branch | null
 }

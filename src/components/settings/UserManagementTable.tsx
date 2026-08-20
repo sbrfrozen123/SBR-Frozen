@@ -139,7 +139,7 @@ export function UserManagementTable({ initialUsers, initialBranches }: UserManag
 
       toast.success('Pengguna berhasil dibuat! Silakan refresh halaman jika belum muncul.')
       setIsModalOpen(false)
-      setFormData({ email: '', password: '', fullName: '', role: 'kasir', branch_id: initialBranches[0]?.id || '', id_role: '' })
+      setFormData({ email: '', password: '', fullName: '', role: 'kasir', branch_id: initialBranches[0]?.id || '', id_role: '', custom_permissions: [] })
       // Idealnya kita memanggil server action revalidatePath, atau sekadar reload data.
       window.location.reload()
     } catch (error: any) {
