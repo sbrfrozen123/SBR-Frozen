@@ -26,88 +26,72 @@ interface NewPurchaseClientProps {
   defaultWarehouseId?: string | null
 }
 
-function ProductCombobox({ 
-  item, 
+function ProductSearch({ 
   products, 
-  isActive, 
-  onActivate,
-  onDeactivate,
   onSelect
 }: {
-  item: CartItem
   products: Product[]
-  isActive: boolean
-  onActivate: () => void
-  onDeactivate: () => void
   onSelect: (p: Product) => void
 }) {
   const [search, setSearch] = useState('')
+  const [isOpen, setIsOpen] = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-        if (isActive) onDeactivate()
+        setIsOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [isActive, onDeactivate])
-
-  if (!isActive && item.product) {
-    return (
-      <div 
-        className="flex flex-col cursor-pointer p-2 hover:bg-slate-50 rounded-lg transition-colors border border-transparent hover:border-dark-200 w-full text-left"
-        onClick={onActivate}
-      >
-        <span className="font-semibold text-dark-900 leading-tight line-clamp-1">{item.product.name}</span>
-        <span className="text-xs text-dark-400 font-mono mt-0.5">{item.product.sku}</span>
-      </div>
-    )
-  }
+  }, [])
 
   const filtered = products.filter(p => 
     p.name.toLowerCase().includes(search.toLowerCase()) || 
     p.sku.toLowerCase().includes(search.toLowerCase())
-  )
+  ).slice(0, 20) // Limit to 20 for performance
 
   return (
-    <div className="relative w-full" ref={wrapperRef}>
+    <div className="relative w-full z-40 mb-2" ref={wrapperRef}>
+      <label className="label mb-2 block text-primary-600">Cari & Tambah Produk ke Faktur</label>
       <div 
-        className="flex items-center bg-white border border-primary-300 rounded-lg overflow-hidden shadow-sm ring-2 ring-primary-500/20 transition-all"
-        onClick={!isActive ? onActivate : undefined}
+        className="flex items-center bg-white border border-primary-300 rounded-xl overflow-hidden shadow-sm ring-4 ring-primary-500/10 transition-all p-1"
       >
-        <Search className="w-4 h-4 text-primary-500 ml-3 shrink-0" />
+        <Search className="w-5 h-5 text-primary-500 ml-3 shrink-0" />
         <input
-          autoFocus={isActive}
           type="text"
           value={search}
-          className="w-full bg-transparent border-none focus:ring-0 text-sm py-2 px-3 text-dark-900 placeholder:text-dark-300"
-          placeholder={isActive ? "Ketik nama barang..." : "Pilih barang..."}
+          className="w-full bg-transparent border-none focus:ring-0 text-base py-2.5 px-3 text-dark-900 placeholder:text-dark-300"
+          placeholder="Ketik nama atau SKU produk untuk ditambahkan..."
           onChange={(e) => setSearch(e.target.value)}
-          onFocus={onActivate}
+          onFocus={() => setIsOpen(true)}
         />
       </div>
       
-      {isActive && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-dark-100 rounded-xl shadow-2xl max-h-[400px] overflow-y-auto z-[100] animate-slide-up">
-          <div className="p-1">
+      {isOpen && search.length > 0 && (
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-dark-100 rounded-xl shadow-2xl max-h-[350px] overflow-y-auto animate-slide-up">
+          <div className="p-2">
             {filtered.length === 0 ? (
-              <p className="p-3 text-sm text-center text-dark-400">Barang tidak ditemukan.</p>
+              <p className="p-4 text-sm text-center text-dark-400">Barang tidak ditemukan.</p>
             ) : (
               filtered.map(p => (
                 <div
                   key={p.id}
-                  className="flex flex-col p-2.5 hover:bg-primary-50 rounded-lg cursor-pointer transition-colors border-b border-dark-50 last:border-0 text-left"
+                  className="flex items-center justify-between p-3 hover:bg-primary-50 rounded-lg cursor-pointer transition-colors border-b border-dark-50 last:border-0"
                   onClick={() => {
                     onSelect(p)
                     setSearch('')
+                    setIsOpen(false)
                   }}
                 >
-                  <span className="font-semibold text-dark-900 text-sm">{p.name}</span>
-                  <div className="flex justify-between items-center mt-1">
-                    <span className="text-xs text-dark-400 font-mono">{p.sku}</span>
-                    <span className="text-xs font-medium text-primary-600 bg-primary-100 px-1.5 py-0.5 rounded">Sisa: {p.stock_quantity} {p.unit}</span>
+                  <div>
+                    <div className="font-semibold text-dark-900 text-sm">{p.name}</div>
+                    <div className="text-xs text-dark-400 font-mono mt-0.5">{p.sku}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-dark-900">{formatRupiah(p.hpp)}</div>
+                    <div className="text-xs font-medium text-primary-600 bg-primary-100 px-2 py-0.5 rounded-full inline-block mt-1">Sisa Stok: {p.stock_quantity}</div>
                   </div>
                 </div>
               ))
@@ -133,55 +117,33 @@ export default function NewPurchaseClient({ products, suppliers, warehouses, use
   const [notes, setNotes] = useState('')
   
   // Items State
-  const [items, setItems] = useState<CartItem[]>([
-    { id: '1', product: null, qty: 1, unit_price: 0, subtotal: 0 }
-  ])
+  const [items, setItems] = useState<CartItem[]>([])
   
   const [loading, setLoading] = useState(false)
-  const [activeProductSearchId, setActiveProductSearchId] = useState<string | null>(null)
-  const searchRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setActiveProductSearchId(null)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
-  const addEmptyRow = () => {
-    setItems([...items, { id: Date.now().toString(), product: null, qty: 1, unit_price: 0, subtotal: 0 }])
-  }
 
   const removeRow = (id: string) => {
-    if (items.length > 1) {
-      setItems(items.filter(item => item.id !== id))
-    } else {
-      setItems([{ id: Date.now().toString(), product: null, qty: 1, unit_price: 0, subtotal: 0 }])
-    }
+    setItems(items.filter(item => item.id !== id))
   }
 
-  const selectProduct = (rowId: string, product: Product) => {
-    setItems(items.map(item => {
-      if (item.id === rowId) {
-        const qty = item.qty || 1
-        const unit_price = product.hpp > 0 ? product.hpp : 0 // Default to current HPP
-        return {
-          ...item,
-          product,
-          unit_price,
-          subtotal: qty * unit_price
-        }
-      }
-      return item
-    }))
-    setActiveProductSearchId(null)
-    
-    // Auto add new row if this was the last row
-    if (items[items.length - 1].id === rowId) {
-       addEmptyRow()
+  const addProduct = (product: Product) => {
+    const existingIndex = items.findIndex(item => item.product?.id === product.id)
+    if (existingIndex >= 0) {
+      // Increment qty
+      const newItems = [...items]
+      newItems[existingIndex].qty += 1
+      newItems[existingIndex].subtotal = newItems[existingIndex].qty * newItems[existingIndex].unit_price
+      setItems(newItems)
+      toast.success(`Kuantitas ${product.name} ditambah`, { id: 'qty-add' })
+    } else {
+      // Add new
+      setItems([...items, { 
+        id: Date.now().toString(), 
+        product, 
+        qty: 1, 
+        unit_price: product.hpp > 0 ? product.hpp : 0, 
+        subtotal: product.hpp > 0 ? product.hpp : 0
+      }])
+      toast.success(`${product.name} ditambahkan`, { id: 'item-add' })
     }
   }
 
@@ -306,19 +268,7 @@ export default function NewPurchaseClient({ products, suppliers, warehouses, use
     }
   }
 
-  // --- Product Search Combobox inside Table ---
-  const renderProductCell = (item: CartItem) => {
-    return (
-      <ProductCombobox
-        item={item}
-        products={products}
-        isActive={activeProductSearchId === item.id}
-        onActivate={() => setActiveProductSearchId(item.id)}
-        onDeactivate={() => setActiveProductSearchId(null)}
-        onSelect={(p) => selectProduct(item.id, p)}
-      />
-    )
-  }
+
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col pb-24">
@@ -445,96 +395,90 @@ export default function NewPurchaseClient({ products, suppliers, warehouses, use
         </div>
 
         {/* ITEMS SECTION */}
-        <div className="bg-white rounded-2xl shadow-sm border border-dark-100 overflow-hidden flex flex-col">
-           <div className="p-4 border-b border-dark-100 bg-slate-50/50 flex justify-between items-center">
-             <h2 className="text-sm font-bold text-dark-800 uppercase tracking-wider flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-dark-800"></span>
-                Daftar Barang
-             </h2>
-           </div>
+        <div className="bg-white rounded-2xl shadow-sm border border-dark-100 overflow-hidden flex flex-col p-6">
+           <ProductSearch products={products} onSelect={addProduct} />
            
-           <div className="overflow-x-auto">
+           <div className="overflow-x-auto mt-4 border border-dark-100 rounded-xl bg-white">
              <table className="w-full text-left border-collapse min-w-[800px]">
                <thead>
-                 <tr className="bg-white border-b border-dark-100 text-xs font-bold text-dark-500 uppercase tracking-wider">
+                 <tr className="bg-slate-100 border-b border-dark-100 text-xs font-bold text-dark-500 uppercase tracking-wider">
                    <th className="p-4 w-[350px]">Produk / Barang</th>
-                   <th className="p-4 w-[120px]">Kuantitas</th>
-                   <th className="p-4 w-[120px]">Satuan</th>
+                   <th className="p-4 w-[120px] text-center">Kuantitas</th>
+                   <th className="p-4 w-[120px] text-center">Satuan</th>
                    <th className="p-4 w-[200px]">Harga Beli (HPP)</th>
                    <th className="p-4 w-[200px] text-right">Subtotal</th>
                    <th className="p-4 w-[60px] text-center">Aksi</th>
                  </tr>
                </thead>
                <tbody className="divide-y divide-dark-50">
-                 {items.map((item, index) => (
-                   <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
-                     <td className="p-3 align-top relative">
-                       {renderProductCell(item)}
-                     </td>
-                     
-                     <td className="p-3 align-top">
-                       <input 
-                         type="number"
-                         min="1"
-                         className="input py-2 text-center"
-                         value={item.qty || ''}
-                         onChange={(e) => updateItemQty(item.id, Number(e.target.value))}
-                         disabled={!item.product}
-                       />
-                     </td>
-                     
-                     <td className="p-3 align-top pt-5">
-                       <span className="text-sm font-medium text-dark-600 bg-dark-50 px-3 py-1.5 rounded-lg border border-dark-100 inline-block w-full text-center">
-                         {item.product ? item.product.unit : '-'}
-                       </span>
-                     </td>
-                     
-                     <td className="p-3 align-top">
-                       <div className="relative">
-                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-400 text-sm font-medium">Rp</span>
-                         <input 
-                           type="number"
-                           min="0"
-                           className="input py-2 pl-9"
-                           value={item.unit_price || ''}
-                           onChange={(e) => updateItemPrice(item.id, Number(e.target.value))}
-                           disabled={!item.product}
-                         />
-                       </div>
-                       {item.product && item.unit_price !== item.product.hpp && (
-                         <p className="text-[10px] text-warning mt-1.5 font-medium flex items-center gap-1">
-                           HPP Lama: {formatRupiah(item.product.hpp)}
-                         </p>
-                       )}
-                     </td>
-                     
-                     <td className="p-3 align-top text-right pt-5 font-bold text-dark-900">
-                       {formatRupiah(item.subtotal)}
-                     </td>
-                     
-                     <td className="p-3 align-top text-center pt-4">
-                       <button 
-                         onClick={() => removeRow(item.id)}
-                         className="w-8 h-8 rounded-lg flex items-center justify-center text-dark-300 hover:text-danger hover:bg-danger/10 transition-colors mx-auto"
-                         title="Hapus Baris"
-                       >
-                         <Trash2 className="w-4 h-4" />
-                       </button>
+                 {items.length === 0 ? (
+                   <tr>
+                     <td colSpan={6} className="text-center p-8 text-dark-400 bg-slate-50/50">
+                        Pilih produk di kolom pencarian di atas untuk menambahkan ke faktur.
                      </td>
                    </tr>
-                 ))}
+                 ) : (
+                   items.map((item, index) => (
+                     <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
+                       <td className="p-4 align-middle">
+                         <div className="font-semibold text-dark-900 line-clamp-1">{item.product?.name}</div>
+                         <div className="text-xs text-dark-400 font-mono mt-0.5">{item.product?.sku}</div>
+                       </td>
+                       
+                       <td className="p-3 align-middle">
+                         <input 
+                           type="number"
+                           min="1"
+                           className="input py-2 text-center"
+                           value={item.qty || ''}
+                           onChange={(e) => updateItemQty(item.id, Number(e.target.value))}
+                           disabled={!item.product}
+                         />
+                       </td>
+                       
+                       <td className="p-3 align-middle text-center">
+                         <span className="text-sm font-medium text-dark-600 bg-dark-50 px-3 py-1.5 rounded-lg border border-dark-100 inline-block">
+                           {item.product ? item.product.unit : '-'}
+                         </span>
+                       </td>
+                       
+                       <td className="p-3 align-middle">
+                         <div className="relative">
+                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-400 text-sm font-medium">Rp</span>
+                           <input 
+                             type="number"
+                             min="0"
+                             className="input py-2 pl-9"
+                             value={item.unit_price || ''}
+                             onChange={(e) => updateItemPrice(item.id, Number(e.target.value))}
+                             disabled={!item.product}
+                           />
+                         </div>
+                         {item.product && item.unit_price !== item.product.hpp && (
+                           <p className="text-[10px] text-warning mt-1.5 font-medium flex items-center gap-1">
+                             HPP Lama: {formatRupiah(item.product.hpp)}
+                           </p>
+                         )}
+                       </td>
+                       
+                       <td className="p-4 align-middle text-right font-bold text-dark-900">
+                         {formatRupiah(item.subtotal)}
+                       </td>
+                       
+                       <td className="p-3 align-middle text-center">
+                         <button 
+                           onClick={() => removeRow(item.id)}
+                           className="w-8 h-8 rounded-lg flex items-center justify-center text-dark-300 hover:text-danger hover:bg-danger/10 transition-colors mx-auto"
+                           title="Hapus Baris"
+                         >
+                           <Trash2 className="w-4 h-4" />
+                         </button>
+                       </td>
+                     </tr>
+                   ))
+                 )}
                </tbody>
              </table>
-           </div>
-           
-           <div className="p-4 border-t border-dark-100 bg-white flex justify-center">
-             <button 
-               onClick={addEmptyRow}
-               className="btn-sm btn-outline text-primary-600 border-primary-200 hover:bg-primary-50 px-6"
-             >
-               <Plus className="w-4 h-4 mr-1.5" />
-               Tambah Baris Kosong
-             </button>
            </div>
         </div>
 
