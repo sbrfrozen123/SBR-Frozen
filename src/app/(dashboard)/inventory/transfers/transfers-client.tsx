@@ -311,7 +311,7 @@ export default function TransfersClient({ userId, userRole, userName, branchId, 
                   </td>
                   <td className="text-sm">{t.creator?.full_name}</td>
                   <td className="text-center border-r-0">
-                    {t.status === 'in_transit' ? (
+                    {(t.status === 'in_transit' && branchId === warehouses.find((w: any) => w.id === t.to_warehouse_id)?.branch_id) ? (
                       <button 
                         onClick={() => openReceiveModal(t)}
                         className="btn-sm bg-success text-white hover:bg-success-600 rounded-lg whitespace-nowrap"
