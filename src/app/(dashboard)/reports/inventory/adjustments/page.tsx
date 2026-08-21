@@ -5,7 +5,7 @@ import AdjustmentsClient from './adjustments-client'
 import { getBranchContext } from '@/app/actions/branch'
 
 export const metadata: Metadata = {
-  title: 'Penyesuaian Stok | SBR Frozen',
+  title: 'Laporan Penyesuaian | SBR Frozen',
 }
 
 export default async function InventoryAdjustmentsPage({

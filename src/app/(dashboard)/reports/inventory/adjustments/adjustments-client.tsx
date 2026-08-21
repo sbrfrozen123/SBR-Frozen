@@ -40,7 +40,7 @@ export default function AdjustmentsClient({
 
   const applyFilter = () => {
     setShowModal(false)
-    let url = `/inventory/adjustments?from=${fromDate}&to=${toDate}`
+    let url = `/reports/inventory/adjustments?from=${fromDate}&to=${toDate}`
     if (branch) url += `&branch=${branch}`
     router.push(url)
   }
@@ -121,7 +121,7 @@ export default function AdjustmentsClient({
         {/* Header Document */}
         <div className="text-center mb-10">
           <h2 className="text-sm font-bold text-dark-900 uppercase tracking-widest">SBR FROZEN</h2>
-          <h1 className="text-2xl font-bold text-[#800000] mt-1">Riwayat Penyesuaian Stok (Adjustment Log)</h1>
+          <h1 className="text-2xl font-bold text-[#800000] mt-1">Laporan Penyesuaian</h1>
           <p className="text-sm text-dark-700 mt-1">
             Dari {formattedFrom || '-'} s/d {formattedTo || '-'}
           </p>
@@ -136,7 +136,7 @@ export default function AdjustmentsClient({
         <div className="w-full">
           {(!initialFrom || !initialTo) ? (
             <div className="text-center py-20 text-dark-400 border-t border-b border-dark-200">
-              Silakan atur Filter Data terlebih dahulu untuk menampilkan data.
+              Silakan atur Parameter Laporan terlebih dahulu untuk menampilkan data.
             </div>
           ) : adjustments.length === 0 ? (
             <div className="text-center py-20 text-dark-400 border-t border-b border-dark-200">
@@ -193,7 +193,7 @@ export default function AdjustmentsClient({
         <div className="fixed inset-0 bg-dark-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 print-hidden animate-fade-in">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-slide-up">
             <div className="bg-[#1a365d] text-white px-6 py-4 flex items-center justify-between">
-              <h3 className="font-bold">Filter Data</h3>
+              <h3 className="font-bold">Parameter Laporan</h3>
               <button onClick={() => setShowModal(false)} className="text-white/70 hover:text-white transition-colors">
                 <X className="w-5 h-5" />
               </button>
