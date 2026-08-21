@@ -105,47 +105,55 @@ export default function TransfersReportClient({ initialTransfers, branches, init
             </div>
           ) : (
             <table className="w-full text-xs text-left">
-              <thead>
-                <tr className="border-t-2 border-b-2 border-dark-900 text-dark-900">
-                  <th className="py-3 px-2 font-bold whitespace-nowrap">Tanggal</th>
-                  <th className="py-3 px-2 font-bold whitespace-nowrap">No Referensi</th>
-                  <th className="py-3 px-2 font-bold">Asal</th>
-                  <th className="py-3 px-2 font-bold">Tujuan</th>
-                  <th className="py-3 px-2 font-bold">Barang Dikirim</th>
-                  <th className="py-3 px-2 font-bold text-center whitespace-nowrap">Status</th>
-                  <th className="py-3 px-2 font-bold whitespace-nowrap">User</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-dark-200 text-dark-700">
-                {initialTransfers.map((item, idx) => (
-                  <tr key={`${item.id}-${idx}`} className="hover:bg-slate-50 print:hover:bg-transparent transition-colors align-top">
-                    <td className="py-3 px-2 font-mono whitespace-nowrap text-dark-500">{formatDateShort(item.transfer_date)}</td>
-                    <td className="py-3 px-2 font-mono text-dark-800 font-bold">{item.reference_number}</td>
-                    <td className="py-3 px-2 text-danger-700 font-medium">{item.from_wh?.name}</td>
-                    <td className="py-3 px-2 text-success-700 font-medium">{item.to_wh?.name}</td>
-                    <td className="py-3 px-2">
-                      <ul className="list-disc pl-4 space-y-1">
-                        {item.items?.map((detail: any, dIdx: number) => (
-                          <li key={dIdx}>
-                            <span className="font-medium text-dark-900">{detail.products?.name}</span> <span className="text-dark-500">({detail.qty_sent} {detail.products?.unit || 'pcs'})</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </td>
-                    <td className="py-3 px-2 text-center">
-                      <span className={cn(
-                        "px-2 py-0.5 rounded text-[10px] font-bold uppercase",
-                        item.status === 'completed' ? "bg-success-100 text-success-700" : 
-                        item.status === 'in_transit' ? "bg-warning-100 text-warning-700" : "bg-dark-100 text-dark-700"
-                      )}>
-                        {item.status === 'completed' ? 'Selesai' : item.status === 'in_transit' ? 'Dikirim' : item.status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-2 text-dark-500">{item.creator?.full_name || '-'}</td>
+                <thead>
+                  <tr className="border-t-2 border-b-2 border-dark-900 text-dark-900">
+                    <th className="py-3 px-2 font-bold whitespace-nowrap">Tanggal</th>
+                    <th className="py-3 px-2 font-bold whitespace-nowrap">No Referensi</th>
+                    <th className="py-3 px-2 font-bold">Asal</th>
+                    <th className="py-3 px-2 font-bold">Tujuan</th>
+                    <th className="py-3 px-2 font-bold">Barang</th>
+                    <th className="py-3 px-2 font-bold text-center whitespace-nowrap">Qty Dikirim</th>
+                    <th className="py-3 px-2 font-bold text-center whitespace-nowrap">Qty Diterima</th>
+                    <th className="py-3 px-2 font-bold text-center whitespace-nowrap">Status</th>
+                    <th className="py-3 px-2 font-bold whitespace-nowrap">User</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-dark-200 text-dark-700">
+                  {initialTransfers.map((item) => (
+                    item.items?.map((detail: any, dIdx: number) => (
+                      <tr key={`${item.id}-${detail.id || dIdx}`} className="hover:bg-slate-50 print:hover:bg-transparent transition-colors align-top">
+                        {dIdx === 0 && (
+                          <>
+                            <td className="py-3 px-2 font-mono whitespace-nowrap text-dark-500" rowSpan={item.items.length}>{formatDateShort(item.transfer_date)}</td>
+                            <td className="py-3 px-2 font-mono text-dark-800 font-bold" rowSpan={item.items.length}>{item.reference_number}</td>
+                            <td className="py-3 px-2 text-danger-700 font-medium" rowSpan={item.items.length}>{item.from_wh?.name}</td>
+                            <td className="py-3 px-2 text-success-700 font-medium" rowSpan={item.items.length}>{item.to_wh?.name}</td>
+                          </>
+                        )}
+                        <td className="py-3 px-2 font-medium text-dark-900">{detail.products?.name}</td>
+                        <td className="py-3 px-2 text-center text-dark-700 font-medium">{detail.qty_sent} {detail.products?.unit || 'pcs'}</td>
+                        <td className="py-3 px-2 text-center font-bold text-success-700">
+                          {item.status === 'completed' ? `${detail.qty_received || 0} ${detail.products?.unit || 'pcs'}` : '-'}
+                        </td>
+                        {dIdx === 0 && (
+                          <>
+                            <td className="py-3 px-2 text-center" rowSpan={item.items.length}>
+                              <span className={cn(
+                                "px-2 py-0.5 rounded text-[10px] font-bold uppercase",
+                                item.status === 'completed' ? "bg-success-100 text-success-700" : 
+                                item.status === 'in_transit' ? "bg-warning-100 text-warning-700" : "bg-dark-100 text-dark-700"
+                              )}>
+                                {item.status === 'completed' ? 'Selesai' : item.status === 'in_transit' ? 'Dikirim' : item.status}
+                              </span>
+                            </td>
+                            <td className="py-3 px-2 text-dark-500" rowSpan={item.items.length}>{item.creator?.full_name || '-'}</td>
+                          </>
+                        )}
+                      </tr>
+                    ))
+                  ))}
+                </tbody>
+              </table>
           )}
         </div>
       </div>
