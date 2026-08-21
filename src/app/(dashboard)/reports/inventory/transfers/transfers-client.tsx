@@ -6,6 +6,7 @@ import { formatDateShort } from '@/lib/utils/dates'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'react-hot-toast'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils/cn'
 
 interface TransfersReportClientProps {
@@ -17,7 +18,7 @@ interface TransfersReportClientProps {
 }
 
 export default function TransfersReportClient({ initialTransfers, branches, initialFrom, initialTo, initialBranch }: TransfersReportClientProps) {
-  const [transfers, setTransfers] = useState(initialTransfers)
+  
   const [showModal, setShowModal] = useState(!initialFrom || !initialTo)
   
   // Filter state
@@ -29,42 +30,18 @@ export default function TransfersReportClient({ initialTransfers, branches, init
   
   const supabase = createClient()
 
-  const applyFilter = async () => {
+  const router = useRouter()
+  const applyFilter = () => {
     if (!fromDate || !toDate) return toast.error('Pilih rentang tanggal terlebih dahulu')
     setLoading(true)
+    const params = new URLSearchParams()
+    params.set('from', fromDate)
+    params.set('to', toDate)
+    if (branch !== 'all') params.set('branch', branch)
     
-    try {
-      let query = supabase.from('stock_transfers')
-        .select(`*, from_wh:warehouses!from_warehouse_id(name), to_wh:warehouses!to_warehouse_id(name), creator:profiles!stock_transfers_user_id_fkey(full_name), receiver:profiles!stock_transfers_received_by_fkey(full_name), items:stock_transfer_items(*, products(name, sku, unit))`)
-        .gte('transfer_date', fromDate + 'T00:00:00')
-        .lte('transfer_date', toDate + 'T23:59:59')
-        .order('transfer_date', { ascending: false })
-
-      if (branch !== 'all') {
-        const { data: whData } = await supabase.from('warehouses').select('id').eq('branch_id', branch)
-        if (whData && whData.length > 0) {
-          const whIds = whData.map(w => w.id)
-          query = query.or(`from_warehouse_id.in.(${whIds.join(',')}),to_warehouse_id.in.(${whIds.join(',')})`)
-        }
-      }
-
-      const { data, error } = await query
-      if (error) throw error
-      setTransfers(data || [])
-      setShowModal(false)
-      
-      // Update URL silently
-      const url = new URL(window.location.href)
-      url.searchParams.set('from', fromDate)
-      url.searchParams.set('to', toDate)
-      url.searchParams.set('branch', branch)
-      window.history.replaceState({}, '', url.toString())
-      
-    } catch (err: any) {
-      toast.error('Gagal mengambil data laporan')
-    } finally {
-      setLoading(false)
-    }
+    router.push(`/reports/inventory/transfers?${params.toString()}`)
+    setShowModal(false)
+    setLoading(false)
   }
 
   const formattedFrom = fromDate ? formatDateShort(fromDate) : ''
@@ -122,7 +99,7 @@ export default function TransfersReportClient({ initialTransfers, branches, init
             <div className="text-center py-20 text-dark-400 border-t border-b border-dark-200">
               Silakan atur Parameter Laporan terlebih dahulu untuk menampilkan data.
             </div>
-          ) : transfers.length === 0 ? (
+          ) : initialTransfers.length === 0 ? (
             <div className="text-center py-20 text-dark-400 border-t border-b border-dark-200">
               Tidak ada data transfer pada rentang tanggal ini.
             </div>
@@ -140,7 +117,7 @@ export default function TransfersReportClient({ initialTransfers, branches, init
                 </tr>
               </thead>
               <tbody className="divide-y divide-dark-200 text-dark-700">
-                {transfers.map((item, idx) => (
+                {initialTransfers.map((item, idx) => (
                   <tr key={`${item.id}-${idx}`} className="hover:bg-slate-50 print:hover:bg-transparent transition-colors align-top">
                     <td className="py-3 px-2 font-mono whitespace-nowrap text-dark-500">{formatDateShort(item.transfer_date)}</td>
                     <td className="py-3 px-2 font-mono text-dark-800 font-bold">{item.reference_number}</td>
