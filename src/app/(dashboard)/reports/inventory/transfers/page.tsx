@@ -35,7 +35,7 @@ export default async function TransfersReportPage({ searchParams }: { searchPara
   const { data: branches } = await supabase.from('branches').select('id, name').order('name')
 
   let query = supabase.from('stock_transfers')
-    .select(\`
+    .select(`
       *,
       from_wh:warehouses!from_warehouse_id(name),
       to_wh:warehouses!to_warehouse_id(name),
@@ -45,7 +45,7 @@ export default async function TransfersReportPage({ searchParams }: { searchPara
         *,
         products(name, sku, unit)
       )
-    \`)
+    `)
     .order('transfer_date', { ascending: false })
 
   if (filterFrom && filterTo) {
@@ -56,7 +56,7 @@ export default async function TransfersReportPage({ searchParams }: { searchPara
       const { data: whData } = await supabase.from('warehouses').select('id').eq('branch_id', filterBranch)
       if (whData && whData.length > 0) {
         const whIds = whData.map(w => w.id)
-        query = query.or(\`from_warehouse_id.in.(\${whIds.join(',')}),to_warehouse_id.in.(\${whIds.join(',')})\`)
+        query = query.or(`from_warehouse_id.in.(${whIds.join(',')}),to_warehouse_id.in.(${whIds.join(',')})`)
       } else {
         // Force empty if no warehouses match
         query = query.eq('id', '00000000-0000-0000-0000-000000000000') 
