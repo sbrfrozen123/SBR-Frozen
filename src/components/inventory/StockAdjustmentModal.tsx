@@ -75,8 +75,7 @@ export function StockAdjustmentModal({ products, branchId, warehouseId, warehous
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (e: React.FormEvent) => {\n    e.preventDefault()\n    if (!branchId) return toast.error('Gagal: Pilih cabang spesifik di menu atas terlebih dahulu (Jangan gunakan Semua Cabang).')
     if (!selectedProduct || actualStock === '') return
     if (!selectedWarehouseId) {
       toast.error('Gudang wajib dipilih.')

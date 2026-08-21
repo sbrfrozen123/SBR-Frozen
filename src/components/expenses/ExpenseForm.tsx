@@ -101,18 +101,15 @@ export function ExpenseForm({ initialData, userId, branchId, onSuccess, onCancel
       if (data.payment_method === 'tunai') {
         data.payment_account = null
       }
-      let finalBranchId = branchId;
-      if (!finalBranchId) {
-        // Fallback to first branch if branchId is null/empty
-        const { data: firstBranch } = await supabase.from('branches').select('id').limit(1).single();
-        if (firstBranch) {
-          finalBranchId = firstBranch.id;
-        } else {
-          throw new Error('Tidak ada cabang yang tersedia. Buat cabang terlebih dahulu.');
+      if (!branchId) {
+          toast.error('Gagal: Pilih cabang spesifik di menu atas terlebih dahulu (Jangan gunakan Semua Cabang).');
+          setLoading(false);
+          toast.dismiss('upload');
+          return;
         }
-      }
-
-      const payload = {
+        let finalBranchId = branchId;
+        
+        const payload = {
         ...data,
         user_id: userId,
         branch_id: finalBranchId,

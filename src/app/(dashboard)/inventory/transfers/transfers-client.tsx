@@ -97,8 +97,7 @@ export default function TransfersClient({ userId, userRole, userName, branchId, 
     if (data) setTransfers(data)
   }
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleCreate = async (e: React.FormEvent) => {\n    e.preventDefault()\n    if (!branchId) return toast.error('Gagal: Pilih cabang spesifik di menu atas terlebih dahulu (Jangan gunakan Semua Cabang).')
     if (!fromWh || !toWh) return toast.error('Pilih gudang asal dan tujuan')
     if (fromWh === toWh) return toast.error('Gudang asal dan tujuan tidak boleh sama')
     if (items.length === 0) return toast.error('Pilih minimal 1 barang')
