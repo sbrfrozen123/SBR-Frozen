@@ -131,11 +131,7 @@ export default async function CashflowPage() {
     else if (['transfer_bank', 'transfer', 'qris'].includes(sp.payment_method)) subBank(sp.amount, sp.payment_account)
   })
 
-  // 6. Supplier Payments (Cicilan Vendor)
-  ;(supplierPaymentsTxns || []).forEach(sp => {
-    if (sp.payment_method === 'tunai') cashBalance -= sp.amount
-    else if (['transfer_bank', 'transfer', 'qris'].includes(sp.payment_method)) subBank(sp.amount, sp.payment_account)
-  })
+  
 
   const bankBalance = Object.values(bankBalances).reduce((a,b) => a+b, 0) + undefinedBankBalance
 
