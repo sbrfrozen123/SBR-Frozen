@@ -121,13 +121,25 @@ export default function ReportsClient({ summary }: ReportsClientProps) {
     {
       title: 'Persediaan',
       reports: [
-{
+        {
+          title: 'Laporan Transfer Barang',
+          description: 'Pantau riwayat pergerakan stok antar gudang.',
+          icon: FileText,
+          href: '/reports/inventory/transfers',
+        },
+        {
           title: 'Nilai Persediaan Barang',
           description: 'Laporan nilai aset stok berjalan per cabang.',
           icon: Package,
-          href: '/reports/inventory/value'
+          href: '/reports/inventory/value',
+        },
+        {
+          title: 'Laporan Penyesuaian',
+          description: 'Laporan log mutasi dan penyesuaian stok (Adjustment).',
+          icon: FileText,
+          href: '/reports/inventory/adjustments',
         }
-]
+      ]
     },
     {
       title: 'Media Perusahaan',
