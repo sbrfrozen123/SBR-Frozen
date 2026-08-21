@@ -31,7 +31,25 @@ export default async function CashflowPage() {
     .single()
 
   // Get all data needed for cashflow
-  const [\n      { data: cashTxns },\n      { data: posTxns },\n      { data: expenseTxns },\n      { data: purchaseTxns },\n      { data: debtPaymentsTxns },\n      { data: supplierPaymentsTxns }\n    ] = await Promise.all([\n      supabase\n        .from('cash_transactions')\n        .select('id, type, amount, payment_method, payment_account, description, transaction_date, created_at, user_id, profiles(full_name)')\n        .order('created_at', { ascending: false })\n        .limit(10000),\n      userBranchId ? supabase.from('transactions').select('id, amount_paid, payment_method, payment_account, created_at, invoice_number').eq('branch_id', userBranchId).neq('status', 'voided').neq('order_status', 'cancelled') : supabase.from('transactions').select('id, amount_paid, payment_method, payment_account, created_at, invoice_number').neq('status', 'voided').neq('order_status', 'cancelled'),\n      userBranchId ? supabase.from('expenses').select('id, amount, payment_method, payment_account, created_at, description').eq('branch_id', userBranchId) : supabase.from('expenses').select('id, amount, payment_method, payment_account, created_at, description'),\n      userBranchId ? supabase.from('purchases').select('id, total_amount, amount_paid, payment_method, payment_status, payment_account, created_at').eq('branch_id', userBranchId) : supabase.from('purchases').select('id, total_amount, amount_paid, payment_method, payment_status, payment_account, created_at'),\n      userBranchId ? supabase.from('debt_payments').select('id, amount, payment_method, payment_account, created_at').eq('branch_id', userBranchId) : supabase.from('debt_payments').select('id, amount, payment_method, payment_account, created_at'),\n      userBranchId ? supabase.from('supplier_payments').select('id, amount, payment_method, payment_account, created_at').eq('branch_id', userBranchId) : supabase.from('supplier_payments').select('id, amount, payment_method, payment_account, created_at')\n    ])
+  const [
+      { data: cashTxns },
+      { data: posTxns },
+      { data: expenseTxns },
+      { data: purchaseTxns },
+      { data: debtPaymentsTxns },
+      { data: supplierPaymentsTxns }
+    ] = await Promise.all([
+      supabase
+        .from('cash_transactions')
+        .select('id, type, amount, payment_method, payment_account, description, transaction_date, created_at, user_id, profiles(full_name)')
+        .order('created_at', { ascending: false })
+        .limit(10000),
+      userBranchId ? supabase.from('transactions').select('id, amount_paid, payment_method, payment_account, created_at, invoice_number').eq('branch_id', userBranchId).neq('status', 'voided').neq('order_status', 'cancelled') : supabase.from('transactions').select('id, amount_paid, payment_method, payment_account, created_at, invoice_number').neq('status', 'voided').neq('order_status', 'cancelled'),
+      userBranchId ? supabase.from('expenses').select('id, amount, payment_method, payment_account, created_at, description').eq('branch_id', userBranchId) : supabase.from('expenses').select('id, amount, payment_method, payment_account, created_at, description'),
+      userBranchId ? supabase.from('purchases').select('id, total_amount, amount_paid, payment_method, payment_status, payment_account, created_at').eq('branch_id', userBranchId) : supabase.from('purchases').select('id, total_amount, amount_paid, payment_method, payment_status, payment_account, created_at'),
+      userBranchId ? supabase.from('debt_payments').select('id, amount, payment_method, payment_account, created_at').eq('branch_id', userBranchId) : supabase.from('debt_payments').select('id, amount, payment_method, payment_account, created_at'),
+      userBranchId ? supabase.from('supplier_payments').select('id, amount, payment_method, payment_account, created_at').eq('branch_id', userBranchId) : supabase.from('supplier_payments').select('id, amount, payment_method, payment_account, created_at')
+    ])
 
     // Calculate Balances dynamically from ALL transactions
   let cashBalance = 0
