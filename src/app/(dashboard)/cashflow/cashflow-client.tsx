@@ -48,7 +48,7 @@ export default function CashflowClient({ userId, branchId, initialCash, initialB
         user_id: userId,
         type,
         amount,
-        payment_method: type === 'mutasi_ke_bank' || type === 'mutasi_ke_kas' ? 'tunai' : paymentMethod,
+        payment_method: (type === 'mutasi_ke_bank' || type === 'mutasi_ke_kas') ? 'transfer' : paymentMethod,
           payment_account: paymentAccount,
         description
       }])
@@ -220,6 +220,24 @@ export default function CashflowClient({ userId, branchId, initialCash, initialB
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Bank/Akun selector - shown for all types */}
+                  {(type === 'mutasi_ke_bank' || type === 'mutasi_ke_kas') && bankOptions.length > 0 && (
+                    <div className="form-group md:col-span-2">
+                      <label className="label">{type === 'mutasi_ke_bank' ? 'Ke Rekening Bank' : 'Dari Rekening Bank'}</label>
+                      <select
+                        value={paymentAccount || bankOptions[0]}
+                        onChange={(e) => {
+                          setPaymentMethod('transfer')
+                          setPaymentAccount(e.target.value)
+                        }}
+                        className="input bg-white font-medium text-blue-700"
+                      >
+                        {bankOptions.map(b => (
+                          <option key={b} value={b}>{b}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   {(type === 'setor_kas' || type === 'tarik_kas' || type === 'saldo_awal' || type === 'pendapatan_lain') && (
                     <div className="form-group">
                       <label className="label">Target Akun</label>
@@ -255,7 +273,7 @@ export default function CashflowClient({ userId, branchId, initialCash, initialB
                     </div>
                   )}
 
-                  <div className={`form-group ${(type === 'setor_kas' || type === 'tarik_kas' || type === 'saldo_awal' || type === 'pendapatan_lain') ? '' : 'md:col-span-2'}`}>
+                  <div className="form-group">
                     <label className="label">Nominal Mutasi (Rp)</label>
                     <div className="relative">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-dark-400 font-medium text-sm">Rp</span>
