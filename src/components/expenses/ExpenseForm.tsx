@@ -22,7 +22,7 @@ const expenseSchema = z.object({
 interface ExpenseFormProps {
   initialData?: Expense
   userId: string
-  branchId: string
+  branchId: string | null
   onSuccess: () => void
   onCancel: () => void
 }
