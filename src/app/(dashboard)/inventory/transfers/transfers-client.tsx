@@ -138,6 +138,17 @@ export default function TransfersClient({ userId, userRole, userName, branchId, 
       }))
       await supabase.from('stock_adjustments').insert(adjustments)
 
+        // Update product_stocks for source warehouse
+        for (const item of items) {
+          const { data: stockData } = await supabase.from('product_stocks').select('stock_quantity').eq('product_id', item.product_id).eq('warehouse_id', fromWh).single();
+          const currentQty = stockData ? Number(stockData.stock_quantity) : 0;
+          if (stockData) {
+            await supabase.from('product_stocks').update({ stock_quantity: currentQty - item.qty }).eq('product_id', item.product_id).eq('warehouse_id', fromWh);
+          } else {
+            await supabase.from('product_stocks').insert({ product_id: item.product_id, warehouse_id: fromWh, stock_quantity: -item.qty });
+          }
+        }
+
       toast.success('Transfer berhasil dibuat dan barang dikirim')
       setIsFormOpen(false)
       setFromWh('')
@@ -199,6 +210,19 @@ export default function TransfersClient({ userId, userRole, userName, branchId, 
       if (adjustments.length > 0) {
         await supabase.from('stock_adjustments').insert(adjustments)
       }
+
+        // Update product_stocks for destination warehouse
+        for (const item of receiveItems) {
+          if (item.qty_received > 0) {
+            const { data: stockData } = await supabase.from('product_stocks').select('stock_quantity').eq('product_id', item.product_id).eq('warehouse_id', trf.to_warehouse_id).single();
+            const currentQty = stockData ? Number(stockData.stock_quantity) : 0;
+            if (stockData) {
+              await supabase.from('product_stocks').update({ stock_quantity: currentQty + item.qty_received }).eq('product_id', item.product_id).eq('warehouse_id', trf.to_warehouse_id);
+            } else {
+              await supabase.from('product_stocks').insert({ product_id: item.product_id, warehouse_id: trf.to_warehouse_id, stock_quantity: item.qty_received });
+            }
+          }
+        }
 
       toast.success('Barang berhasil diterima', { id: 'recv' })
       setReceivingTransfer(null)
