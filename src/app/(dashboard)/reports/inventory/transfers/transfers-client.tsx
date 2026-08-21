@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Printer, Download, RefreshCw, X, Calendar, MapPin, Truck, ChevronLeft, Filter } from 'lucide-react'
-import { formatDateShort, formatDateFull } from '@/lib/utils/dates'
+import { formatDateShort } from '@/lib/utils/dates'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'react-hot-toast'
 import Link from 'next/link'
