@@ -32,7 +32,7 @@ export default async function CashflowReportPage({
   // We need to fetch all types of transactions in the date range to create a chronological ledger
   let cashTxnsQuery = supabase.from('cash_transactions').select('*')
   let posTxnsQuery = supabase.from('transactions').select('id, amount_paid, payment_method, payment_account, created_at, invoice_number, payment_status, branch_id')
-  let expenseTxnsQuery = supabase.from('expenses').select('id, amount, payment_method, payment_account, created_at, title, branch_id')
+  let expenseTxnsQuery = supabase.from('expenses').select('id, amount, payment_method, payment_account, created_at, description, branch_id')
   let purchaseTxnsQuery = supabase.from('purchases').select('id, total_amount, amount_paid, payment_status, payment_method, payment_account, created_at, invoice_number, branch_id')
   let debtPaymentsQuery = supabase.from('debt_payments').select('id, amount, payment_method, payment_account, created_at, branch_id')
   let supplierPaymentsQuery = supabase.from('supplier_payments').select('id, amount, payment_method, payment_account, created_at, branch_id')
