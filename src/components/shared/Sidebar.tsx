@@ -67,8 +67,8 @@ export const modules: ModuleGroup[] = [
       { href: '/categories', icon: Tags, label: 'Kategori', roles: ['super_admin', 'admin_gudang'] },
       { href: '/units', icon: Package, label: 'Satuan (UoM)', roles: ['super_admin', 'admin_gudang'] },
       { href: '/warehouses', icon: Package, label: 'Gudang', roles: ['super_admin'] },
-      { href: '/reports/inventory/adjustments', icon: Scale, label: 'Penyesuaian Stok', roles: ['super_admin', 'admin_gudang'] },
-      { href: '/reports/inventory/transfers', icon: Truck, label: 'Transfer Antar Cabang', roles: ['super_admin', 'admin_gudang'] }
+      { href: '/inventory/adjustments', icon: Scale, label: 'Penyesuaian Stok', roles: ['super_admin', 'admin_gudang'] },
+      { href: '/inventory/transfers', icon: Truck, label: 'Transfer Antar Cabang', roles: ['super_admin', 'admin_gudang'] }
     ]
   },
   {
