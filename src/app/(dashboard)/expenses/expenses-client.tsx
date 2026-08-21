@@ -17,7 +17,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 interface ExpensesClientProps {
   initialExpenses: (Expense & { profiles: { full_name: string } | null })[]
   userId: string
-  branchId: string
+  branchId: string | null
 }
 
 const CATEGORIES = ['Semua', 'operasional', 'logistik', 'sdm', 'lain-lain']
