@@ -110,7 +110,7 @@ export default async function CashflowReportPage({
     timeline.push({
       date: ex.created_at,
       ref: '-',
-      description: `Pengeluaran: ${ex.title}`,
+      description: `Pengeluaran: ${ex.description}`,
       method: ex.payment_method + (ex.payment_account ? ` - ${ex.payment_account}` : ''),
       inflow: 0,
       outflow: ex.amount,
