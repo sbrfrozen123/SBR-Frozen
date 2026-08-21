@@ -128,7 +128,7 @@ export default function HutangClient({ branches, suppliers, userId }: HutangClie
                 placeholder="Cari No. Faktur / Pemasok..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="input pl-8 h-9 text-sm w-full bg-white"
+                className="input pl-8 h-9 !py-1.5 text-sm w-full bg-white"
               />
             </div>
             {/* Supplier Filter */}
@@ -137,7 +137,7 @@ export default function HutangClient({ branches, suppliers, userId }: HutangClie
               <select
                 value={supplierFilter}
                 onChange={e => setSupplierFilter(e.target.value)}
-                className="input pl-8 h-9 text-sm bg-white appearance-none min-w-full"
+                className="input pl-8 h-9 !py-1 text-sm bg-white appearance-none min-w-full"
               >
                 <option value="all">Semua Pemasok</option>
                 {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -146,9 +146,9 @@ export default function HutangClient({ branches, suppliers, userId }: HutangClie
             {/* Date Range */}
             <div className="flex items-center gap-1.5 ml-auto">
               <span className="text-xs text-dark-500 font-medium">Dari</span>
-              <input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} className="input h-9 text-sm" />
+              <input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} className="input h-9 !py-1.5 text-sm" />
               <span className="text-xs text-dark-400">—</span>
-              <input type="date" value={toDate} onChange={e => setToDate(e.target.value)} className="input h-9 text-sm" />
+              <input type="date" value={toDate} onChange={e => setToDate(e.target.value)} className="input h-9 !py-1.5 text-sm" />
             </div>
           </div>
         </div>

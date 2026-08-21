@@ -29,7 +29,7 @@ function GlobalProductSearch({ onSelect, products }: { onSelect: (val: string) =
             <input 
               type="text" 
               autoFocus 
-              className="input w-full text-sm h-9 bg-white" 
+              className="input w-full text-sm h-9 bg-white !py-1" 
               placeholder="Ketik nama atau barcode produk..." 
               value={search}
               onChange={e => setSearch(e.target.value)}
@@ -383,7 +383,7 @@ export default function TransfersClient({ userId, userRole, userName, branchId, 
                       </div>
                       <input type="number" required min={1} value={it.qty || ''} onChange={e => {
                         const newI = [...items]; newI[idx].qty = Number(e.target.value); setItems(newI)
-                      }} className="input w-24 text-center bg-white h-9" placeholder="Qty" />
+                      }} className="input w-24 text-center bg-white h-9 !py-1" placeholder="Qty" />
                       <button type="button" onClick={() => {
                         setItems(items.filter((_, i) => i !== idx))
                       }} className="w-9 h-9 flex-shrink-0 bg-white border border-dark-200 text-danger hover:bg-danger-50 hover:border-danger-200 rounded-lg flex items-center justify-center transition-colors">

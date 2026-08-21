@@ -515,7 +515,7 @@ export default function POSClient({ products, customers, settings, userRole, use
                         value={categorySearch}
                         onChange={(e) => setCategorySearch(e.target.value)}
                         onKeyDown={(e) => e.stopPropagation()}
-                        className="input pl-9 h-9 text-sm w-full"
+                        className="input pl-9 h-9 text-sm w-full !py-1"
                       />
                     </div>
                   </div>
@@ -648,7 +648,7 @@ export default function POSClient({ products, customers, settings, userRole, use
                       value={customerSearch}
                       onChange={(e) => setCustomerSearch(e.target.value)}
                       onKeyDown={(e) => e.stopPropagation()}
-                      className="input pl-9 h-9 text-sm w-full"
+                      className="input pl-9 h-9 text-sm w-full !py-1"
                       autoFocus
                     />
                   </div>
