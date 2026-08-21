@@ -114,13 +114,19 @@ export default function TransfersReportClient({ initialTransfers, branches, init
                     <th className="py-3 px-2 font-bold">Barang</th>
                     <th className="py-3 px-2 font-bold text-center whitespace-nowrap">Qty Dikirim</th>
                     <th className="py-3 px-2 font-bold text-center whitespace-nowrap">Qty Diterima</th>
+                    <th className="py-3 px-2 font-bold text-center whitespace-nowrap">Pengecekan</th>
+                    <th className="py-3 px-2 font-bold whitespace-nowrap">Keterangan</th>
                     <th className="py-3 px-2 font-bold text-center whitespace-nowrap">Status</th>
                     <th className="py-3 px-2 font-bold whitespace-nowrap">User</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-dark-200 text-dark-700">
                   {initialTransfers.map((item) => (
-                    item.items?.map((detail: any, dIdx: number) => (
+                    item.items?.map((detail: any, dIdx: number) => {
+                      const isCompleted = item.status === 'completed';
+                      const isSesuai = detail.qty_sent === (detail.qty_received || 0);
+                      
+                      return (
                       <tr key={`${item.id}-${detail.id || dIdx}`} className="hover:bg-slate-50 print:hover:bg-transparent transition-colors align-top">
                         {dIdx === 0 && (
                           <>
@@ -133,10 +139,20 @@ export default function TransfersReportClient({ initialTransfers, branches, init
                         <td className="py-3 px-2 font-medium text-dark-900">{detail.products?.name}</td>
                         <td className="py-3 px-2 text-center text-dark-700 font-medium">{detail.qty_sent} {detail.products?.unit || 'pcs'}</td>
                         <td className="py-3 px-2 text-center font-bold text-success-700">
-                          {item.status === 'completed' ? `${detail.qty_received || 0} ${detail.products?.unit || 'pcs'}` : '-'}
+                          {isCompleted ? `${detail.qty_received || 0} ${detail.products?.unit || 'pcs'}` : '-'}
+                        </td>
+                        <td className="py-3 px-2 text-center">
+                          {isCompleted ? (
+                            <span className={cn("px-2 py-0.5 rounded text-[10px] font-bold uppercase", isSesuai ? "bg-success-100 text-success-700" : "bg-danger-100 text-danger-700")}>
+                              {isSesuai ? 'Sesuai' : 'Selisih'}
+                            </span>
+                          ) : '-'}
                         </td>
                         {dIdx === 0 && (
                           <>
+                            <td className="py-3 px-2 text-dark-500 italic max-w-[150px] truncate" rowSpan={item.items.length} title={item.notes || ''}>
+                              {item.notes || '-'}
+                            </td>
                             <td className="py-3 px-2 text-center" rowSpan={item.items.length}>
                               <span className={cn(
                                 "px-2 py-0.5 rounded text-[10px] font-bold uppercase",
@@ -150,7 +166,8 @@ export default function TransfersReportClient({ initialTransfers, branches, init
                           </>
                         )}
                       </tr>
-                    ))
+                      );
+                    })
                   ))}
                 </tbody>
               </table>
