@@ -222,7 +222,10 @@ export default function TransfersClient({ userId, userRole, userName, branchId, 
           <p className="page-subtitle">Kirim dan terima persediaan antar cabang atau gudang.</p>
         </div>
         <div className="flex gap-2 mt-4 sm:mt-0">
-          
+          <button onClick={() => setIsFormOpen(true)} className="btn-md btn-primary whitespace-nowrap">
+            <Plus className="w-4 h-4" />
+            Buat Transfer Baru
+          </button>
         </div>
       </div>
 
