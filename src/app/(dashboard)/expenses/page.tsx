@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getBranchContext } from '@/app/actions/branch'
 import type { Metadata } from 'next'
 import ExpensesClient from './expenses-client'
 
@@ -34,5 +35,6 @@ export default async function ExpensesPage() {
     .gte('expense_date', firstDay)
     .order('expense_date', { ascending: false })
 
-  return <ExpensesClient initialExpenses={expenses || []} userId={user.id} branchId={profile?.branch_id} />
+  const branchId = await getBranchContext(supabase, user.id)
+  return <ExpensesClient initialExpenses={expenses || []} userId={user.id} branchId={branchId} />
 }

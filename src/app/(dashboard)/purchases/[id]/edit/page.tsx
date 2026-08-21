@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getBranchContext } from '@/app/actions/branch'
 import type { Metadata } from 'next'
 import EditPurchaseClient from './edit-purchase-client'
 
@@ -61,7 +62,7 @@ export default async function EditPurchasePage({ params }: { params: { id: strin
     .select('*')
     .order('name', { ascending: true })
 
-  const branchId = profile?.branch_id || null
+  const branchId = await getBranchContext(supabase, user.id)
 
   let defaultWarehouseId = null
   if (branchId) {
