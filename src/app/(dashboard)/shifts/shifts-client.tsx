@@ -83,7 +83,7 @@ export default function ShiftsClient({ initialShifts, userRole }: ShiftsClientPr
   })
 
   const handleExportCSV = () => {
-    const headers = ['No', 'Waktu Shift', 'Kasir', 'Nama Barang', 'Quantity', 'Modal Awal', 'Total Penjualan Cash', 'Total Penjualan Transfer/QRS', 'Jumlah Total', 'Selisih', 'Status']
+    const headers = ['No', 'Waktu Shift', 'Kasir', 'Nama Barang', 'Quantity', 'Modal Awal', 'CASH', 'TRANSFER', 'PIUTANG', 'TOTAL PENJUALAN', 'Total Uang Fisik', 'Selisih', 'Status']
     const csvData = filteredShifts.map((s, index) => {
       const waktuShift = format(new Date(s.start_time), 'dd MMM yyyy, HH:mm', { locale: localeID }) + ' sd ' + (s.end_time ? format(new Date(s.end_time), 'dd MMM yyyy, HH:mm', { locale: localeID }) : 'Sekarang')
       const kasir = s.user?.full_name || '-'
@@ -91,14 +91,18 @@ export default function ShiftsClient({ initialShifts, userRole }: ShiftsClientPr
       const qty = (s.shiftItems || []).map(i => `${i.qty} pcs`).join('\n')
       const totalCash = (s as any).totalCash || 0
       const totalTransfer = (s as any).totalTransfer || 0
-      const jumlahTotal = totalCash + totalTransfer
-      const selisih = (s.ending_cash_actual || 0) - (s.ending_cash_system || 0)
+      const totalPiutang = (s as any).totalPiutang || 0
+      const totalPenjualan = totalCash + totalTransfer + totalPiutang
+      const totalUangFisik = (s.starting_cash || 0) + totalCash
+      const selisih = (s.ending_cash_actual || 0) - totalUangFisik
       return [
         index + 1, waktuShift, kasir, `"${namaBarang}"`, `"${qty}"`,
         s.starting_cash,
         totalCash,
         totalTransfer,
-        jumlahTotal,
+        totalPiutang,
+        totalPenjualan,
+        totalUangFisik,
         selisih,
         s.status === 'closed' ? 'Selesai' : 'Aktif'
       ].join(',')
@@ -187,9 +191,11 @@ export default function ShiftsClient({ initialShifts, userRole }: ShiftsClientPr
                 <th>Nama Barang</th>
                 <th className="text-right">Quantity</th>
                 <th className="text-right">Modal Awal</th>
-                <th className="text-right">Total Penjualan Cash</th>
-                <th className="text-right">Total Penjualan Transfer/QRS</th>
-                <th className="text-right">Jumlah Total</th>
+                <th className="text-right">CASH</th>
+                <th className="text-right">TRANSFER</th>
+                <th className="text-right">PIUTANG</th>
+                <th className="text-right">TOTAL PENJUALAN</th>
+                <th className="text-right">Total Uang Fisik</th>
                 <th className="text-center">Selisih</th>
                 <th className="text-center print:border-r">Status</th>
                 <th className="w-16 text-center print:hidden">Aksi</th>
@@ -198,7 +204,7 @@ export default function ShiftsClient({ initialShifts, userRole }: ShiftsClientPr
             <tbody>
               {filteredShifts.length === 0 ? (
                 <tr>
-                  <td colSpan={userRole === 'super_admin' ? 12 : 11} className="text-center py-12 text-dark-400">
+                  <td colSpan={userRole === 'super_admin' ? 14 : 13} className="text-center py-12 text-dark-400">
                     <Clock className="w-12 h-12 mx-auto text-dark-200 mb-3" />
                     <p className="text-base font-medium text-dark-600">Tidak ada riwayat shift</p>
                   </td>
@@ -249,18 +255,27 @@ export default function ShiftsClient({ initialShifts, userRole }: ShiftsClientPr
                       <td className="text-right text-dark-700 align-top py-2">
                         {formatRupiah((shift as any).totalTransfer || 0)}
                       </td>
-                      <td className="text-right text-dark-900 font-semibold align-top py-2">
-                        {formatRupiah(((shift as any).totalCash || 0) + ((shift as any).totalTransfer || 0))}
+                      <td className="text-right text-dark-700 align-top py-2">
+                        {formatRupiah((shift as any).totalPiutang || 0)}
+                      </td>
+                      <td className="text-right text-dark-900 font-semibold align-top py-2 bg-primary-50/30">
+                        {formatRupiah(((shift as any).totalCash || 0) + ((shift as any).totalTransfer || 0) + ((shift as any).totalPiutang || 0))}
+                      </td>
+                      <td className="text-right text-dark-900 font-bold align-top py-2">
+                        {formatRupiah((shift.starting_cash || 0) + ((shift as any).totalCash || 0))}
                       </td>
                       <td className="text-center align-top py-2">
-                        {shift.status === 'closed' ? (
+                        {shift.status === 'closed' ? (() => {
+                          const uangFisik = (shift.starting_cash || 0) + ((shift as any).totalCash || 0);
+                          const currentSelisih = (shift.ending_cash_actual || 0) - uangFisik;
+                          return (
                           <span className={cn(
                             'font-bold',
-                            selisih > 0 ? 'text-success' : selisih < 0 ? 'text-danger' : 'text-dark-400'
+                            currentSelisih > 0 ? 'text-success' : currentSelisih < 0 ? 'text-danger' : 'text-dark-400'
                           )}>
-                            {selisih === 0 ? 'Seimbang' : selisih > 0 ? `+${formatRupiah(selisih)}` : formatRupiah(selisih)}
+                            {currentSelisih === 0 ? 'Seimbang' : currentSelisih > 0 ? `+${formatRupiah(currentSelisih)}` : formatRupiah(currentSelisih)}
                           </span>
-                        ) : '-'}
+                        )})() : '-'}
                       </td>
                       <td className="text-center print:border-r">
                         <span className={cn(
