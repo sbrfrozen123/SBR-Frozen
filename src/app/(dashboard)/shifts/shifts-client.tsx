@@ -83,16 +83,18 @@ export default function ShiftsClient({ initialShifts, userRole }: ShiftsClientPr
   })
 
   const handleExportCSV = () => {
-    const headers = ['Waktu Mulai', 'Waktu Selesai', 'Kasir', 'Barang Terjual', 'Modal Awal', 'Kas Akhir (Sistem)', 'Kas Akhir (Fisik)', 'Selisih', 'Status']
+    const headers = ['Waktu Mulai', 'Waktu Selesai', 'Kasir', 'Barang Terjual', 'Modal Awal', 'Total Penjualan', 'Kas Akhir (Sistem)', 'Kas Akhir (Fisik)', 'Selisih', 'Status']
     const csvData = filteredShifts.map(s => {
       const start = format(new Date(s.start_time), 'dd/MM/yyyy HH:mm', { locale: localeID })
       const end = s.end_time ? format(new Date(s.end_time), 'dd/MM/yyyy HH:mm', { locale: localeID }) : '-'
       const kasir = s.user?.full_name || '-'
       const items = (s.shiftItems || []).map(i => `${i.name} (${i.qty})`).join('; ')
+      const totalPenjualan = (s.shiftItems || []).reduce((sum, i) => sum + (i.subtotal || 0), 0)
       const selisih = (s.ending_cash_actual || 0) - (s.ending_cash_system || 0)
       return [
         start, end, kasir, items,
         s.starting_cash,
+        totalPenjualan,
         s.ending_cash_system || 0,
         s.ending_cash_actual || 0,
         selisih,
@@ -182,6 +184,7 @@ export default function ShiftsClient({ initialShifts, userRole }: ShiftsClientPr
                 {userRole === 'super_admin' && <th>Kasir</th>}
                 <th>Barang Terjual</th>
                 <th className="text-right">Modal Awal</th>
+                <th className="text-right">Total Penjualan</th>
                 <th className="text-right">Kas Akhir (Sistem)</th>
                 <th className="text-right">Kas Akhir (Fisik)</th>
                 <th className="text-center">Selisih</th>
@@ -230,6 +233,9 @@ export default function ShiftsClient({ initialShifts, userRole }: ShiftsClientPr
                       </td>
                       <td className="text-right text-dark-700">
                         {formatRupiah(shift.starting_cash)}
+                      </td>
+                      <td className="text-right text-dark-700">
+                        {formatRupiah(shift.shiftItems?.reduce((sum: number, item: any) => sum + (item.subtotal || 0), 0) || 0)}
                       </td>
                       <td className="text-right text-dark-700">
                         {shift.status === 'closed' ? formatRupiah(shift.ending_cash_system || 0) : '-'}

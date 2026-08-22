@@ -61,7 +61,7 @@ export default function RincianClient({
   }
 
   const exportToCSV = () => {
-    const headers = ['Nomor SO', 'Pelanggan', 'Nama Barang', 'Kuantitas', 'UoM', 'Salesman', 'Nama Kasir', 'Warehouse', 'Metode Pembayaran', 'Harga Jual', 'Payment Amount', 'Catatan']
+    const headers = ['Nomor SO', 'Pelanggan', 'Nama Barang', 'Kuantitas', 'UoM', 'Salesman', 'Nama Kasir', 'Warehouse', 'Metode Pembayaran', 'Harga Jual', 'Diskon', 'Jumlah Total', 'Payment Amount', 'Catatan']
     const csvData = detailedItems.map(item => [
       item.invoice_number,
       item.customer_name,
@@ -73,6 +73,8 @@ export default function RincianClient({
       item.branch,
       item.payment_method,
       item.unit_price,
+      item.discount || 0,
+      item.subtotal || 0,
       item.payment_amount,
       item.notes
     ])
@@ -107,6 +109,7 @@ export default function RincianClient({
           branch: sale.branches?.name || '-',
           payment_method: sale.payment_method + (sale.payment_account ? ' - ' + sale.payment_account : ''),
           unit_price: item.unit_price,
+          discount: item.discount_amount || 0,
           subtotal: item.subtotal,
           payment_amount: sale.amount_paid,
           notes: sale.notes ? sale.notes.replace(/"/g, '""') : '-',
@@ -193,6 +196,8 @@ export default function RincianClient({
                   <th className="py-3 px-2 font-bold">Warehouse</th>
                   <th className="py-3 px-2 font-bold">Metode Pembayaran</th>
                   <th className="py-3 px-2 font-bold text-right whitespace-nowrap">Harga Jual</th>
+                  <th className="py-3 px-2 font-bold text-right whitespace-nowrap">Diskon</th>
+                  <th className="py-3 px-2 font-bold text-right whitespace-nowrap">Jumlah Total</th>
                   <th className="py-3 px-2 font-bold text-right whitespace-nowrap">Payment<br/>Amount</th>
                   <th className="py-3 px-2 font-bold w-48">Catatan</th>
                 </tr>
@@ -210,6 +215,8 @@ export default function RincianClient({
                     <td className="py-3 px-2 align-top">{item.branch}</td>
                     <td className="py-3 px-2 align-top uppercase text-xs font-semibold">{item.payment_method}</td>
                     <td className="py-3 px-2 align-top text-right">{formatRupiah(item.unit_price).replace('Rp', '')}</td>
+                    <td className="py-3 px-2 align-top text-right">{formatRupiah(item.discount || 0).replace('Rp', '')}</td>
+                    <td className="py-3 px-2 align-top text-right">{formatRupiah(item.subtotal || 0).replace('Rp', '')}</td>
                     <td className="py-3 px-2 align-top text-right">{formatRupiah(item.payment_amount).replace('Rp', '')}</td>
                     <td className="py-3 px-2 align-top text-sm text-dark-500 truncate max-w-[10rem]" title={item.notes || ''}>{item.notes || '-'}</td>
                   </tr>
@@ -217,7 +224,7 @@ export default function RincianClient({
               </tbody>
               <tfoot>
                 <tr className="border-t-2 border-b-2 border-dark-900 font-bold text-dark-900">
-                  <td colSpan={10} className="py-3 px-2 text-right">TOTAL</td>
+                  <td colSpan={12} className="py-3 px-2 text-right">TOTAL</td>
                   <td className="py-3 px-2 text-right">{formatRupiah(detailedItems.reduce((sum, item) => sum + item.payment_amount, 0)).replace('Rp', '')}</td>
                   <td></td>
                 </tr>

@@ -51,7 +51,7 @@ export default async function RincianFakturPage({
         profiles ( full_name ),
         branches ( name ),
         transaction_items (
-          id, qty, unit, unit_price, subtotal, product_name, product_sku,
+          id, qty, unit, unit_price, discount_amount, subtotal, product_name, product_sku,
           products ( name, sku )
         )
       `)

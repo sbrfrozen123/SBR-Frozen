@@ -242,7 +242,7 @@ export default function POSClient({ products, customers, settings, userRole, use
     setCart(prev => prev.filter(item => item.product.id !== productId))
   }
 
-  const subtotal = cart.reduce((sum, item) => sum + ((item.unit_price * item.qty) - (item.discount_amount || 0)), 0)
+  const subtotal = cart.reduce((sum: number, item: any) => sum + ((item.unit_price * item.qty) - (item.discount_amount || 0)), 0)
   const taxRate = settings?.tax_percentage || 0
   const taxAmount = (subtotal * taxRate) / 100
   const total = subtotal + taxAmount
@@ -853,26 +853,20 @@ export default function POSClient({ products, customers, settings, userRole, use
                     </div>
 
                     <div className="border-t border-dashed border-dark-200 pt-2 mb-4 text-xs">
-                      <div className="flex justify-between font-bold text-sm mb-1">
-                        <span>TOTAL</span>
+                      <div className="flex justify-between text-dark-500">
+                        <span>Sub Total</span>
+                        <span>{formatRupiah(completedTxn.items.reduce((sum: number, item: any) => sum + (item.qty * item.unit_price), 0))}</span>
+                      </div>
+                      {completedTxn.items.reduce((sum: number, item: any) => sum + (item.discount_amount || 0), 0) > 0 && (
+                        <div className="flex justify-between text-dark-500">
+                          <span>Diskon</span>
+                          <span>{formatRupiah(completedTxn.items.reduce((sum: number, item: any) => sum + (item.discount_amount || 0), 0))}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between font-bold text-sm mt-1 mb-1">
+                        <span>Total Tagihan</span>
                         <span>{formatRupiah(completedTxn.total)}</span>
                       </div>
-                      <div className="flex justify-between text-dark-500">
-                        <span>BAYAR ({completedTxn.paymentMethod.toUpperCase()}{completedTxn.paymentMethod === 'transfer' && completedTxn.paymentAccount ? ` - ${completedTxn.paymentAccount}` : ''})</span>
-                        <span>{formatRupiah(completedTxn.amountPaid)}</span>
-                      </div>
-                      {completedTxn.paymentMethod === 'tunai' && (
-                        <div className="flex justify-between text-dark-500">
-                          <span>KEMBALI</span>
-                          <span>{formatRupiah(completedTxn.change)}</span>
-                        </div>
-                      )}
-                      {completedTxn.paymentMethod === 'tempo' && (
-                        <div className="flex justify-between text-dark-500">
-                          <span>SISA PIUTANG</span>
-                          <span>{formatRupiah(completedTxn.debt)}</span>
-                        </div>
-                      )}
                     </div>
 
                     <div className="text-center text-xs text-dark-400 mt-6">
