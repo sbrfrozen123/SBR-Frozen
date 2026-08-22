@@ -39,13 +39,17 @@ export default function ShiftsClient({ initialShifts, userRole }: ShiftsClientPr
         const endTime = shift.end_time || new Date().toISOString()
         const { data: txns } = await supabase
           .from('transactions')
-          .select('id')
+          .select('id, payment_method, amount_paid, total_amount')
           .eq('user_id', shift.user_id)
           .gte('created_at', shift.start_time)
           .lte('created_at', endTime)
           .eq('order_status', 'completed')
           
-        if (!txns || txns.length === 0) return { ...shift, shiftItems: [] }
+        if (!txns || txns.length === 0) return { ...shift, shiftItems: [], totalCash: 0, totalTransfer: 0, totalPiutang: 0 }
+        
+        const totalCash = txns.filter(t => t.payment_method === 'tunai' || t.payment_method === 'cash' || t.payment_method === 'tempo').reduce((sum, t) => sum + (t.amount_paid || 0), 0);
+        const totalTransfer = txns.filter(t => ['transfer', 'qris'].includes(t.payment_method?.toLowerCase() || '')).reduce((sum, t) => sum + (t.amount_paid || 0), 0);
+        const totalPiutang = txns.filter(t => t.payment_method === 'tempo').reduce((sum, t) => sum + ((t.total_amount || 0) - (t.amount_paid || 0)), 0);
         
         const txnIds = txns.map(t => t.id)
         const { data: items } = await supabase
@@ -64,7 +68,10 @@ export default function ShiftsClient({ initialShifts, userRole }: ShiftsClientPr
         
         return {
           ...shift,
-          shiftItems: Object.values(aggregated).sort((a: any, b: any) => b.qty - a.qty)
+          shiftItems: Object.values(aggregated).sort((a: any, b: any) => b.qty - a.qty),
+          totalCash,
+          totalTransfer,
+          totalPiutang
         }
       }))
       setShifts(shiftsWithItems)
